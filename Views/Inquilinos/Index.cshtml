@@ -13,9 +13,11 @@
             <th>Nombre</th>
             <th>Apellido</th>
             <th>DNI</th>
+            <th>Dirección</th>
             <th>Teléfono</th>
             <th>Email</th>
             <th>Acciones</th>
+           
         </tr>
     </thead>
     <tbody>
@@ -26,8 +28,10 @@
                 <td>@item.Nombre</td>
                 <td>@item.Apellido</td>
                 <td>@item.Dni</td>
-                <td>@item.Telefono</td>
-                <td>@item.Email</td>
+                <td>@(item.Direccion ?? "N/A")</td>
+                <td>@(item.Telefono ?? "N/A")</td>
+                <td>@(item.Email ?? "N/A")</td>
+                
                 <td>
                     <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
                     <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Eliminar</a>

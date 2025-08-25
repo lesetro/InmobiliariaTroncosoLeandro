@@ -4,11 +4,11 @@ using System.Diagnostics.Contracts;
 
 namespace Inmobiliaria_troncoso_leandro.Models
 {
-    [Table("inquilinos")]
+    [Table("inquilino")]
     public class Inquilino
     {
         [Key]
-        [Column("id")]
+        [Column("id_inquilino")]
         public int Id { get; set; }
 
         [Required(ErrorMessage = "El DNI es obligatorio")]
@@ -26,6 +26,10 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Column("nombre")]
         public required string Nombre { get; set; }
 
+        [StringLength(200, ErrorMessage = "La dirección no puede exceder 200 caracteres")]
+        [Column("direccion")]
+        public string? Direccion { get; set; }
+
         [StringLength(20, ErrorMessage = "El teléfono no puede exceder 20 caracteres")]
         [Column("telefono")]
         public string? Telefono { get; set; }
@@ -35,11 +39,12 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Column("email")]
         public string? Email { get; set; }
 
-        [Column("FechaCreacion")]
+        [Column("fecha_alta")]
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
-        [Column("activo")]
-        public bool Activo { get; set; } = true;
+        [Column("estado")]
+        public bool Estado { get; set; } = true;
+       
 
         // Relación 1 a N con Contratos (un inquilino tiene muchos contratos)
         //public virtual ICollection<Contrato> Contratos { get; set; } = new List<Contrato>();
