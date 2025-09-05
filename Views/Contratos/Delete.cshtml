@@ -1,0 +1,104 @@
+@model Inmobiliaria_troncoso_leandro.Models.Contrato
+@{
+    ViewData["Title"] = "Finalizar Contrato";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-warning">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0">Finalizar Contrato</h3>
+            </div>
+            <div class="card-body">
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="alert alert-warning">
+                    <h5 class="alert-heading">¿Confirmar finalización?</h5>
+                    <p class="mb-0">Esta acción cambiará el estado del contrato a "finalizado" y no se puede deshacer.</p>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-12">
+                        <h5>Detalles del contrato:</h5>
+                        <dl class="row">
+                            <dt class="col-sm-3">ID Contrato:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-secondary">#@Model.IdContrato</span>
+                            </dd>
+
+                            <dt class="col-sm-3">Inmueble:</dt>
+                            <dd class="col-sm-9">
+                                <strong>@Model.Inmueble?.Direccion</strong>
+                            </dd>
+
+                            <dt class="col-sm-3">Inquilino:</dt>
+                            <dd class="col-sm-9">
+                                <strong>@(Model.Inquilino?.Usuario?.Nombre) @(Model.Inquilino?.Usuario?.Apellido)</strong>
+                                <br><small class="text-muted">DNI: @Model.Inquilino?.Usuario?.Dni</small>
+                            </dd>
+
+                            <dt class="col-sm-3">Período:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge bg-info">@Model.FechaInicio.ToString("dd/MM/yyyy")</span>
+                                <i class="bi bi-arrow-right mx-2"></i>
+                                <span class="badge bg-warning text-dark">@Model.FechaFin.ToString("dd/MM/yyyy")</span>
+                            </dd>
+
+                            <dt class="col-sm-3">Monto Mensual:</dt>
+                            <dd class="col-sm-9">
+                                <strong class="text-success">@Model.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))</strong>
+                            </dd>
+
+                            <dt class="col-sm-3">Estado Actual:</dt>
+                            <dd class="col-sm-9">
+                                @{
+                                    var estadoBadgeClass = Model.Estado switch
+                                    {
+                                        "vigente" => "bg-success",
+                                        "finalizado" => "bg-secondary",
+                                        "finalizado_anticipado" => "bg-warning text-dark",
+                                        _ => "bg-light text-dark"
+                                    };
+                                }
+                                <span class="badge @estadoBadgeClass">@Model.Estado.ToUpper()</span>
+                            </dd>
+                        </dl>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-3">
+                    <h6>Consecuencias de la finalización:</h6>
+                    <ul class="mb-0">
+                        <li>El contrato será marcado como "finalizado"</li>
+                        <li>El inmueble quedará disponible para nuevos contratos</li>
+                        <li>Esta acción es permanente y no se puede deshacer</li>
+                        <li>Se actualizará la fecha de modificación</li>
+                    </ul>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex gap-2 justify-content-center">
+                    <form asp-action="Delete" method="post" class="d-inline">
+                        <input type="hidden" asp-for="IdContrato" />
+                        <button type="submit" 
+                                class="btn btn-warning btn-lg"
+                                onclick="return confirm('¿Está seguro que desea finalizar este contrato? Esta acción no se puede deshacer.')">
+                            <i class="bi bi-check-circle"></i> Finalizar Contrato
+                        </button>
+                    </form>
+                    <a asp-action="Index" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

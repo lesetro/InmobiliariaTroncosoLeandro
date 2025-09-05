@@ -1,39 +1,53 @@
 @model Inmobiliaria_troncoso_leandro.Models.Inquilino
+
 @{
     ViewData["Title"] = "Editar Inquilino";
 }
+
 <h1>Editar Inquilino</h1>
+
 <form asp-action="Edit">
-    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="IdInquilino" />
     <div class="form-group">
-        <label asp-for="Nombre" class="control-label"></label>
-        <input asp-for="Nombre" class="form-control" />
+        <label asp-for="Usuario.Nombre" class="control-label"></label>
+        <input asp-for="Usuario.Nombre" class="form-control" />
+        <span asp-validation-for="Usuario.Nombre" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Apellido" class="control-label"></label>
-        <input asp-for="Apellido" class="form-control" />
+        <label asp-for="Usuario.Apellido" class="control-label"></label>
+        <input asp-for="Usuario.Apellido" class="form-control" />
+        <span asp-validation-for="Usuario.Apellido" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Dni" class="control-label"></label>
-        <input asp-for="Dni" class="form-control" />
+        <label asp-for="Usuario.Dni" class="control-label"></label>
+        <input asp-for="Usuario.Dni" class="form-control" />
+        <span asp-validation-for="Usuario.Dni" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Telefono" class="control-label"></label>
-        <input asp-for="Telefono" class="form-control" />
+        <label asp-for="Usuario.Telefono" class="control-label"></label>
+        <input asp-for="Usuario.Telefono" class="form-control" />
+        <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
     </div>
     <div class="form-group">
-        <label asp-for="Email" class="control-label"></label>
-        <input asp-for="Email" class="form-control" />
+        <label asp-for="Usuario.Email" class="control-label"></label>
+        <input asp-for="Usuario.Email" class="form-control" />
+        <span asp-validation-for="Usuario.Email" class="text-danger"></span>
     </div>
     <div class="form-group">
         <label asp-for="Estado" class="control-label"></label>
         <input type="radio" asp-for="Estado" value="true" /> Activo
         <input type="radio" asp-for="Estado" value="false" /> Inactivo
+        <span asp-validation-for="Estado" class="text-danger"></span>
     </div>
     <div class="form-group">
         <input type="submit" value="Guardar" class="btn btn-primary" />
     </div>
 </form>
+
 <div>
-<a asp-action="Index">Volver</a>
+    <a asp-action="Index">Volver</a>
 </div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

@@ -1,0 +1,161 @@
+@model Inmobiliaria_troncoso_leandro.Models.ImagenInmueble
+@{
+    ViewData["Title"] = "Eliminar Imagen";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0">Eliminar Imagen</h3>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h5 class="alert-heading">¿Confirmar eliminación?</h5>
+                    <p class="mb-0">Esta acción no se puede deshacer. La imagen será eliminada permanentemente del servidor.</p>
+                </div>
+
+                <div class="row">
+                    <!-- Imagen a eliminar -->
+                    <div class="col-md-6">
+                        <div class="card">
+                            <img src="@Model.Url" 
+                                 alt="@(Model.Descripcion ?? "Imagen del inmueble")" 
+                                 class="card-img-top"
+                                 style="height: 250px; object-fit: cover;"
+                                 onerror="this.src='/images/placeholder.png'; this.alt='Imagen no disponible';">
+                        </div>
+                    </div>
+
+                    <!-- Información de la imagen -->
+                    <div class="col-md-6">
+                        <h5>Detalles de la imagen:</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">ID Imagen:</dt>
+                            <dd class="col-sm-8">
+                                #@Model.IdImagen
+                                <small class="text-muted">(Este es el ID que se enviará)</small>
+                            </dd>
+                            
+                            <dt class="col-sm-4">ID Inmueble:</dt>
+                            <dd class="col-sm-8">
+                                #@Model.IdInmueble
+                                <small class="text-muted">(Para redirección)</small>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Orden:</dt>
+                            <dd class="col-sm-8">@Model.Orden</dd>
+                            
+                            <dt class="col-sm-4">Descripción:</dt>
+                            <dd class="col-sm-8">
+                                @if (!string.IsNullOrEmpty(Model.Descripcion))
+                                {
+                                    @Model.Descripcion
+                                }
+                                else
+                                {
+                                    <em class="text-muted">Sin descripción</em>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-4">Fecha creación:</dt>
+                            <dd class="col-sm-8">@Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</dd>
+                            
+                            <dt class="col-sm-4">URL:</dt>
+                            <dd class="col-sm-8">
+                                <code class="text-break">@Model.Url</code>
+                            </dd>
+                        </dl>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <h6>Consecuencias de la eliminación:</h6>
+                            <ul class="mb-0">
+                                <li>La imagen desaparecerá del carrusel del inmueble</li>
+                                <li>El archivo se eliminará permanentemente del servidor</li>
+                                <li>Si otras imágenes tienen orden mayor, mantendrán su posición</li>
+                                <li>Los enlaces externos a esta imagen dejarán de funcionar</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="row">
+                    <div class="col-12">
+                        <!-- FORMULARIO COMPLETAMENTE CORREGIDO -->
+                        <form method="post" asp-controller="ImagenesInmueble" asp-action="Delete">
+                            @Html.AntiForgeryToken()
+                            
+                            <!-- PARÁMETROS CORRECTOS -->
+                            <input type="hidden" name="id" value="@Model.IdImagen" />
+                            <input type="hidden" name="idInmueble" value="@Model.IdInmueble" />
+                            
+                            <!-- DEBUG: Mostrar los valores que se enviarán -->
+                            <div class="alert alert-info mb-3">
+                                <small>
+                                    <strong>DEBUG:</strong> 
+                                    Se enviará id=@Model.IdImagen, idInmueble=@Model.IdInmueble
+                                </small>
+                            </div>
+                            
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="submit" 
+                                        class="btn btn-danger btn-lg"
+                                        id="deleteButton">
+                                    Sí, Eliminar Permanentemente
+                                </button>
+                                <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@Model.IdInmueble" 
+                                   class="btn btn-secondary btn-lg">
+                                    Cancelar
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="mt-4">
+                    <small class="text-muted">
+                        <strong>Consejo:</strong> Si solo quieres cambiar la imagen, usa la opción "Editar" en lugar de eliminar y crear una nueva.
+                    </small>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteButton = document.getElementById('deleteButton');
+            
+            if (deleteButton) {
+                let clickCount = 0;
+                
+                deleteButton.addEventListener('click', function(e) {
+                    if (clickCount === 0) {
+                        // Primera vez - cambiar texto y prevenir envío
+                        e.preventDefault();
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-warning');
+                        this.innerHTML = 'Confirmar Eliminación';
+                        clickCount++;
+                        
+                        // Resetear después de 4 segundos si no confirma
+                        setTimeout(() => {
+                            this.classList.remove('btn-warning');
+                            this.classList.add('btn-danger');
+                            this.innerHTML = 'Eliminar Imagen';
+                            clickCount = 0;
+                        }, 4000);
+                        
+                        return false;
+                    }
+                    
+                    // Segunda vez - permitir envío del formulario
+                    return true;
+                });
+            }
+        });
+    </script>
+}

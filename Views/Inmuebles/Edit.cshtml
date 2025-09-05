@@ -1,0 +1,385 @@
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
+@{
+    ViewData["Title"] = "Editar Inmueble";
+    var propietarios = ViewData["Propietarios"] as List<Propietario> ?? new List<Propietario>();
+    var tiposInmuebles = ViewData["TiposInmuebles"] as List<TipoInmueble> ?? new List<TipoInmueble>();
+    
+    // Buscar el propietario actual
+    var propietarioActual = propietarios.FirstOrDefault(p => p.IdPropietario == Model.IdPropietario);
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0">Editar Inmueble #@Model.IdInmueble</h3>
+            </div>
+            <div class="card-body">
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <h6>Se encontraron los siguientes errores:</h6>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="IdInmueble" />
+                    <input type="hidden" asp-for="FechaAlta" />
+
+                    <!-- FILA 1: Dirección y Tipo -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group mb-3">
+                                <label asp-for="Direccion" class="form-label fw-bold">
+                                    <i class="bi bi-geo-alt"></i> Dirección *
+                                </label>
+                                <input asp-for="Direccion" class="form-control" placeholder="Ej: Av. Corrientes 1234, CABA" required />
+                                <span asp-validation-for="Direccion" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdTipoInmueble" class="form-label fw-bold">
+                                    <i class="bi bi-house-door"></i> Tipo de Inmueble *
+                                </label>
+                                <select asp-for="IdTipoInmueble" class="form-select" required>
+                                    <option value="">Seleccione un tipo</option>
+                                    @foreach(var tipo in tiposInmuebles)
+                                    {
+                                        <option value="@tipo.IdTipoInmueble" selected="@(tipo.IdTipoInmueble == Model.IdTipoInmueble)">@tipo.Nombre</option>
+                                    }
+                                </select>
+                                <span asp-validation-for="IdTipoInmueble" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 2: Propietario con autocompletado -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdPropietario" class="form-label fw-bold">
+                                    <i class="bi bi-person"></i> Propietario *
+                                </label>
+                                
+                                <!-- Mostrar propietario actual o permitir cambiar -->
+                                @if (propietarioActual != null)
+                                {
+                                    <!-- Propietario seleccionado actualmente -->
+                                    <div id="propietario-selected" class="selected-item">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-person-check"></i>
+                                                <span id="propietario-info">@propietarioActual.Usuario.Apellido, @propietarioActual.Usuario.Nombre <small class="text-muted">(DNI: @propietarioActual.Usuario.Dni)</small></span>
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showPropietarioSearch()">
+                                                <i class="bi bi-pencil"></i> Cambiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Input de búsqueda (inicialmente oculto) -->
+                                    <div id="propietario-search-container" class="position-relative" style="display: none;">
+                                        <input type="text" 
+                                               id="propietario-search" 
+                                               class="form-control" 
+                                               placeholder="Buscar propietario por nombre, apellido o DNI..."
+                                               autocomplete="off">
+                                        <div id="propietario-suggestions" class="suggestions-dropdown"></div>
+                                        <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="cancelPropietarioChange()">
+                                            <i class="bi bi-x"></i> Cancelar
+                                        </button>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <!-- Si no hay propietario actual, mostrar búsqueda -->
+                                    <div id="propietario-search-container" class="position-relative">
+                                        <input type="text" 
+                                               id="propietario-search" 
+                                               class="form-control" 
+                                               placeholder="Buscar propietario por nombre, apellido o DNI..."
+                                               autocomplete="off">
+                                        <div id="propietario-suggestions" class="suggestions-dropdown"></div>
+                                    </div>
+                                    
+                                    <div id="propietario-selected" class="selected-item" style="display: none;">
+                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-person-check"></i>
+                                                <span id="propietario-info"></span>
+                                            </span>
+                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPropietario()">
+                                                <i class="bi bi-x"></i> Cambiar
+                                            </button>
+                                        </div>
+                                    </div>
+                                }
+                                
+                                <!-- Campo hidden para el ID -->
+                                <input asp-for="IdPropietario" type="hidden" />
+                                
+                                <span asp-validation-for="IdPropietario" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 3: Uso y Ambientes -->
+                    <div class="row">
+                        <div class="col-md-8">
+                            <div class="form-group mb-3">
+                                <label asp-for="Uso" class="form-label fw-bold">
+                                    <i class="bi bi-briefcase"></i> Uso *
+                                </label>
+                                <select asp-for="Uso" class="form-select" required>
+                                    <option value="">Seleccione el uso</option>
+                                    <option value="residencial" selected="@(Model.Uso == "residencial")">Residencial</option>
+                                    <option value="comercial" selected="@(Model.Uso == "comercial")">Comercial</option>
+                                    <option value="industrial" selected="@(Model.Uso == "industrial")">Industrial</option>
+                                    <option value="mixto" selected="@(Model.Uso == "mixto")">Mixto</option>
+                                </select>
+                                <span asp-validation-for="Uso" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Ambientes" class="form-label fw-bold">
+                                    <i class="bi bi-door-open"></i> Ambientes *
+                                </label>
+                                <input asp-for="Ambientes" type="number" class="form-control" min="1" max="20" required />
+                                <span asp-validation-for="Ambientes" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 4: Precio y Estado -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Precio" class="form-label fw-bold">
+                                    <i class="bi bi-currency-dollar"></i> Precio Mensual *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="Precio" type="number" step="0.01" min="1" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="Precio" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Estado" class="form-label fw-bold">
+                                    <i class="bi bi-flag"></i> Estado *
+                                </label>
+                                <select asp-for="Estado" class="form-select" required>
+                                    <option value="disponible" selected="@(Model.Estado == "disponible")">Disponible</option>
+                                    <option value="no_disponible" selected="@(Model.Estado == "no_disponible")">No Disponible</option>
+                                    <option value="alquilado" selected="@(Model.Estado == "alquilado")">Alquilado</option>
+                                </select>
+                                <span asp-validation-for="Estado" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 5: Coordenadas -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <label asp-for="Coordenadas" class="form-label fw-bold">
+                                    <i class="bi bi-map"></i> Coordenadas GPS (Opcional)
+                                </label>
+                                <input asp-for="Coordenadas" class="form-control" placeholder="Ej: -34.6037,-58.3816" />
+                                <small class="form-text text-muted">Formato: latitud,longitud (opcional)</small>
+                                <span asp-validation-for="Coordenadas" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-check-circle"></i> Actualizar Inmueble
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.IdInmueble" class="btn btn-danger btn-lg ms-auto">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        let propietarioTimeout;
+        const originalPropietarioId = @Model.IdPropietario;
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            const searchInput = document.getElementById('propietario-search');
+            const suggestionsDiv = document.getElementById('propietario-suggestions');
+            
+            if (searchInput) {
+                // Búsqueda de propietarios
+                searchInput.addEventListener('input', function() {
+                    clearTimeout(propietarioTimeout);
+                    const query = this.value.trim();
+                    
+                    if (query.length < 2) {
+                        suggestionsDiv.innerHTML = '';
+                        suggestionsDiv.style.display = 'none';
+                        return;
+                    }
+                    
+                    propietarioTimeout = setTimeout(() => {
+                        fetch(`/api/search/propietarios?termino=${encodeURIComponent(query)}&limite=5`)
+                            .then(response => response.json())
+                            .then(data => {
+                                suggestionsDiv.innerHTML = '';
+                                
+                                if (data && data.length > 0) {
+                                    data.forEach(item => {
+                                        const div = document.createElement('div');
+                                        div.className = 'suggestion-item';
+                                        div.innerHTML = `
+                                            <div class="d-flex justify-content-between">
+                                                <span><strong>${item.texto}</strong></span>
+                                                <small class="text-muted">${item.infoAdicional || ''}</small>
+                                            </div>
+                                            <small class="text-muted">${item.telefono || ''} ${item.email || ''}</small>
+                                        `;
+                                        
+                                        div.addEventListener('click', () => {
+                                            selectPropietario(item.id, item.texto, item.infoAdicional);
+                                        });
+                                        
+                                        suggestionsDiv.appendChild(div);
+                                    });
+                                    
+                                    suggestionsDiv.style.display = 'block';
+                                } else {
+                                    suggestionsDiv.innerHTML = '<div class="suggestion-item text-muted">No se encontraron propietarios</div>';
+                                    suggestionsDiv.style.display = 'block';
+                                }
+                            })
+                            .catch(error => {
+                                console.error('Error:', error);
+                                suggestionsDiv.innerHTML = '<div class="suggestion-item text-danger">Error en la búsqueda</div>';
+                            });
+                    }, 300);
+                });
+                
+                // Ocultar sugerencias al hacer clic fuera
+                document.addEventListener('click', function(e) {
+                    if (!e.target.closest('.position-relative')) {
+                        suggestionsDiv.style.display = 'none';
+                    }
+                });
+            }
+        });
+        
+        function showPropietarioSearch() {
+            document.getElementById('propietario-selected').style.display = 'none';
+            document.getElementById('propietario-search-container').style.display = 'block';
+            document.getElementById('propietario-search').focus();
+        }
+        
+        function cancelPropietarioChange() {
+            document.getElementById('propietario-selected').style.display = 'block';
+            document.getElementById('propietario-search-container').style.display = 'none';
+            document.getElementById('propietario-search').value = '';
+            document.getElementById('propietario-suggestions').style.display = 'none';
+        }
+        
+        function selectPropietario(id, nombre, dni) {
+            const hiddenInput = document.querySelector('input[name="IdPropietario"]');
+            const selectedDiv = document.getElementById('propietario-selected');
+            const infoSpan = document.getElementById('propietario-info');
+            const searchContainer = document.getElementById('propietario-search-container');
+            const suggestionsDiv = document.getElementById('propietario-suggestions');
+            
+            hiddenInput.value = id;
+            infoSpan.innerHTML = `${nombre} <small class="text-muted">(DNI: ${dni})</small>`;
+            
+            searchContainer.style.display = 'none';
+            selectedDiv.style.display = 'block';
+            suggestionsDiv.style.display = 'none';
+        }
+        
+        function clearPropietario() {
+            const searchInput = document.getElementById('propietario-search');
+            const hiddenInput = document.querySelector('input[name="IdPropietario"]');
+            const selectedDiv = document.getElementById('propietario-selected');
+            const searchContainer = document.getElementById('propietario-search-container');
+            
+            hiddenInput.value = '';
+            searchInput.value = '';
+            selectedDiv.style.display = 'none';
+            searchContainer.style.display = 'block';
+            searchInput.focus();
+        }
+    </script>
+    
+    <style>
+        .suggestions-dropdown {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            max-height: 200px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+        }
+        
+        .suggestion-item {
+            padding: 10px;
+            cursor: pointer;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .suggestion-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .suggestion-item:last-child {
+            border-bottom: none;
+        }
+        
+        .selected-item {
+            animation: fadeIn 0.3s ease-in;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+}

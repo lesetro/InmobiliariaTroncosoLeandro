@@ -29,3 +29,29 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+.background-image {
+    background-size: cover;
+    background-position: center;
+    min-height: 100vh;
+}
+.overlay-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: white;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.5); /* Fondo semitransparente */
+    padding: 20px;
+    border-radius: 10px;
+    font-size: 3rem;
+}
+footer {
+  position: absolute;
+  bottom: 0;
+  width: 100%;
+  height: 60px;
+  line-height: 60px;
+  background-color: #8688fa;
+  font-size: 1.2rem;
+}

@@ -1,0 +1,131 @@
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.ImagenInmueble>
+@{
+    ViewData["Title"] = "Gestionar Imágenes del Inmueble";
+    int idInmueble = ViewData["IdInmueble"] as int? ?? 0;
+}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>📷 Gestionar Imágenes del Inmueble</h2>
+    <div>
+        <a asp-action="Create" asp-route-idInmueble="@idInmueble" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>Agregar Imagen
+        </a>
+        <a asp-controller="Inmuebles" asp-action="Details" asp-route-id="@idInmueble" class="btn btn-secondary">
+            <i class="fas fa-arrow-left me-2"></i>Volver al Inmueble
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <strong>❌ Error:</strong> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <strong>✅ Éxito:</strong> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="fas fa-images fa-3x text-muted mb-3"></i>
+        <h4 class="text-muted">No hay imágenes para este inmueble</h4>
+        <p class="text-muted">Comienza agregando la primera imagen</p>
+        <a asp-action="Create" asp-route-idInmueble="@idInmueble" class="btn btn-primary mt-2">
+            <i class="fas fa-plus me-2"></i>Agregar Primera Imagen
+        </a>
+    </div>
+}
+else
+{
+    <div class="row">
+        @foreach (var imagen in Model)
+        {
+            <div class="col-md-4 col-lg-3 mb-4">
+                <div class="card h-100 shadow-sm">
+                    <div class="position-relative">
+                        <img src="@imagen.Url" 
+                             alt="@(imagen.Descripcion ?? "Imagen del inmueble")" 
+                             class="card-img-top"
+                             style="height: 200px; object-fit: cover;"
+                             loading="lazy"
+                             onerror="this.src='/images/placeholder.png'; this.alt='Imagen no disponible';">
+                        <div class="position-absolute top-0 end-0 m-2">
+                            <span class="badge bg-primary">Orden: @imagen.Orden</span>
+                        </div>
+                    </div>
+                    <div class="card-body d-flex flex-column">
+                        @if (!string.IsNullOrEmpty(imagen.Descripcion))
+                        {
+                            <p class="card-text text-muted flex-grow-1">
+                                <small>@imagen.Descripcion</small>
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="card-text text-muted flex-grow-1">
+                                <small><em>Sin descripción</em></small>
+                            </p>
+                        }
+                        <div class="text-center mt-auto">
+                            <small class="text-muted d-block mb-2">
+                                Agregada: @imagen.FechaCreacion.ToString("dd/MM/yyyy")
+                            </small>
+                            <div class="btn-group w-80" role="group">
+                                <a asp-action="Edit" asp-route-id="@imagen.IdImagen" 
+                                   class="btn btn-warning btn-sm" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@imagen.IdImagen" 
+                                   class="btn btn-danger btn-sm" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <div class="mt-4">
+        <div class="alert alert-info">
+            <h6><i class="fas fa-info-circle me-2"></i>Información:</h6>
+            <ul class="mb-0">
+                <li>Total de imágenes: <strong>@Model.Count()</strong></li>
+                <li>El orden de las imágenes determina cómo se muestran en el carrusel</li>
+                <li>Puedes agregar múltiples imágenes</li>
+            </ul>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <style>
+        .card {
+            transition: transform 0.2s;
+        }
+        .card:hover {
+            transform: translateY(-2px);
+        }
+        .btn-group .btn {
+            border-radius: 0;
+        }
+        .btn-group .btn:first-child {
+            border-top-left-radius: 1.5rem;
+            border-bottom-left-radius: 1.5rem;
+        }
+        .btn-group .btn:last-child {
+            border-top-right-radius: 1.5rem;
+            border-bottom-right-radius: 1.5rem;
+        }
+        
+    </style>
+}

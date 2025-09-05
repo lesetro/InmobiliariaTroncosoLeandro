@@ -1,0 +1,343 @@
+@model Inmobiliaria_troncoso_leandro.Models.Contrato
+@{
+    ViewData["Title"] = "Editar Contrato";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0">Editar Contrato #@Model.IdContrato</h3>
+            </div>
+            <div class="card-body">
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <h6>Se encontraron los siguientes errores:</h6>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <form asp-action="Edit" method="post">
+                    <input type="hidden" asp-for="IdContrato" />
+                    <input type="hidden" asp-for="IdUsuarioCreador" />
+                    <input type="hidden" asp-for="FechaCreacion" />
+                    <input type="hidden" asp-for="FechaModificacion" value="@DateTime.Now" />
+
+                    <!-- FILA 1: Inmueble e Inquilino -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdInmueble" class="form-label fw-bold">
+                                    <i class="bi bi-house"></i> Inmueble *
+                                </label>
+                                <select asp-for="IdInmueble" 
+                                        class="form-select select-with-search" 
+                                        data-placeholder="Buscar inmueble..."
+                                        required>
+                                    <option value="">Seleccione un inmueble</option>
+                                    @if(ViewData["Inmuebles"] != null)
+                                    {
+                                        @foreach(var inmueble in (List<Inmueble>)ViewData["Inmuebles"])
+                                        {
+                                            <option value="@inmueble.IdInmueble" selected="@(inmueble.IdInmueble == Model.IdInmueble)">@inmueble.Direccion</option>
+                                        }
+                                    }
+                                </select>
+                                <span asp-validation-for="IdInmueble" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdInquilino" class="form-label fw-bold">
+                                    <i class="bi bi-person"></i> Inquilino *
+                                </label>
+                                <select asp-for="IdInquilino" 
+                                        class="form-select select-with-search" 
+                                        data-placeholder="Buscar inquilino..."
+                                        required>
+                                    <option value="">Seleccione un inquilino</option>
+                                    @{
+                                        var inquilinos = ViewData["Inquilinos"] as List<Inquilino> ?? new List<Inquilino>();
+                                    }
+
+                                    @foreach(var inquilino in inquilinos)
+                                    {
+                                        @if(inquilino?.Usuario != null && 
+                                        !string.IsNullOrEmpty(inquilino.Usuario.Nombre) && 
+                                        !string.IsNullOrEmpty(inquilino.Usuario.Apellido) && 
+                                        !string.IsNullOrEmpty(inquilino.Usuario.Dni))
+                                    {
+                                        <option value="@inquilino.IdInquilino" selected="@(inquilino.IdInquilino == Model.IdInquilino)">
+                                            @inquilino.Usuario.Apellido, @inquilino.Usuario.Nombre - @inquilino.Usuario.Dni
+                                        </option>
+                                    }
+                                }
+                                </select>
+                                <span asp-validation-for="IdInquilino" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 2: Fechas -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="FechaInicio" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-check"></i> Fecha de Inicio *
+                                </label>
+                                <input asp-for="FechaInicio" type="date" class="form-control" required />
+                                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="FechaFin" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-x"></i> Fecha de Fin *
+                                </label>
+                                <input asp-for="FechaFin" type="date" class="form-control" required />
+                                <span asp-validation-for="FechaFin" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="FechaFinAnticipada" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-event"></i> Fecha Fin Anticipada
+                                </label>
+                                <input asp-for="FechaFinAnticipada" type="date" class="form-control" />
+                                <small class="form-text text-muted">Opcional</small>
+                                <span asp-validation-for="FechaFinAnticipada" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 3: Montos y Estado -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="MontoMensual" class="form-label fw-bold">
+                                    <i class="bi bi-currency-dollar"></i> Monto Mensual *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoMensual" type="number" step="0.01" min="1" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="MontoMensual" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="MultaAplicada" class="form-label fw-bold">
+                                    <i class="bi bi-exclamation-triangle"></i> Multa Aplicada
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MultaAplicada" type="number" step="0.01" min="0" class="form-control" />
+                                </div>
+                                <small class="form-text text-muted">Opcional - Por defecto $0.00</small>
+                                <span asp-validation-for="MultaAplicada" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Estado" class="form-label fw-bold">
+                                    <i class="bi bi-flag"></i> Estado *
+                                </label>
+                                <select asp-for="Estado" class="form-select" required>
+                                    <option value="vigente">Vigente</option>
+                                    <option value="finalizado">Finalizado</option>
+                                    <option value="finalizado_anticipado">Finalizado Anticipado</option>
+                                </select>
+                                <span asp-validation-for="Estado" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 4: Usuario Terminador -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdUsuarioTerminador" class="form-label fw-bold">
+                                    <i class="bi bi-person-x"></i> Usuario Terminador
+                                </label>
+                                <select asp-for="IdUsuarioTerminador" 
+                                        class="form-select select-with-search" 
+                                        data-placeholder="Buscar usuario terminador...">
+                                    <option value="">Ninguno</option>
+                                    @{
+                                         var usuarios = ViewData["Usuarios"] as List<Usuario> ?? new List<Usuario>();
+                                    }
+
+                                    @foreach(var usuario in usuarios)
+                                    {
+                                        @if(usuario != null && !string.IsNullOrEmpty(usuario.Nombre) && !string.IsNullOrEmpty(usuario.Apellido))
+                                    {
+                                        <option value="@usuario.IdUsuario" selected="@(usuario.IdUsuario == Model.IdUsuarioTerminador)">
+                                            @usuario.Apellido, @usuario.Nombre
+                                        </option>
+                                    }
+                                    }
+                                </select>
+                                <small class="form-text text-muted">Solo necesario si el contrato fue finalizado por alguien específico</small>
+                                <span asp-validation-for="IdUsuarioTerminador" class="text-danger"></span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <div class="alert alert-info">
+                                <h6><i class="bi bi-info-circle"></i> Información del contrato:</h6>
+                                <ul class="mb-0 small">
+                                    <li><strong>Creado:</strong> @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</li>
+                                    <li><strong>Última modificación:</strong> @Model.FechaModificacion.ToString("dd/MM/yyyy HH:mm")</li>
+                                    <li><strong>Estado actual:</strong> @Model.Estado.ToUpper()</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="submit" class="btn btn-warning btn-lg">
+                            <i class="bi bi-check-circle"></i> Actualizar Contrato
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                        <a asp-action="Delete" asp-route-id="@Model.IdContrato" class="btn btn-danger btn-lg ms-auto">
+                            <i class="bi bi-flag-fill"></i> Finalizar Contrato
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hacer que los selects sean searchables
+            const selects = document.querySelectorAll('.select-with-search');
+            selects.forEach(select => {
+                // Agregar funcionalidad de búsqueda simple
+                const wrapper = document.createElement('div');
+                wrapper.className = 'select-search-wrapper position-relative';
+                
+                const searchInput = document.createElement('input');
+                searchInput.type = 'text';
+                searchInput.className = 'form-control mb-2';
+                searchInput.placeholder = select.dataset.placeholder || 'Buscar...';
+                
+                select.parentNode.insertBefore(wrapper, select);
+                wrapper.appendChild(searchInput);
+                wrapper.appendChild(select);
+                
+                // Filtrar opciones al escribir
+                searchInput.addEventListener('input', function() {
+                    const filter = this.value.toLowerCase();
+                    const options = select.querySelectorAll('option');
+                    
+                    options.forEach(option => {
+                        if (option.value === '') return; // Mantener opción vacía
+                        
+                        const text = option.textContent.toLowerCase();
+                        option.style.display = text.includes(filter) ? '' : 'none';
+                    });
+                });
+                
+                // Limpiar búsqueda al seleccionar
+                select.addEventListener('change', function() {
+                    if (this.value) {
+                        searchInput.value = '';
+                        const options = this.querySelectorAll('option');
+                        options.forEach(option => option.style.display = '');
+                    }
+                });
+            });
+            
+            // Validación de fechas
+            const fechaInicio = document.querySelector('input[name="FechaInicio"]');
+            const fechaFin = document.querySelector('input[name="FechaFin"]');
+            const fechaFinAnticipada = document.querySelector('input[name="FechaFinAnticipada"]');
+            
+            function validarFechas() {
+                if (fechaInicio.value && fechaFin.value) {
+                    const inicio = new Date(fechaInicio.value);
+                    const fin = new Date(fechaFin.value);
+                    
+                    if (fin <= inicio) {
+                        fechaFin.setCustomValidity('La fecha de fin debe ser posterior a la fecha de inicio');
+                    } else {
+                        fechaFin.setCustomValidity('');
+                    }
+                }
+                
+                // Validar fecha fin anticipada
+                if (fechaFinAnticipada.value) {
+                    const anticipada = new Date(fechaFinAnticipada.value);
+                    const inicio = new Date(fechaInicio.value);
+                    const fin = new Date(fechaFin.value);
+                    
+                    if (anticipada < inicio) {
+                        fechaFinAnticipada.setCustomValidity('La fecha fin anticipada no puede ser anterior al inicio');
+                    } else if (anticipada > fin) {
+                        fechaFinAnticipada.setCustomValidity('La fecha fin anticipada no puede ser posterior a la fecha fin');
+                    } else {
+                        fechaFinAnticipada.setCustomValidity('');
+                    }
+                }
+            }
+            
+            fechaInicio.addEventListener('change', validarFechas);
+            fechaFin.addEventListener('change', validarFechas);
+            fechaFinAnticipada.addEventListener('change', validarFechas);
+        });
+    </script>
+    
+    <style>
+        .select-search-wrapper select {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .select-search-wrapper option[style*="display: none"] {
+            display: none !important;
+        }
+        
+        .card-header {
+            border-bottom: 3px solid rgba(255, 193, 7, 0.5);
+        }
+        
+        .form-label.fw-bold {
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .alert-info {
+            background-color: #f8f9fa;
+            border-color: #dee2e6;
+        }
+    </style>
+}

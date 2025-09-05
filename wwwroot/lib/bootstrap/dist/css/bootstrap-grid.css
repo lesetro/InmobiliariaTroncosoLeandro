@@ -17,6 +17,7 @@
   padding-left: calc(var(--bs-gutter-x) * 0.5);
   margin-right: auto;
   margin-left: auto;
+  background-color: rgb(63, 197, 135);
 }
 
 @media (min-width: 576px) {

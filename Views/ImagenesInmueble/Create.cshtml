@@ -1,0 +1,127 @@
+@model Inmobiliaria_troncoso_leandro.Models.ImagenInmueble
+@{
+    ViewData["Title"] = "Agregar Imagen";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">📷 Agregar Nueva Imagen</h3>
+            </div>
+            <div class="card-body">
+                
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger">
+                        <h6>Se encontraron los siguientes errores:</h6>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="IdInmueble" />
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="fas fa-image me-2"></i>Seleccionar Imagen *
+                                </label>
+                                <input type="file" 
+                                       name="ImagenFile" 
+                                       class="form-control" 
+                                       accept=".jpg,.jpeg,.png,.gif,.bmp"
+                                       required>
+                                <div class="form-text">
+                                    Formatos permitidos: JPG, JPEG, PNG, GIF, BMP (máximo 5MB)
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Orden" class="form-label fw-bold">
+                                    <i class="fas fa-sort me-2"></i>Orden de visualización
+                                </label>
+                                <input asp-for="Orden" 
+                                       class="form-control" 
+                                       type="number" 
+                                       min="1" 
+                                       max="99">
+                                <div class="form-text">
+                                    Las imágenes se ordenan de menor a mayor número
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label asp-for="Descripcion" class="form-label fw-bold">
+                            <i class="fas fa-comment me-2"></i>Descripción (opcional)
+                        </label>
+                        <textarea asp-for="Descripcion" 
+                                  class="form-control" 
+                                  rows="3" 
+                                  placeholder="Ej: Vista frontal de la casa, cocina moderna, jardín trasero..."></textarea>
+                        <div class="form-text">
+                            Agrega una descripción para identificar mejor la imagen
+                        </div>
+                    </div>
+
+
+                    <div class="d-flex gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-2"></i>Guardar Imagen
+                        </button>
+                        <a asp-action="Index" asp-route-idInmueble="@Model.IdInmueble" 
+                           class="btn btn-secondary">
+                            <i class="fas fa-times me-2"></i>Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.querySelector('input[type="file"]');
+            const orderInput = document.querySelector('input[name="Orden"]');
+            
+            // Vista previa de imagen
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                if (file) {
+                    // Validar tamaño
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Validar tipo
+                    if (!file.type.startsWith('image/')) {
+                        alert('Por favor selecciona un archivo de imagen válido.');
+                        this.value = '';
+                        return;
+                    }
+                    
+                    // Mostrar nombre del archivo
+                    console.log('Archivo seleccionado:', file.name, '- Tamaño:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+                }
+            });
+            
+            // Focus en el campo de orden cuando se carga la página
+            if (orderInput) {
+                orderInput.focus();
+            }
+        });
+    </script>
+}

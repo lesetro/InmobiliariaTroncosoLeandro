@@ -1,0 +1,378 @@
+
+
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
+@{
+    ViewData["Title"] = "Crear Nuevo Inmueble";
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h3 class="mb-0">🏠 Crear Nuevo Inmueble</h3>
+            </div>
+            <div class="card-body">
+                
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>❌ Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <h6>Se encontraron los siguientes errores:</h6>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <form asp-action="Create" method="post" enctype="multipart/form-data">
+                    <div class="row">
+                        <!-- Información Básica -->
+                        <div class="col-md-6">
+                            <h5 class="text-primary mb-3">📋 Información Básica</h5>
+                            
+                            <div class="mb-3">
+                                <label asp-for="Direccion" class="form-label fw-bold">
+                                    📍 Dirección *
+                                </label>
+                                <input asp-for="Direccion" 
+                                       class="form-control" 
+                                       placeholder="Ej: Av. San Martín 1234, Villa Mercedes"
+                                       required>
+                                <span asp-validation-for="Direccion" class="text-danger"></span>
+                            </div>
+
+                            <!-- AUTOCOMPLETADO PROPIETARIO -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">👤 Propietario *</label>
+                                <div class="position-relative">
+                                    <input type="text" 
+                                           id="propietarioBuscar" 
+                                           class="form-control autocomplete-input" 
+                                           placeholder="Escriba nombre o apellido del propietario..."
+                                           autocomplete="off"
+                                           required>
+                                    <input type="hidden" 
+                                           asp-for="IdPropietario" 
+                                           id="propietarioId" 
+                                           required>
+                                    <div id="propietarioDropdown" 
+                                         class="autocomplete-dropdown position-absolute w-100 bg-white border shadow-sm"
+                                         style="display: none; z-index: 1000; max-height: 200px; overflow-y: auto;">
+                                    </div>
+                                    <div class="form-text">
+                                        Escriba al menos 2 caracteres para buscar
+                                    </div>
+                                </div>
+                                <span asp-validation-for="IdPropietario" class="text-danger"></span>
+                                
+                                <!-- Propietario seleccionado -->
+                                <div id="propietarioSeleccionado" 
+                                     class="mt-2 p-2 bg-light rounded border" 
+                                     style="display: none;">
+                                    <small class="text-muted">Propietario seleccionado:</small>
+                                    <div id="propietarioInfo" class="fw-bold"></div>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger mt-1" 
+                                            onclick="window.autocompleteInstances['propietarioBuscar'].clearSelection()">
+                                        Cambiar propietario
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="IdTipoInmueble" class="form-label fw-bold">
+                                    🏢 Tipo de Inmueble *
+                                </label>
+                                @if (ViewData["TiposInmueble"] != null)
+                                {
+                                    <select asp-for="IdTipoInmueble" 
+                                            class="form-select"
+                                            asp-items="@(ViewData["TiposInmueble"] as SelectList)"
+                                            required>
+                                        <option value="">Seleccionar tipo...</option>
+                                    </select>
+                                }
+                                else
+                                {
+                                    <select class="form-select" disabled>
+                                        <option>Error cargando tipos</option>
+                                    </select>
+                                }
+                                <span asp-validation-for="IdTipoInmueble" class="text-danger"></span>
+                            </div>
+
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="Uso" class="form-label fw-bold">
+                                        🎯 Uso *
+                                    </label>
+                                    <select asp-for="Uso" class="form-select" required>
+                                        <option value="">Seleccionar uso...</option>
+                                        <option value="Residencial">Residencial</option>
+                                        <option value="Comercial">Comercial</option>
+                                        <option value="Industrial">Industrial</option>
+                                    </select>
+                                    <span asp-validation-for="Uso" class="text-danger"></span>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label asp-for="Ambientes" class="form-label fw-bold">
+                                        🚪 Ambientes *
+                                    </label>
+                                    <input asp-for="Ambientes" 
+                                           class="form-control" 
+                                           type="number" 
+                                           min="1" 
+                                           max="20"
+                                           required>
+                                    <span asp-validation-for="Ambientes" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Coordenadas" class="form-label fw-bold">
+                                    🗺️ Coordenadas GPS (opcional)
+                                </label>
+                                <input asp-for="Coordenadas" 
+                                       class="form-control" 
+                                       placeholder="Ej: -33.682234, -65.463613"
+                                       pattern="^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$"
+                                       title="Formato: latitud,longitud (ej: -33.682234, -65.463613)">
+                                <div class="form-text">
+                                    Formato: latitud,longitud. 
+                                    <a href="https://www.google.com/maps" target="_blank">Obtener en Google Maps</a>
+                                </div>
+                                <span asp-validation-for="Coordenadas" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Información Comercial e Imágenes -->
+                        <div class="col-md-6">
+                            <h5 class="text-success mb-3">💰 Información Comercial</h5>
+                            
+                            <div class="mb-3">
+                                <label asp-for="Precio" class="form-label fw-bold">
+                                    💵 Precio de Alquiler (ARS) *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="Precio" 
+                                           class="form-control" 
+                                           type="number" 
+                                           step="0.01" 
+                                           min="1000"
+                                           placeholder="50000"
+                                           required>
+                                </div>
+                                <span asp-validation-for="Precio" class="text-danger"></span>
+                            </div>
+
+                            <div class="mb-4">
+                                <h5 class="text-info mb-3">📸 Imágenes</h5>
+                                
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">
+                                        🖼️ Seleccionar Imágenes
+                                    </label>
+                                    <input type="file" 
+                                           name="Imagenes" 
+                                           multiple 
+                                           class="form-control" 
+                                           accept="image/jpeg,image/png,image/jpg"
+                                           id="imageInput">
+                                    <div class="form-text">
+                                        Seleccione imágenes JPEG o PNG (máximo 5MB cada una). 
+                                        Puede seleccionar múltiples archivos.
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label fw-bold">Vista previa:</label>
+                                    <div id="imagePreview" 
+                                         class="border rounded p-3 bg-light"
+                                         style="min-height: 120px;">
+                                        <div class="text-center text-muted">
+                                            <i class="fas fa-images fa-2x"></i>
+                                            <p class="mt-2 mb-0">Las imágenes seleccionadas aparecerán aquí</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                        </div>
+                    </div>
+
+                    <!-- Botones de Acción -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <hr>
+                            <div class="d-flex gap-2 justify-content-center">
+                                <button type="submit" class="btn btn-primary btn-lg">
+                                    <i class="fas fa-save me-2"></i>Crear Inmueble
+                                </button>
+                                <a asp-action="Index" class="btn btn-secondary btn-lg">
+                                    <i class="fas fa-times me-2"></i>Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Estilos del autocompletado -->
+<style>
+.autocomplete-dropdown {
+    border-top: none !important;
+    border-radius: 0 0 0.375rem 0.375rem;
+}
+
+.autocomplete-item {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #eee;
+    transition: background-color 0.2s;
+}
+
+.autocomplete-item:hover, 
+.autocomplete-item.active {
+    background-color: #f8f9fa;
+}
+
+.autocomplete-item:last-child {
+    border-bottom: none;
+}
+
+.autocomplete-input.loading {
+    background-image: url("data:image/svg+xml;charset=utf8,<svg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24'><circle cx='12' cy='12' r='10' stroke='%23007bff' stroke-width='2' fill='none' stroke-dasharray='15.71 15.71' stroke-dashoffset='0'><animateTransform attributeName='transform' dur='1s' repeatCount='indefinite' type='rotate' values='0 12 12;360 12 12'/></circle></svg>");
+    background-repeat: no-repeat;
+    background-position: right 10px center;
+    background-size: 16px;
+}
+</style>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    <script src="~/js/autocomplete-search.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar autocompletado de propietarios
+            window.createAutocomplete({
+                inputId: 'propietarioBuscar',
+                hiddenInputId: 'propietarioId',
+                dropdownId: 'propietarioDropdown',
+                selectedId: 'propietarioSeleccionado',
+                infoId: 'propietarioInfo',
+                apiEndpoint: '/api/search/propietarios',
+                placeholder: 'Escriba nombre o apellido del propietario...',
+                minLength: 2,
+                debounceTime: 300
+            });
+
+            // Vista previa de imágenes mejorada
+            const imageInput = document.getElementById('imageInput');
+            const previewContainer = document.getElementById('imagePreview');
+            
+            imageInput.addEventListener('change', function(e) {
+                previewContainer.innerHTML = '';
+                
+                if (e.target.files && e.target.files.length > 0) {
+                    const fileArray = Array.from(e.target.files);
+                    
+                    // Header con contador
+                    const header = document.createElement('div');
+                    header.className = 'mb-2 text-center';
+                    header.innerHTML = `<small class="text-muted">${fileArray.length} imagen(es) seleccionada(s)</small>`;
+                    previewContainer.appendChild(header);
+                    
+                    // Container para imágenes
+                    const imagesContainer = document.createElement('div');
+                    imagesContainer.className = 'd-flex flex-wrap gap-2 justify-content-center';
+                    
+                    fileArray.forEach((file, index) => {
+                        if (file.type.startsWith('image/')) {
+                            // Validar tamaño
+                            if (file.size > 5 * 1024 * 1024) {
+                                alert(`La imagen "${file.name}" es demasiado grande (máximo 5MB)`);
+                                return;
+                            }
+                            
+                            const reader = new FileReader();
+                            reader.onload = function(e) {
+                                const imageWrapper = document.createElement('div');
+                                imageWrapper.className = 'text-center';
+                                imageWrapper.innerHTML = `
+                                    <div class="position-relative">
+                                        <img src="${e.target.result}" 
+                                             class="img-thumbnail shadow-sm" 
+                                             style="width: 100px; height: 100px; object-fit: cover;">
+                                        <span class="position-absolute top-0 start-0 badge bg-primary" style="font-size: 0.7em;">
+                                            ${index + 1}
+                                        </span>
+                                    </div>
+                                    <small class="d-block mt-1 text-truncate" style="max-width: 100px;" title="${file.name}">
+                                        ${file.name}
+                                    </small>
+                                    <small class="d-block text-muted">
+                                        ${(file.size / 1024 / 1024).toFixed(2)} MB
+                                    </small>
+                                `;
+                                imagesContainer.appendChild(imageWrapper);
+                            };
+                            reader.readAsDataURL(file);
+                        } else {
+                            alert(`El archivo "${file.name}" no es una imagen válida`);
+                        }
+                    });
+                    
+                    previewContainer.appendChild(imagesContainer);
+                } else {
+                    // Estado vacío
+                    previewContainer.innerHTML = `
+                        <div class="text-center text-muted">
+                            <i class="fas fa-images fa-2x"></i>
+                            <p class="mt-2 mb-0">Las imágenes seleccionadas aparecerán aquí</p>
+                        </div>
+                    `;
+                }
+            });
+
+            // Validación de coordenadas en tiempo real
+            const coordenadasInput = document.querySelector('input[name="Coordenadas"]');
+            if (coordenadasInput) {
+                coordenadasInput.addEventListener('input', function(e) {
+                    const value = e.target.value.trim();
+                    if (value && !value.match(/^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$/)) {
+                        e.target.setCustomValidity('Formato inválido. Use: latitud,longitud (ej: -33.682234, -65.463613)');
+                        e.target.classList.add('is-invalid');
+                    } else {
+                        e.target.setCustomValidity('');
+                        e.target.classList.remove('is-invalid');
+                    }
+                });
+            }
+            
+            // Formatear input de precio
+            const precioInput = document.querySelector('input[name="Precio"]');
+            if (precioInput) {
+                precioInput.addEventListener('blur', function() {
+                    const value = parseFloat(this.value);
+                    if (!isNaN(value)) {
+                        this.value = value.toFixed(2);
+                    }
+                });
+            }
+        });
+    </script>
+}

@@ -1,0 +1,199 @@
+@model Inmobiliaria_troncoso_leandro.Models.ImagenInmueble
+@{
+    ViewData["Title"] = "Editar Imagen";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="mb-0">✏️ Editar Imagen</h3>
+            </div>
+            <div class="card-body">
+                
+                @if (ViewData.ModelState.ErrorCount > 0)
+                {
+                    <div class="alert alert-danger">
+                        <h6>Se encontraron los siguientes errores:</h6>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <div class="row">
+                    <!-- Columna izquierda: Imagen actual -->
+                    <div class="col-md-5">
+                        <h5>Imagen Actual:</h5>
+                        <div class="card">
+                            <img src="@Model.Url" 
+                                 alt="@(Model.Descripcion ?? "Imagen del inmueble")" 
+                                 class="card-img-top"
+                                 style="height: 300px; object-fit: cover;"
+                                 onerror="this.src='/images/placeholder.png'; this.alt='Imagen no disponible';">
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <small class="text-muted">
+                                        <strong>Orden actual:</strong> @Model.Orden<br>
+                                        <strong>Fecha:</strong> @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")<br>
+                                        <strong>Descripción:</strong> @(Model.Descripcion ?? "Sin descripción")
+                                    </small>
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Columna derecha: Formulario de edición -->
+                    <div class="col-md-7">
+                        <h5>Modificar Datos:</h5>
+                        
+                        <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                            <input type="hidden" asp-for="IdImagen" />
+                            <input type="hidden" asp-for="IdInmueble" />
+                            <input type="hidden" asp-for="Url" />
+                            <input type="hidden" asp-for="FechaCreacion" />
+                            
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    🔄 Reemplazar Imagen (opcional)
+                                </label>
+                                <input type="file" 
+                                       name="ImagenFile" 
+                                       class="form-control" 
+                                       accept=".jpg,.jpeg,.png,.gif,.bmp">
+                                <div class="form-text">
+                                    Deja este campo vacío si no deseas cambiar la imagen actual.<br>
+                                    Formatos permitidos: JPG, JPEG, PNG, GIF, BMP (máximo 5MB)
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Orden" class="form-label fw-bold">
+                                    📋 Orden de visualización
+                                </label>
+                                <input asp-for="Orden" 
+                                       class="form-control" 
+                                       type="number" 
+                                       min="1" 
+                                       max="99">
+                                <div class="form-text">
+                                    Las imágenes se ordenan de menor a mayor número
+                                </div>
+                            </div>
+
+                            <div class="mb-3">
+                                <label asp-for="Descripcion" class="form-label fw-bold">
+                                    📝 Descripción
+                                </label>
+                                <textarea asp-for="Descripcion" 
+                                          class="form-control" 
+                                          rows="4" 
+                                          placeholder="Ej: Vista frontal de la casa, cocina moderna, jardín trasero..."></textarea>
+                                <div class="form-text">
+                                    Agrega una descripción para identificar mejor la imagen
+                                </div>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="alert alert-warning">
+                                    <h6>⚠️ Importante:</h6>
+                                    <ul class="mb-0">
+                                        <li>Si seleccionas una nueva imagen, la actual será reemplazada permanentemente</li>
+                                        <li>Los cambios en el orden afectarán cómo se muestran las imágenes en el carrusel</li>
+                                        <li>La descripción ayuda a los visitantes a entender qué muestra la imagen</li>
+                                    </ul>
+                                </div>
+                            </div>
+
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-warning">
+                                    💾 Actualizar Imagen
+                                </button>
+                                <a asp-action="Index" asp-route-idInmueble="@Model.IdInmueble" 
+                                   class="btn btn-secondary">
+                                    ❌ Cancelar
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@Model.IdImagen" 
+                                   class="btn btn-danger ms-auto"
+                                   onclick="return confirm('¿Estás seguro de que deseas eliminar esta imagen? Esta acción no se puede deshacer.')">
+                                    🗑️ Eliminar Imagen
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const fileInput = document.querySelector('input[type="file"]');
+            const currentImage = document.querySelector('.card-img-top');
+            let originalSrc = currentImage.src;
+            
+            // Vista previa de nueva imagen
+            fileInput.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                
+                if (file) {
+                    // Validar tamaño
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('La imagen es demasiado grande. El tamaño máximo es 5MB.');
+                        this.value = '';
+                        currentImage.src = originalSrc;
+                        return;
+                    }
+                    
+                    // Validar tipo
+                    if (!file.type.startsWith('image/')) {
+                        alert('Por favor selecciona un archivo de imagen válido.');
+                        this.value = '';
+                        currentImage.src = originalSrc;
+                        return;
+                    }
+                    
+                    // Mostrar vista previa
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        currentImage.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                    
+                    console.log('Nueva imagen seleccionada:', file.name, '- Tamaño:', (file.size / 1024 / 1024).toFixed(2) + 'MB');
+                } else {
+                    // Restaurar imagen original si no hay archivo seleccionado
+                    currentImage.src = originalSrc;
+                }
+            });
+            
+            // Confirmar antes de salir si hay cambios sin guardar
+            let formChanged = false;
+            const form = document.querySelector('form');
+            const inputs = form.querySelectorAll('input, textarea');
+            
+            inputs.forEach(input => {
+                input.addEventListener('change', () => {
+                    formChanged = true;
+                });
+            });
+            
+            window.addEventListener('beforeunload', function(e) {
+                if (formChanged) {
+                    e.preventDefault();
+                    e.returnValue = '';
+                }
+            });
+            
+            // Resetear flag cuando se envía el formulario
+            form.addEventListener('submit', () => {
+                formChanged = false;
+            });
+        });
+    </script>
+}

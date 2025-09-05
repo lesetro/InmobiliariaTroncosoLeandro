@@ -1,0 +1,204 @@
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
+@{
+    ViewData["Title"] = "Eliminar Inmueble";
+    bool tieneContratosVigentes = ViewBag.ContratosVigentes > 0;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0">Eliminar Inmueble</h3>
+            </div>
+            <div class="card-body">
+                
+                @if (tieneContratosVigentes)
+                {
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">No se puede eliminar</h5>
+                        <p>Este inmueble tiene <strong>@ViewBag.ContratosVigentes contrato(s) vigente(s)</strong> y no puede ser eliminado.</p>
+                        <p class="mb-0">Para poder eliminarlo, primero debe finalizar todos los contratos asociados.</p>
+                    </div>
+                }
+                else
+                {
+                    <div class="alert alert-danger">
+                        <h5 class="alert-heading">¿Confirmar eliminación?</h5>
+                        <p class="mb-0">Esta acción cambiará el estado del inmueble a "no disponible" y eliminará todas sus imágenes permanentemente.</p>
+                    </div>
+                }
+
+                <div class="row">
+                    <!-- Información del Inmueble -->
+                    <div class="col-md-8">
+                        <h5>Detalles del inmueble:</h5>
+                        <dl class="row">
+                            <dt class="col-sm-3">Dirección:</dt>
+                            <dd class="col-sm-9">@Model.Direccion</dd>
+                            
+                            <dt class="col-sm-3">Tipo:</dt>
+                            <dd class="col-sm-9">@Model.TipoInmueble?.Nombre</dd>
+                            
+                            <dt class="col-sm-3">Propietario:</dt>
+                            <dd class="col-sm-9">
+                                @($"{Model.Propietario?.Usuario?.Nombre} {Model.Propietario?.Usuario?.Apellido}")
+                                @if (!string.IsNullOrEmpty(Model.Propietario?.Usuario?.Telefono))
+                                {
+                                    <br><small class="text-muted">Tel: @Model.Propietario.Usuario.Telefono</small>
+                                }
+                            </dd>
+                            
+                            <dt class="col-sm-3">Uso:</dt>
+                            <dd class="col-sm-9">
+                                <span class="badge @(Model.Uso == "Comercial" ? "bg-warning text-dark" : "bg-primary")">
+                                    @Model.Uso
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Ambientes:</dt>
+                            <dd class="col-sm-9">@Model.Ambientes</dd>
+                            
+                            <dt class="col-sm-3">Precio:</dt>
+                            <dd class="col-sm-9 fw-bold text-success">@Model.Precio.ToString("C", new System.Globalization.CultureInfo("es-AR"))</dd>
+                            
+                            <dt class="col-sm-3">Estado actual:</dt>
+                            <dd class="col-sm-9">
+                                @{
+                                    var estadoBadgeClass = Model.Estado switch
+                                    {
+                                        "disponible" => "bg-success",
+                                        "alquilado" => "bg-danger",
+                                        "no_disponible" => "bg-secondary",
+                                        "inactivo" => "bg-dark text-white",
+                                        _ => "bg-secondary"
+                                    };
+                                }
+                                <span class="badge @estadoBadgeClass">@Model.Estado</span>
+                            </dd>
+                            
+                            <dt class="col-sm-3">Fecha Alta:</dt>
+                            <dd class="col-sm-9">@Model.FechaAlta.ToString("dd/MM/yyyy")</dd>
+                            
+                            @if (!string.IsNullOrEmpty(Model.Coordenadas))
+                            {
+                                <dt class="col-sm-3">Ubicación:</dt>
+                                <dd class="col-sm-9">
+                                    <a href="https://www.google.com/maps?q=@Model.Coordenadas" target="_blank">
+                                        Ver en Google Maps
+                                    </a>
+                                </dd>
+                            }
+                        </dl>
+                    </div>
+
+                    <!-- Estadísticas -->
+                    <div class="col-md-4">
+                        <h5>Datos relacionados:</h5>
+                        <div class="card bg-light">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Contratos vigentes:</span>
+                                    <span class="badge @(ViewBag.ContratosVigentes > 0 ? "bg-warning text-dark" : "bg-success")">
+                                        @ViewBag.ContratosVigentes
+                                    </span>
+                                </div>
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Imágenes:</span>
+                                    <span class="badge bg-info">@ViewBag.TotalImagenes</span>
+                                </div>
+                                <div class="d-flex justify-content-between">
+                                    <span>Personas interesadas:</span>
+                                    <span class="badge bg-secondary">@ViewBag.TotalIntereses</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!tieneContratosVigentes)
+                        {
+                            <div class="alert alert-warning mt-3">
+                                <h6>Consecuencias de la eliminación:</h6>
+                                <ul class="mb-0 small">
+                                    <li>El estado cambiará a "no disponible"</li>
+                                    <li>Se eliminarán @ViewBag.TotalImagenes imagen(es)</li>
+                                    <li>Se eliminarán @ViewBag.TotalIntereses registro(s) de interés</li>
+                                    <li>El inmueble seguirá existiendo pero no será visible</li>
+                                </ul>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <hr class="my-4">
+
+                <div class="d-flex gap-2 justify-content-center">
+                    @if (!tieneContratosVigentes)
+                    {
+                        <form asp-action="Delete" method="post" class="d-inline">
+                            <input type="hidden" name="id" value="@Model.IdInmueble" />
+                            <button type="submit" 
+                                    class="btn btn-danger btn-lg"
+                                    onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción eliminará el inmueble y todas sus imágenes.')">
+                                Confirmar Eliminación
+                            </button>
+                        </form>
+                    }
+                    else
+                    {
+                        <div class="alert alert-info text-center">
+                            <p class="mb-2">Para poder eliminar este inmueble, primero debes:</p>
+                            <ol class="text-start">
+                                <li>Finalizar todos los contratos vigentes</li>
+                                <li>Cambiar el estado de los contratos de "vigente" a "finalizado"</li>
+                                <li>Luego podrás eliminar el inmueble</li>
+                            </ol>
+                        </div>
+                    }
+                    
+                    <a asp-action="Details" asp-route-id="@Model.IdInmueble" 
+                       class="btn btn-secondary btn-lg">
+                        Volver a Detalles
+                    </a>
+                    <a asp-action="Index" 
+                       class="btn btn-outline-secondary btn-lg">
+                        Volver a Lista
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const deleteForm = document.querySelector('form[asp-action="Delete"]');
+            if (deleteForm) {
+                const deleteButton = deleteForm.querySelector('button[type="submit"]');
+                let confirmClicks = 0;
+                
+                deleteButton.addEventListener('click', function(e) {
+                    if (confirmClicks === 0) {
+                        e.preventDefault();
+                        this.classList.remove('btn-danger');
+                        this.classList.add('btn-warning');
+                        this.innerHTML = 'Haz clic de nuevo para confirmar eliminación';
+                        confirmClicks++;
+                        
+                        // Resetear después de 4 segundos
+                        setTimeout(() => {
+                            this.classList.remove('btn-warning');
+                            this.classList.add('btn-danger');
+                            this.innerHTML = 'Confirmar Eliminación';
+                            confirmClicks = 0;
+                        }, 4000);
+                        
+                        return false;
+                    }
+                    
+                    // Segunda confirmación
+                    return confirm('ÚLTIMA CONFIRMACIÓN: ¿Realmente deseas eliminar este inmueble y todas sus imágenes?');
+                });
+            }
+        });
+    </script>
+}

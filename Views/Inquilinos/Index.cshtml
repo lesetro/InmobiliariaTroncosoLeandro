@@ -2,41 +2,225 @@
 @{
     ViewData["Title"] = "Inquilinos";
 }
-<h1>Inquilinos</h1>
-<p>
-    <a asp-action="Create" class="btn btn-primary">Crear Nuevo</a>
-</p>
-<table class="table table-striped">
-    <thead>
-        <tr>
-            <th>Código</th>
-            <th>Nombre</th>
-            <th>Apellido</th>
-            <th>DNI</th>
-            <th>Dirección</th>
-            <th>Teléfono</th>
-            <th>Email</th>
-            <th>Acciones</th>
-           
-        </tr>
-    </thead>
-    <tbody>
-        @foreach (var item in Model)
-        {
-            <tr>
-                <td>@item.Id</td>
-                <td>@item.Nombre</td>
-                <td>@item.Apellido</td>
-                <td>@item.Dni</td>
-                <td>@(item.Direccion ?? "N/A")</td>
-                <td>@(item.Telefono ?? "N/A")</td>
-                <td>@(item.Email ?? "N/A")</td>
-                
-                <td>
-                    <a asp-action="Edit" asp-route-id="@item.Id" class="btn btn-warning btn-sm">Editar</a>
-                    <a asp-action="Delete" asp-route-id="@item.Id" class="btn btn-danger btn-sm">Eliminar</a>
-                </td>
-            </tr>
-        }
-    </tbody>
-</table>
+
+<div class="row justify-content-between align-items-center mb-4">
+    <div class="col-md-6">
+        <h2>👥 Gestión de Inquilinos</h2>
+    </div>
+    <div class="col-md-6 text-end">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Nuevo Inquilino
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        <strong>❌ Error:</strong> @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        <strong>✅ Éxito:</strong> @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Formulario de búsqueda -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" asp-action="Index">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-6">
+                    <label for="buscar" class="form-label">Buscar Inquilino</label>
+                    <input type="text" 
+                           id="buscar" 
+                           name="buscar" 
+                           class="form-control" 
+                           placeholder="Nombre, apellido, DNI, email, teléfono..."
+                           value="@ViewBag.Buscar">
+                </div>
+                <div class="col-md-4">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-search"></i> Buscar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle"></i> Limpiar
+                    </a>
+                </div>
+                <div class="col-md-2 text-end">
+                    <small class="text-muted">
+                        Total: @ViewBag.TotalRegistros inquilinos
+                    </small>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@if (!Model.Any())
+{
+    <div class="text-center py-5">
+        <i class="bi bi-people" style="font-size: 4rem; color: #6c757d;"></i>
+        <h4 class="text-muted mt-3">No hay inquilinos</h4>
+        <p class="text-muted">
+            @if (!string.IsNullOrEmpty(ViewBag.Buscar))
+            {
+                <span>No se encontraron inquilinos con los criterios de búsqueda.</span>
+            }
+            else
+            {
+                <span>Comienza creando tu primer inquilino.</span>
+            }
+        </p>
+        <a asp-action="Create" class="btn btn-primary mt-2">
+            <i class="bi bi-plus-circle"></i> Crear Primer Inquilino
+        </a>
+    </div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-striped table-hover">
+            <thead class="table-dark">
+                <tr>
+                    <th style="width: 8%;">Código</th>
+                    <th style="width: 20%;">Nombre Completo</th>
+                    <th style="width: 12%;">DNI</th>
+                    <th style="width: 20%;">Dirección</th>
+                    <th style="width: 15%;">Teléfono</th>
+                    <th style="width: 15%;">Email</th>
+                    <th style="width: 10%;">Acciones</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Model)
+                {
+                    <tr>
+                        <td>
+                            <span class="badge bg-secondary">#@item.IdInquilino</span>
+                        </td>
+                        <td>
+                            <strong>@item.Usuario?.Apellido, @item.Usuario?.Nombre</strong>
+                        </td>
+                        <td>@(item.Usuario?.Dni ?? "N/A")</td>
+                        <td>@(item.Usuario?.Direccion ?? "N/A")</td>
+                        <td>@(item.Usuario?.Telefono ?? "N/A")</td>
+                        <td>@(item.Usuario?.Email ?? "N/A")</td>
+                        <td>
+                            <div class="btn-group" role="group">
+                                <a asp-action="Edit" asp-route-id="@item.IdInquilino" 
+                                   class="btn btn-warning btn-sm" title="Editar">
+                                    <i class="bi bi-pencil"></i>
+                                </a>
+                                <a asp-action="Delete" asp-route-id="@item.IdInquilino" 
+                                   class="btn btn-danger btn-sm" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <!-- Paginación -->
+    @if (ViewBag.TotalPaginas > 1)
+    {
+        <nav aria-label="Paginación de inquilinos">
+            <ul class="pagination justify-content-center">
+                <!-- Página anterior -->
+                @if (ViewBag.PaginaActual > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pagina="@(ViewBag.PaginaActual - 1)"
+                           asp-route-buscar="@ViewBag.Buscar">
+                            Anterior
+                        </a>
+                    </li>
+                }
+
+                <!-- Páginas numéricas -->
+                @{
+                    int inicioRango = Math.Max(1, ViewBag.PaginaActual - 2);
+                    int finRango = Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2);
+                }
+
+                @if (inicioRango > 1)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="1"
+                           asp-route-buscar="@ViewBag.Buscar">1</a>
+                    </li>
+                    @if (inicioRango > 2)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                }
+
+                @for (int i = inicioRango; i <= finRango; i++)
+                {
+                    <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@i"
+                           asp-route-buscar="@ViewBag.Buscar">@i</a>
+                    </li>
+                }
+
+                @if (finRango < ViewBag.TotalPaginas)
+                {
+                    @if (finRango < ViewBag.TotalPaginas - 1)
+                    {
+                        <li class="page-item disabled">
+                            <span class="page-link">...</span>
+                        </li>
+                    }
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@ViewBag.TotalPaginas"
+                           asp-route-buscar="@ViewBag.Buscar">@ViewBag.TotalPaginas</a>
+                    </li>
+                }
+
+                <!-- Página siguiente -->
+                @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                {
+                    <li class="page-item">
+                        <a class="page-link" asp-action="Index" 
+                           asp-route-pagina="@(ViewBag.PaginaActual + 1)"
+                           asp-route-buscar="@ViewBag.Buscar">
+                            Siguiente
+                        </a>
+                    </li>
+                }
+            </ul>
+        </nav>
+
+        <!-- Información de paginación -->
+        <div class="text-center text-muted mt-3">
+            <small>
+                Mostrando @((ViewBag.PaginaActual - 1) * ViewBag.ITEMS_POR_PAGINA + 1) - 
+                @(Math.Min(ViewBag.PaginaActual * ViewBag.ITEMS_POR_PAGINA, ViewBag.TotalRegistros)) 
+                de @ViewBag.TotalRegistros inquilinos
+            </small>
+        </div>
+    }
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus en el campo de búsqueda si está vacío
+            const buscarInput = document.getElementById('buscar');
+            if (buscarInput && !buscarInput.value) {
+                buscarInput.focus();
+            }
+        });
+    </script>
+}

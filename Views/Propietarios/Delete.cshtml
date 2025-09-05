@@ -1,23 +1,27 @@
 @model Inmobiliaria_troncoso_leandro.Models.Propietario
+
 @{
     ViewData["Title"] = "Eliminar Propietario";
 }
+
 <h1>Eliminar Propietario</h1>
 <h3>¿Confirmar eliminación?</h3>
+
 <dl class="row">
     <dt class="col-sm-2">Nombre</dt>
-    <dd class="col-sm-10">@Model.Nombre</dd>
+    <dd class="col-sm-10">@(Model.Usuario?.Nombre ?? "N/A")</dd>
     <dt class="col-sm-2">Apellido</dt>
-    <dd class="col-sm-10">@Model.Apellido</dd>
+    <dd class="col-sm-10">@(Model.Usuario?.Apellido ?? "N/A")</dd>
     <dt class="col-sm-2">DNI</dt>
-    <dd class="col-sm-10">@Model.Dni</dd>
+    <dd class="col-sm-10">@(Model.Usuario?.Dni ?? "N/A")</dd>
     <dt class="col-sm-2">Teléfono</dt>
-    <dd class="col-sm-10">@Model.Telefono</dd>
+    <dd class="col-sm-10">@(Model.Usuario?.Telefono ?? "N/A")</dd>
     <dt class="col-sm-2">Email</dt>
-    <dd class="col-sm-10">@Model.Email</dd>
+    <dd class="col-sm-10">@(Model.Usuario?.Email ?? "N/A")</dd>
 </dl>
+
 <form asp-action="Delete">
-    <input type="hidden" asp-for="Id" />
+    <input type="hidden" asp-for="IdPropietario" />
     <input type="submit" value="Eliminar" class="btn btn-danger" />
     <a asp-action="Index" class="btn btn-secondary">Cancelar</a>
 </form>
