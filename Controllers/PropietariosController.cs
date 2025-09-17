@@ -1,476 +1,291 @@
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
+using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
-using System.Collections.Generic;
-using Inmobiliaria_troncoso_leandro.Services;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
     public class PropietariosController : Controller
     {
-        private readonly string _connectionString;
-        private readonly ISearchService _searchService;
+        private readonly IRepositorioPropietario _repositorioPropietario;
 
-        public PropietariosController(IConfiguration configuration, ISearchService searchService)
+        public PropietariosController(IRepositorioPropietario repositorioPropietario)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                               throw new ArgumentNullException(nameof(configuration), "La cadena de conexión está nula");
-            _searchService = searchService;
+            _repositorioPropietario = repositorioPropietario;
         }
 
         // GET: Propietarios
-        public IActionResult Index(int pagina = 1, string buscar = "")
+        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", int itemsPorPagina = 10)
         {
-            var listaPropietarios = new List<Propietario>();
-            const int ITEMS_POR_PAGINA = 10;
-            int totalRegistros = 0;
-
             try
             {
-                using (var connection = new MySqlConnection(_connectionString))
-                {
-                    connection.Open();
+                var (propietarios, totalRegistros) = await _repositorioPropietario
+                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, itemsPorPagina);
 
-                    // Construir WHERE dinámico
-                    string whereClause = "WHERE p.estado = 1";
-                    var parameters = new List<MySqlParameter>();
+                // Calcular información de paginación
+                var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
 
-                    if (!string.IsNullOrEmpty(buscar))
-                    {
-                        whereClause += @" AND (u.nombre LIKE @buscar 
-                                      OR u.apellido LIKE @buscar 
-                                      OR u.dni LIKE @buscar
-                                      OR u.email LIKE @buscar
-                                      OR u.telefono LIKE @buscar
-                                      OR CONCAT(u.nombre, ' ', u.apellido) LIKE @buscar)";
-                        parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
-                    }
-
-                    // Contar total de registros
-                    string countQuery = $@"
-                SELECT COUNT(*) 
-                FROM propietario p
-                INNER JOIN usuario u ON p.id_usuario = u.id_usuario
-                {whereClause}";
-
-                    using (var countCommand = new MySqlCommand(countQuery, connection))
-                    {
-                        foreach (var param in parameters)
-                        {
-                            countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                        }
-                        totalRegistros = Convert.ToInt32(countCommand.ExecuteScalar());
-                    }
-
-                    // Consulta principal con paginación
-                    string query = $@"
-                SELECT p.id_propietario, p.id_usuario, p.fecha_creacion, p.estado,
-                       u.dni, u.apellido, u.nombre, u.direccion, u.telefono, u.email
-                FROM propietario p
-                INNER JOIN usuario u ON p.id_usuario = u.id_usuario
-                {whereClause}
-                ORDER BY u.apellido, u.nombre
-                LIMIT @offset, @limit";
-
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        foreach (var param in parameters)
-                        {
-                            command.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                        }
-                        command.Parameters.AddWithValue("@offset", (pagina - 1) * ITEMS_POR_PAGINA);
-                        command.Parameters.AddWithValue("@limit", ITEMS_POR_PAGINA);
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                listaPropietarios.Add(new Propietario
-                                {
-                                    IdPropietario = reader.GetInt32("id_propietario"),
-                                    IdUsuario = reader.GetInt32("id_usuario"),
-                                    FechaAlta = reader.IsDBNull(reader.GetOrdinal("fecha_creacion")) ?
-                                               DateTime.Now : reader.GetDateTime("fecha_creacion"),
-                                    Estado = reader.GetBoolean("estado"),
-                                    Usuario = new Usuario
-                                    {
-                                        IdUsuario = reader.GetInt32("id_usuario"),
-                                        Dni = reader.GetString("dni"),
-                                        Apellido = reader.GetString("apellido"),
-                                        Nombre = reader.GetString("nombre"),
-                                        Direccion = reader.IsDBNull(reader.GetOrdinal("direccion")) ? null : reader.GetString("direccion"),
-                                        Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? null : reader.GetString("telefono"),
-                                        Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString("email")
-                                    }
-                                });
-                            }
-                        }
-                    }
-                }
-
-                // Preparar datos de paginación para la vista
                 ViewBag.PaginaActual = pagina;
-                ViewBag.TotalPaginas = (int)Math.Ceiling((double)totalRegistros / ITEMS_POR_PAGINA);
+                ViewBag.TotalPaginas = totalPaginas;
                 ViewBag.TotalRegistros = totalRegistros;
                 ViewBag.Buscar = buscar;
-                ViewBag.ITEMS_POR_PAGINA = ITEMS_POR_PAGINA;
+                ViewBag.ITEMS_POR_PAGINA = itemsPorPagina;
+
+                return View(propietarios);
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error al cargar los propietarios: {ex.Message}";
-            }
-
-            return View(listaPropietarios);
-        }
-
-        // 5. AGREGAR método nuevo para API de búsqueda:
-        [HttpGet]
-        public async Task<IActionResult> BuscarPropietarios(string termino, int limite = 10)
-        {
-            try
-            {
-                var resultados = await _searchService.BuscarPropietariosAsync(termino, limite);
-                return Json(resultados);
-            }
-            catch (Exception ex)
-            {
-                return Json(new { error = ex.Message });
+                return View(new List<Propietario>());
             }
         }
+
         // GET: Propietarios/Create
         public IActionResult Create()
         {
-            return View(new Propietario { Usuario = new Usuario() });
+            var propietario = new Propietario
+            {
+                Usuario = new Usuario
+                {
+                    Nombre = "",
+                    Apellido = "",
+                    Dni = "",
+                    Email = "",
+                    Telefono = "",
+                    Direccion = ""
+                }
+            };
+            return View(propietario);
         }
 
         // POST: Propietarios/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Propietario propietario)
+        public async Task<IActionResult> Create(Propietario propietario)
         {
-            if (!ModelState.IsValid)
+            Console.WriteLine("=== INICIO DEBUG CREATE ===");
+            Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
+
+            // Verificar si Usuario es null
+            if (propietario.Usuario == null)
             {
+                Console.WriteLine("ERROR: propietario.Usuario es NULL");
+                ModelState.AddModelError("", "Error: datos de usuario no recibidos");
                 return View(propietario);
             }
 
-            using var connection = new MySqlConnection(_connectionString);
-            connection.Open();
-            using var transaction = connection.BeginTransaction();
-            try
-            {
-                // Verificar DNI único
-                if (!string.IsNullOrEmpty(propietario.Usuario.Dni) && ExisteDni(propietario.Usuario.Dni, connection, transaction))
-                {
-                    ModelState.AddModelError("Usuario.Dni", "Ya existe un usuario con este DNI");
-                    return View(propietario);
-                }
-
-                // Verificar Email único
-                if (!string.IsNullOrEmpty(propietario.Usuario.Email) && ExisteEmail(propietario.Usuario.Email, connection, transaction))
-                {
-                    ModelState.AddModelError("Usuario.Email", "Ya existe un usuario con este email");
-                    return View(propietario);
-                }
-
-                // Crear usuario
-                string queryUsuario = @"
-                    INSERT INTO usuario 
-                    (dni, nombre, apellido, telefono, email, direccion, password, rol, estado, fecha_creacion) 
-                    VALUES (@dni, @nombre, @apellido, @telefono, @email, @direccion, @password, @rol, @estado, @fecha_creacion);
-                    SELECT LAST_INSERT_ID();";
-
-                int idUsuario;
-                using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
-                {
-                    commandUsuario.Parameters.AddWithValue("@dni", propietario.Usuario.Dni);
-                    commandUsuario.Parameters.AddWithValue("@nombre", propietario.Usuario.Nombre);
-                    commandUsuario.Parameters.AddWithValue("@apellido", propietario.Usuario.Apellido);
-                    commandUsuario.Parameters.AddWithValue("@telefono", propietario.Usuario.Telefono ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@email", propietario.Usuario.Email ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@direccion", propietario.Usuario.Direccion ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@password", BCrypt.Net.BCrypt.HashPassword("passwordtemporal"));
-                    commandUsuario.Parameters.AddWithValue("@rol", "propietario");
-                    commandUsuario.Parameters.AddWithValue("@estado", true);
-                    commandUsuario.Parameters.AddWithValue("@fecha_creacion", DateTime.Now);
-
-                    idUsuario = Convert.ToInt32(commandUsuario.ExecuteScalar());
-                }
-
-                // Crear propietario
-                string queryPropietario = @"
-                    INSERT INTO propietario 
-                    (id_usuario, fecha_alta, estado) 
-                    VALUES (@id_usuario, @fecha_alta, @estado)";
-
-                using (var commandPropietario = new MySqlCommand(queryPropietario, connection, transaction))
-                {
-                    commandPropietario.Parameters.AddWithValue("@id_usuario", idUsuario);
-                    commandPropietario.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
-                    commandPropietario.Parameters.AddWithValue("@estado", true);
-
-                    commandPropietario.ExecuteNonQuery();
-                }
-
-                transaction.Commit();
-                TempData["SuccessMessage"] = "Propietario creado exitosamente";
-                return RedirectToAction(nameof(Index));
-            }
-            catch (Exception ex)
-            {
-                transaction.Rollback();
-                ModelState.AddModelError("", $"Error al crear propietario: {ex.Message}");
-                return View(propietario);
-            }
-        }
-
-        private bool ExisteDni(string dni, MySqlConnection connection, MySqlTransaction transaction)
-        {
-            string query = "SELECT COUNT(*) FROM usuario WHERE dni = @dni";
-            using var command = new MySqlCommand(query, connection, transaction);
-            command.Parameters.AddWithValue("@dni", dni);
-            return Convert.ToInt32(command.ExecuteScalar()) > 0;
-        }
-
-        private bool ExisteEmail(string email, MySqlConnection connection, MySqlTransaction transaction)
-        {
-            if (string.IsNullOrEmpty(email)) return false;
-            string query = "SELECT COUNT(*) FROM usuario WHERE email = @email";
-            using var command = new MySqlCommand(query, connection, transaction);
-            command.Parameters.AddWithValue("@email", email);
-            return Convert.ToInt32(command.ExecuteScalar()) > 0;
-        }
-        // GET: Propietarios/Edit
-        public IActionResult Edit(int id)
-        {
-            try
-            {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = @"
-                    SELECT p.id_propietario, p.id_usuario, p.fecha_alta, p.estado,
-                           u.id_usuario, u.dni, u.nombre, u.apellido, u.telefono, u.email, u.direccion
-                    FROM propietario p 
-                    INNER JOIN usuario u ON p.id_usuario = u.id_usuario 
-                    WHERE p.id_propietario = @id";
-
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@id", id);
-
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
-                {
-                    var propietario = new Propietario
-                    {
-                        IdPropietario = reader.GetInt32("id_propietario"),
-                        IdUsuario = reader.GetInt32("id_usuario"),
-                        FechaAlta = reader.GetDateTime("fecha_alta"),
-                        Estado = reader.GetBoolean("estado"),
-                        Usuario = new Usuario
-                        {
-                            IdUsuario = reader.GetInt32("id_usuario"),
-                            Dni = reader.GetString("dni"),
-                            Nombre = reader.GetString("nombre"),
-                            Apellido = reader.GetString("apellido"),
-                            Telefono = reader.GetString("telefono"),
-                            Email = reader.GetString("email"),
-                            Direccion = reader.GetString("direccion")
-                        }
-                    };
-                    return View(propietario);
-                }
-                TempData["ErrorMessage"] = "Propietario no encontrado";
-            }
-            catch (Exception ex)
-            {
-                TempData["ErrorMessage"] = $"Error al cargar propietario: {ex.Message}";
-            }
-
-            return RedirectToAction(nameof(Index));
-        }
-        // POST: Propietarios/Edit
-        [HttpPost]
-        [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Propietario propietario)
-        {
-            if (id != propietario.IdPropietario)
-            {
-                TempData["ErrorMessage"] = "ID de propietario no coincide";
-                return RedirectToAction(nameof(Index));
-            }
+            Console.WriteLine($"Usuario recibido:");
+            Console.WriteLine($"- Nombre: '{propietario.Usuario.Nombre}'");
+            Console.WriteLine($"- Apellido: '{propietario.Usuario.Apellido}'");
+            Console.WriteLine($"- DNI: '{propietario.Usuario.Dni}'");
+            Console.WriteLine($"- Email: '{propietario.Usuario.Email}'");
+            Console.WriteLine($"- Telefono: '{propietario.Usuario.Telefono}'");
+            Console.WriteLine($"- Direccion: '{propietario.Usuario.Direccion}'");
 
             if (!ModelState.IsValid)
             {
+                Console.WriteLine("=== ERRORES DE VALIDACIÓN ===");
+                foreach (var error in ModelState)
+                {
+                    foreach (var err in error.Value.Errors)
+                    {
+                        Console.WriteLine($"Campo: {error.Key} | Error: {err.ErrorMessage}");
+                    }
+                }
+                
                 return View(propietario);
             }
 
-            using var connection = new MySqlConnection(_connectionString);
-            connection.Open();
-            using var transaction = connection.BeginTransaction();
             try
             {
-                // Verificar DNI único 
-                string queryDni = "SELECT COUNT(*) FROM usuario WHERE dni = @dni AND id_usuario != @id_usuario";
-                using (var commandDni = new MySqlCommand(queryDni, connection, transaction))
+                Console.WriteLine("=== VERIFICANDO DNI ===");
+
+                if (!string.IsNullOrEmpty(propietario.Usuario.Dni))
                 {
-                    commandDni.Parameters.AddWithValue("@dni", propietario.Usuario.Dni);
-                    commandDni.Parameters.AddWithValue("@id_usuario", propietario.IdUsuario);
-                    if (Convert.ToInt32(commandDni.ExecuteScalar()) > 0)
+                    Console.WriteLine($"Verificando DNI: '{propietario.Usuario.Dni}'");
+                    bool dniExiste = await _repositorioPropietario.ExisteDniAsync(propietario.Usuario.Dni);
+                    Console.WriteLine($"DNI existe: {dniExiste}");
+
+                    if (dniExiste)
                     {
-                        ModelState.AddModelError("Usuario.Dni", "Ya existe otro usuario con este DNI");
+                        Console.WriteLine("DNI duplicado - devolviendo vista con error");
+                        ModelState.AddModelError("Usuario.Dni", "Ya existe un propietario con este DNI");
                         return View(propietario);
                     }
                 }
 
-                // Verificar Email único 
+                Console.WriteLine("=== VERIFICANDO EMAIL ===");
+
                 if (!string.IsNullOrEmpty(propietario.Usuario.Email))
                 {
-                    string queryEmail = "SELECT COUNT(*) FROM usuario WHERE email = @email AND id_usuario != @id_usuario";
-                    using (var commandEmail = new MySqlCommand(queryEmail, connection, transaction))
+                    Console.WriteLine($"Verificando Email: '{propietario.Usuario.Email}'");
+                    bool emailExiste = await _repositorioPropietario.ExisteEmailAsync(propietario.Usuario.Email);
+                    Console.WriteLine($"Email existe: {emailExiste}");
+
+                    if (emailExiste)
                     {
-                        commandEmail.Parameters.AddWithValue("@email", propietario.Usuario.Email);
-                        commandEmail.Parameters.AddWithValue("@id_usuario", propietario.IdUsuario);
-                        if (Convert.ToInt32(commandEmail.ExecuteScalar()) > 0)
-                        {
-                            ModelState.AddModelError("Usuario.Email", "Ya existe otro usuario con este email");
-                            return View(propietario);
-                        }
+                        Console.WriteLine("Email duplicado - devolviendo vista con error");
+                        ModelState.AddModelError("Usuario.Email", "Ya existe un propietario con este email");
+                        return View(propietario);
                     }
                 }
 
-                // Actualizar usuario
-                string queryUsuario = @"
-                    UPDATE usuario 
-                    SET dni = @dni, nombre = @nombre, apellido = @apellido, 
-                        telefono = @telefono, email = @email, direccion = @direccion
-                    WHERE id_usuario = @id_usuario";
+                Console.WriteLine("=== LLAMANDO AL REPOSITORIO PARA CREAR ===");
+                bool resultado = await _repositorioPropietario.CrearPropietarioConTransaccionAsync(propietario);
+                Console.WriteLine($"Resultado del repositorio: {resultado}");
 
-                using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
+                if (resultado)
                 {
-                    commandUsuario.Parameters.AddWithValue("@dni", propietario.Usuario.Dni);
-                    commandUsuario.Parameters.AddWithValue("@nombre", propietario.Usuario.Nombre);
-                    commandUsuario.Parameters.AddWithValue("@apellido", propietario.Usuario.Apellido);
-                    commandUsuario.Parameters.AddWithValue("@telefono", propietario.Usuario.Telefono ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@email", propietario.Usuario.Email ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@direccion", propietario.Usuario.Direccion ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@id_usuario", propietario.IdUsuario);
-
-                    commandUsuario.ExecuteNonQuery();
+                    Console.WriteLine("=== ÉXITO - REDIRIGIENDO AL INDEX ===");
+                    TempData["SuccessMessage"] = "Propietario creado exitosamente";
+                    return RedirectToAction(nameof(Index));
                 }
-
-                // Actualizar propietario
-                string queryPropietario = @"
-                    UPDATE propietario 
-                    SET estado = @estado 
-                    WHERE id_propietario = @id_propietario";
-
-                using (var commandPropietario = new MySqlCommand(queryPropietario, connection, transaction))
+                else
                 {
-                    commandPropietario.Parameters.AddWithValue("@estado", propietario.Estado);
-                    commandPropietario.Parameters.AddWithValue("@id_propietario", propietario.IdPropietario);
-
-                    commandPropietario.ExecuteNonQuery();
+                    Console.WriteLine("=== ERROR: REPOSITORIO DEVOLVIÓ FALSE ===");
+                    ModelState.AddModelError("", "No se pudo crear el propietario. Error en la base de datos.");
                 }
-
-                transaction.Commit();
-                TempData["SuccessMessage"] = "Propietario actualizado exitosamente";
-                return RedirectToAction(nameof(Index));
             }
             catch (Exception ex)
             {
-                transaction.Rollback();
-                ModelState.AddModelError("", $"Error al actualizar propietario: {ex.Message}");
+                Console.WriteLine($"=== EXCEPCIÓN: {ex.Message} ===");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                ModelState.AddModelError("", $"Error: {ex.Message}");
+            }
+
+            Console.WriteLine("=== DEVOLVIENDO VISTA CON ERRORES ===");
+            return View(propietario);
+        }
+
+        // GET: Propietarios/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var propietario = await _repositorioPropietario.ObtenerPropietarioPorIdAsync(id);
+
+                if (propietario == null)
+                {
+                    return NotFound();
+                }
+
                 return View(propietario);
             }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar el propietario: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
-        // GET: Propietarios/Delete
-        public IActionResult Delete(int id)
+
+        // POST: Propietarios/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Propietario propietario)
         {
+            if (id != propietario.IdPropietario)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Verificar DNI único (excluyendo el actual por IdUsuario)
+                    if (!string.IsNullOrEmpty(propietario.Usuario?.Dni))
+                    {
+                        bool dniExiste = await _repositorioPropietario.ExisteDniAsync(propietario.Usuario.Dni, propietario.IdUsuario);
+                        if (dniExiste)
+                        {
+                            ModelState.AddModelError("Usuario.Dni", "Ya existe otro propietario con este DNI");
+                            return View(propietario);
+                        }
+                    }
+
+                    // Verificar Email único (si se proporciona, excluyendo el actual)
+                    if (!string.IsNullOrEmpty(propietario.Usuario?.Email))
+                    {
+                        bool emailExiste = await _repositorioPropietario.ExisteEmailAsync(propietario.Usuario.Email, propietario.IdUsuario);
+                        if (emailExiste)
+                        {
+                            ModelState.AddModelError("Usuario.Email", "Ya existe otro propietario con este email");
+                            return View(propietario);
+                        }
+                    }
+
+                    bool resultado = await _repositorioPropietario.ActualizarPropietarioConTransaccionAsync(propietario);
+
+                    if (resultado)
+                    {
+                        TempData["SuccessMessage"] = "Propietario actualizado exitosamente";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "No se pudo actualizar el propietario.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"Error al actualizar el propietario: {ex.Message}");
+                }
+            }
+
+            return View(propietario);
+        }
+
+        // GET: Propietarios/Delete/5
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = @"
-                    SELECT p.id_propietario, p.id_usuario, p.fecha_alta, p.estado,
-                           u.dni, u.nombre, u.apellido
-                    FROM propietario p 
-                    INNER JOIN usuario u ON p.id_usuario = u.id_usuario 
-                    WHERE p.id_propietario = @id";
+                var propietario = await _repositorioPropietario.ObtenerPropietarioPorIdAsync(id);
 
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@id", id);
-
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
+                if (propietario == null)
                 {
-                    var propietario = new Propietario
-                    {
-                        IdPropietario = reader.GetInt32("id_propietario"),
-                        IdUsuario = reader.GetInt32("id_usuario"),
-                        FechaAlta = reader.GetDateTime("fecha_alta"),
-                        Estado = reader.GetBoolean("estado"),
-                        Usuario = new Usuario
-                        {
-                            Dni = reader.GetString("dni"),
-                            Nombre = reader.GetString("nombre"),
-                            Apellido = reader.GetString("apellido")
-                        }
-                    };
-                    return View(propietario);
+                    return NotFound();
                 }
-                TempData["ErrorMessage"] = "Propietario no encontrado";
+
+                return View(propietario);
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error al cargar propietario: {ex.Message}";
+                TempData["ErrorMessage"] = $"Error al cargar el propietario: {ex.Message}";
+                return RedirectToAction(nameof(Index));
             }
-
-            return RedirectToAction(nameof(Index));
         }
 
-        // POST: Propietarios/Delete
+        // POST: Propietarios/Delete/5
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
-            using var connection = new MySqlConnection(_connectionString);
-            connection.Open();
-            using var transaction = connection.BeginTransaction();
             try
             {
-                // Obtener id_usuario
-                int idUsuario;
-                string queryGetUsuario = "SELECT id_usuario FROM propietario WHERE id_propietario = @id_propietario";
-                using (var commandGet = new MySqlCommand(queryGetUsuario, connection, transaction))
-                {
-                    commandGet.Parameters.AddWithValue("@id_propietario", id);
-                    idUsuario = Convert.ToInt32(commandGet.ExecuteScalar());
-                }
+                bool resultado = await _repositorioPropietario.EliminarPropietarioConTransaccionAsync(id);
 
-                // Actualizar estado en propietario
-                string queryPropietario = "UPDATE propietario SET estado = @estado WHERE id_propietario = @id_propietario";
-                using (var commandPropietario = new MySqlCommand(queryPropietario, connection, transaction))
+                if (resultado)
                 {
-                    commandPropietario.Parameters.AddWithValue("@estado", false);
-                    commandPropietario.Parameters.AddWithValue("@id_propietario", id);
-                    commandPropietario.ExecuteNonQuery();
+                    TempData["SuccessMessage"] = "Propietario eliminado exitosamente";
                 }
-
-                // Actualizar estado en usuario
-                string queryUsuario = "UPDATE usuario SET estado = @estado WHERE id_usuario = @id_usuario";
-                using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
+                else
                 {
-                    commandUsuario.Parameters.AddWithValue("@estado", false);
-                    commandUsuario.Parameters.AddWithValue("@id_usuario", idUsuario);
-                    commandUsuario.ExecuteNonQuery();
+                    TempData["ErrorMessage"] = "No se pudo eliminar el propietario";
                 }
-
-                transaction.Commit();
-                TempData["SuccessMessage"] = "Propietario eliminado exitosamente";
             }
             catch (Exception ex)
             {
-                transaction.Rollback();
-                TempData["ErrorMessage"] = $"Error al eliminar propietario: {ex.Message}";
+                TempData["ErrorMessage"] = $"Error al eliminar el propietario: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

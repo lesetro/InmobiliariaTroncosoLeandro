@@ -1,0 +1,313 @@
+@model Inmobiliaria_troncoso_leandro.Models.Contrato
+@{
+    ViewData["Title"] = $"Contrato #{Model.IdContrato}";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        
+        <!-- Header del contrato -->
+        <div class="card shadow mb-4">
+            <div class="card-header bg-info text-white">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h3 class="mb-0">
+                        <i class="bi bi-file-text"></i> Contrato #@Model.IdContrato
+                    </h3>
+                    <div>
+                        @{
+                            var estadoBadgeClass = Model.Estado switch
+                            {
+                                "vigente" => "bg-success",
+                                "finalizado" => "bg-secondary",
+                                "finalizado_anticipado" => "bg-warning text-dark",
+                                _ => "bg-light text-dark"
+                            };
+                            
+                            var estadoTexto = Model.Estado switch
+                            {
+                                "vigente" => "VIGENTE",
+                                "finalizado" => "FINALIZADO",
+                                "finalizado_anticipado" => "FINALIZADO ANTICIPADO",
+                                _ => Model.Estado.ToUpper()
+                            };
+                        }
+                        <span class="badge @estadoBadgeClass fs-6">@estadoTexto</span>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-8">
+                        <h5 class="text-primary"><i class="bi bi-house"></i> @Model.Inmueble?.Direccion</h5>
+                        <p class="text-muted mb-0">
+                            <strong>Tipo:</strong> @Model.Inmueble?.TipoInmueble?.Nombre | 
+                            <strong>Ambientes:</strong> @Model.Inmueble?.Ambientes | 
+                            <strong>Uso:</strong> @Model.Inmueble?.Uso
+                        </p>
+                    </div>
+                    <div class="col-md-4 text-end">
+                        <h4 class="text-success mb-0">
+                            <i class="bi bi-currency-dollar"></i> 
+                            @Model.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                            <small class="text-muted">/mes</small>
+                        </h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Información de las partes -->
+            <div class="col-md-6">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0"><i class="bi bi-people"></i> Partes del Contrato</h5>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Inquilino -->
+                        <div class="mb-3">
+                            <h6 class="text-primary"><i class="bi bi-person"></i> Inquilino</h6>
+                            <div class="ps-3">
+                                <strong>@Model.Inquilino?.Usuario?.NombreCompleto</strong><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-card-text"></i> DNI: @Model.Inquilino?.Usuario?.Dni<br>
+                                    @if (!string.IsNullOrEmpty(Model.Inquilino?.Usuario?.Telefono))
+                                    {
+                                        <i class="bi bi-telephone"></i>
+                                        <span> @Model.Inquilino.Usuario.Telefono<br></span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.Inquilino?.Usuario?.Email))
+                                    {
+                                        <i class="bi bi-envelope"></i>
+                                        <span> @Model.Inquilino.Usuario.Email</span>
+                                    }
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Propietario -->
+                        <div class="mb-3">
+                            <h6 class="text-success"><i class="bi bi-person-badge"></i> Propietario</h6>
+                            <div class="ps-3">
+                                <strong>@Model.Propietario?.Usuario?.NombreCompleto</strong><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-card-text"></i> DNI: @Model.Propietario?.Usuario?.Dni<br>
+                                    @if (!string.IsNullOrEmpty(Model.Propietario?.Usuario?.Telefono))
+                                    {
+                                        <i class="bi bi-telephone"></i>
+                                        <span> @Model.Propietario.Usuario.Telefono<br></span>
+                                    }
+                                    @if (!string.IsNullOrEmpty(Model.Propietario?.Usuario?.Email))
+                                    {
+                                        <i class="bi bi-envelope"></i>
+                                        <span> @Model.Propietario.Usuario.Email</span>
+                                    }
+                                </small>
+                            </div>
+                        </div>
+
+                        <!-- Usuario Creador -->
+                        <div class="mb-0">
+                            <h6 class="text-info"><i class="bi bi-person-check"></i> Creado por</h6>
+                            <div class="ps-3">
+                                <strong>@Model.UsuarioCreador?.NombreCompleto</strong><br>
+                                <small class="text-muted">
+                                    <i class="bi bi-calendar"></i> @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                                </small>
+                            </div>
+                        </div>
+
+                        @if (Model.UsuarioTerminador != null)
+                        {
+                            <hr>
+                            <div class="mb-0">
+                                <h6 class="text-warning"><i class="bi bi-person-x"></i> Finalizado por</h6>
+                                <div class="ps-3">
+                                    <strong>@Model.UsuarioTerminador.NombreCompleto</strong><br>
+                                    <small class="text-muted">
+                                        <i class="bi bi-calendar"></i> @Model.FechaModificacion.ToString("dd/MM/yyyy HH:mm")
+                                    </small>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de fechas y montos -->
+            <div class="col-md-6">
+                <div class="card shadow h-100">
+                    <div class="card-header bg-success text-white">
+                        <h5 class="mb-0"><i class="bi bi-calendar-range"></i> Términos del Contrato</h5>
+                    </div>
+                    <div class="card-body">
+                        
+                        <!-- Fechas -->
+                        <div class="mb-3">
+                            <h6 class="text-success"><i class="bi bi-calendar-check"></i> Fecha de Inicio</h6>
+                            <div class="ps-3">
+                                <span class="badge bg-info fs-6">@Model.FechaInicio.ToString("dd/MM/yyyy")</span>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <h6 class="text-warning"><i class="bi bi-calendar-x"></i> Fecha de Fin</h6>
+                            <div class="ps-3">
+                                <span class="badge bg-warning text-dark fs-6">@Model.FechaFin.ToString("dd/MM/yyyy")</span>
+                                @if (Model.FechaFinAnticipada.HasValue)
+                                {
+                                    <br><small class="text-muted mt-1 d-block">
+                                        <i class="bi bi-clock-history"></i> Fin anticipada: @Model.FechaFinAnticipada.Value.ToString("dd/MM/yyyy")
+                                    </small>
+                                }
+                            </div>
+                        </div>
+
+                        <!-- Duración -->
+                        @{
+                            var fechaFinal = Model.FechaFinAnticipada ?? Model.FechaFin;
+                            var duracion = (fechaFinal - Model.FechaInicio).Days;
+                            var meses = Math.Round(duracion / 30.44, 1);
+                        }
+                        <div class="mb-3">
+                            <h6 class="text-primary"><i class="bi bi-hourglass-split"></i> Duración</h6>
+                            <div class="ps-3">
+                                <strong>@duracion días</strong> 
+                                <small class="text-muted">(≈ @meses meses)</small>
+                            </div>
+                        </div>
+
+                        <!-- Montos -->
+                        <div class="mb-3">
+                            <h6 class="text-success"><i class="bi bi-currency-dollar"></i> Monto Mensual</h6>
+                            <div class="ps-3">
+                                <h5 class="text-success mb-0">
+                                    @Model.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                </h5>
+                            </div>
+                        </div>
+
+                        @if (Model.MultaAplicada > 0)
+                        {
+                            <div class="mb-3">
+                                <h6 class="text-danger"><i class="bi bi-exclamation-triangle"></i> Multa Aplicada</h6>
+                                <div class="ps-3">
+                                    <h5 class="text-danger mb-0">
+                                        @Model.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                    </h5>
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Total estimado -->
+                        @{
+                            var totalEstimado = Model.MontoMensual * (decimal)meses;
+                        }
+                        <hr>
+                        <div class="mb-0">
+                            <h6 class="text-info"><i class="bi bi-calculator"></i> Total Estimado</h6>
+                            <div class="ps-3">
+                                <h5 class="text-info mb-0">
+                                    @totalEstimado.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                </h5>
+                                <small class="text-muted">
+                                    (@meses meses × @Model.MontoMensual.ToString("C"))
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información adicional -->
+        @{
+            var hoy = DateTime.Today;
+            var diasRestantes = (Model.FechaFin - hoy).Days;
+            var vencido = hoy > Model.FechaFin;
+            var estadoContrato = Model.Estado == "vigente";
+        }
+
+        @if (estadoContrato)
+        {
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="alert @(vencido ? "alert-danger" : diasRestantes <= 30 ? "alert-warning" : "alert-info")">
+                        <h6>
+                            <i class="bi bi-@(vencido ? "exclamation-triangle" : diasRestantes <= 30 ? "clock" : "info-circle")"></i>
+                            Estado del Contrato
+                        </h6>
+                        @if (vencido)
+                        {
+                            <p class="mb-0">
+                                <strong>⚠️ Contrato vencido:</strong> El contrato venció hace @Math.Abs(diasRestantes) días (@Model.FechaFin.ToString("dd/MM/yyyy")).
+                                Considere finalizarlo o renovarlo.
+                            </p>
+                        }
+                        else if (diasRestantes <= 30)
+                        {
+                            <p class="mb-0">
+                                <strong>🔔 Próximo a vencer:</strong> El contrato vence en @diasRestantes días (@Model.FechaFin.ToString("dd/MM/yyyy")).
+                                Planifique la renovación o finalización.
+                            </p>
+                        }
+                        else
+                        {
+                            <p class="mb-0">
+                                <strong>✅ Contrato vigente:</strong> Quedan @diasRestantes días hasta el vencimiento (@Model.FechaFin.ToString("dd/MM/yyyy")).
+                            </p>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Botones de acción -->
+        <div class="d-flex gap-2 justify-content-center mt-4 mb-4">
+            <a asp-action="Edit" asp-route-id="@Model.IdContrato" class="btn btn-warning btn-lg">
+                <i class="bi bi-pencil"></i> Editar Contrato
+            </a>
+            <a asp-action="Index" class="btn btn-secondary btn-lg">
+                <i class="bi bi-arrow-left"></i> Volver al Listado
+            </a>
+            @if (Model.Estado == "vigente")
+            {
+                <a asp-action="Delete" asp-route-id="@Model.IdContrato" class="btn btn-danger btn-lg">
+                    <i class="bi bi-flag-fill"></i> Finalizar Contrato
+                </a>
+            }
+        </div>
+
+    </div>
+</div>
+
+<style>
+    .card-header {
+        border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+    }
+    
+    .badge.fs-6 {
+        font-size: 0.9rem !important;
+    }
+    
+    .alert h6 {
+        margin-bottom: 0.75rem;
+    }
+    
+    .ps-3 {
+        padding-left: 1rem !important;
+    }
+    
+    .card.h-100 {
+        height: 100% !important;
+    }
+    
+    .text-muted {
+        line-height: 1.4;
+    }
+    
+    .badge {
+        font-weight: 500;
+    }
+</style>

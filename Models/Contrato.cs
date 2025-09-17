@@ -22,10 +22,16 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Column("id_inquilino")]
         public int IdInquilino { get; set; }
 
+        [Required(ErrorMessage = "Debe seleccionar un propietario")]
+        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un propietario válido")]
+        [Display(Name = "Propietario")]
+        [Column("id_propietario")]
+        public int IdPropietario { get; set; }
+
         [Required(ErrorMessage = "La fecha de inicio es obligatoria")]
         [Display(Name = "Fecha de Inicio")]
         [Column("fecha_inicio")]
-        public DateTime FechaInicio { get; set; }
+        public DateTime FechaInicio { get; set; } = DateTime.Today.AddDays(1);
 
         [Required(ErrorMessage = "La fecha de fin es obligatoria")]
         [Display(Name = "Fecha de Fin")]
@@ -75,6 +81,8 @@ namespace Inmobiliaria_troncoso_leandro.Models
 
         [NotMapped]
         public virtual Inquilino? Inquilino { get; set; }
+        [NotMapped]
+        public virtual Propietario? Propietario { get; set; }
 
         [NotMapped]
         public virtual Usuario? UsuarioCreador { get; set; }

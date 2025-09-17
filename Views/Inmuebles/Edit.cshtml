@@ -2,14 +2,14 @@
 @{
     ViewData["Title"] = "Editar Inmueble";
     var propietarios = ViewData["Propietarios"] as List<Propietario> ?? new List<Propietario>();
-    var tiposInmuebles = ViewData["TiposInmuebles"] as List<TipoInmueble> ?? new List<TipoInmueble>();
+    var tiposInmueble = ViewData["TiposInmueble"] as List<TipoInmueble> ?? new List<TipoInmueble>();
     
     // Buscar el propietario actual
     var propietarioActual = propietarios.FirstOrDefault(p => p.IdPropietario == Model.IdPropietario);
 }
 
 <div class="row justify-content-center">
-    <div class="col-md-10">
+    <div class="col-md-12">
         <div class="card shadow">
             <div class="card-header bg-warning text-dark">
                 <h3 class="mb-0">Editar Inmueble #@Model.IdInmueble</h3>
@@ -37,178 +37,253 @@
                     </div>
                 }
 
-                <form asp-action="Edit" method="post">
+                <form asp-action="Edit" method="post" enctype="multipart/form-data">
                     <input type="hidden" asp-for="IdInmueble" />
                     <input type="hidden" asp-for="FechaAlta" />
 
-                    <!-- FILA 1: Dirección y Tipo -->
                     <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group mb-3">
-                                <label asp-for="Direccion" class="form-label fw-bold">
-                                    <i class="bi bi-geo-alt"></i> Dirección *
-                                </label>
-                                <input asp-for="Direccion" class="form-control" placeholder="Ej: Av. Corrientes 1234, CABA" required />
-                                <span asp-validation-for="Direccion" class="text-danger"></span>
-                            </div>
-                        </div>
+                        <!-- Columna Izquierda: Datos Básicos -->
+                        <div class="col-lg-8">
+                            <h5 class="text-primary mb-3"><i class="bi bi-pencil-square"></i> Información Básica</h5>
 
-                        <div class="col-md-4">
-                            <div class="form-group mb-3">
-                                <label asp-for="IdTipoInmueble" class="form-label fw-bold">
-                                    <i class="bi bi-house-door"></i> Tipo de Inmueble *
-                                </label>
-                                <select asp-for="IdTipoInmueble" class="form-select" required>
-                                    <option value="">Seleccione un tipo</option>
-                                    @foreach(var tipo in tiposInmuebles)
-                                    {
-                                        <option value="@tipo.IdTipoInmueble" selected="@(tipo.IdTipoInmueble == Model.IdTipoInmueble)">@tipo.Nombre</option>
-                                    }
-                                </select>
-                                <span asp-validation-for="IdTipoInmueble" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FILA 2: Propietario con autocompletado -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group mb-3">
-                                <label asp-for="IdPropietario" class="form-label fw-bold">
-                                    <i class="bi bi-person"></i> Propietario *
-                                </label>
-                                
-                                <!-- Mostrar propietario actual o permitir cambiar -->
-                                @if (propietarioActual != null)
-                                {
-                                    <!-- Propietario seleccionado actualmente -->
-                                    <div id="propietario-selected" class="selected-item">
-                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
-                                            <span>
-                                                <i class="bi bi-person-check"></i>
-                                                <span id="propietario-info">@propietarioActual.Usuario.Apellido, @propietarioActual.Usuario.Nombre <small class="text-muted">(DNI: @propietarioActual.Usuario.Dni)</small></span>
-                                            </span>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showPropietarioSearch()">
-                                                <i class="bi bi-pencil"></i> Cambiar
-                                            </button>
-                                        </div>
+                            <!-- FILA 1: Dirección y Tipo -->
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="Direccion" class="form-label fw-bold">
+                                            <i class="bi bi-geo-alt"></i> Dirección *
+                                        </label>
+                                        <input asp-for="Direccion" class="form-control" placeholder="Ej: Av. Corrientes 1234, CABA" required />
+                                        <span asp-validation-for="Direccion" class="text-danger"></span>
                                     </div>
-                                    
-                                    <!-- Input de búsqueda (inicialmente oculto) -->
-                                    <div id="propietario-search-container" class="position-relative" style="display: none;">
-                                        <input type="text" 
-                                               id="propietario-search" 
-                                               class="form-control" 
-                                               placeholder="Buscar propietario por nombre, apellido o DNI..."
-                                               autocomplete="off">
-                                        <div id="propietario-suggestions" class="suggestions-dropdown"></div>
-                                        <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="cancelPropietarioChange()">
-                                            <i class="bi bi-x"></i> Cancelar
-                                        </button>
-                                    </div>
-                                }
-                                else
-                                {
-                                    <!-- Si no hay propietario actual, mostrar búsqueda -->
-                                    <div id="propietario-search-container" class="position-relative">
-                                        <input type="text" 
-                                               id="propietario-search" 
-                                               class="form-control" 
-                                               placeholder="Buscar propietario por nombre, apellido o DNI..."
-                                               autocomplete="off">
-                                        <div id="propietario-suggestions" class="suggestions-dropdown"></div>
-                                    </div>
-                                    
-                                    <div id="propietario-selected" class="selected-item" style="display: none;">
-                                        <div class="alert alert-info d-flex justify-content-between align-items-center">
-                                            <span>
-                                                <i class="bi bi-person-check"></i>
-                                                <span id="propietario-info"></span>
-                                            </span>
-                                            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPropietario()">
-                                                <i class="bi bi-x"></i> Cambiar
-                                            </button>
-                                        </div>
-                                    </div>
-                                }
-                                
-                                <!-- Campo hidden para el ID -->
-                                <input asp-for="IdPropietario" type="hidden" />
-                                
-                                <span asp-validation-for="IdPropietario" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FILA 3: Uso y Ambientes -->
-                    <div class="row">
-                        <div class="col-md-8">
-                            <div class="form-group mb-3">
-                                <label asp-for="Uso" class="form-label fw-bold">
-                                    <i class="bi bi-briefcase"></i> Uso *
-                                </label>
-                                <select asp-for="Uso" class="form-select" required>
-                                    <option value="">Seleccione el uso</option>
-                                    <option value="residencial" selected="@(Model.Uso == "residencial")">Residencial</option>
-                                    <option value="comercial" selected="@(Model.Uso == "comercial")">Comercial</option>
-                                    <option value="industrial" selected="@(Model.Uso == "industrial")">Industrial</option>
-                                    <option value="mixto" selected="@(Model.Uso == "mixto")">Mixto</option>
-                                </select>
-                                <span asp-validation-for="Uso" class="text-danger"></span>
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
-                            <div class="form-group mb-3">
-                                <label asp-for="Ambientes" class="form-label fw-bold">
-                                    <i class="bi bi-door-open"></i> Ambientes *
-                                </label>
-                                <input asp-for="Ambientes" type="number" class="form-control" min="1" max="20" required />
-                                <span asp-validation-for="Ambientes" class="text-danger"></span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- FILA 4: Precio y Estado -->
-                    <div class="row">
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label asp-for="Precio" class="form-label fw-bold">
-                                    <i class="bi bi-currency-dollar"></i> Precio Mensual *
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input asp-for="Precio" type="number" step="0.01" min="1" class="form-control" required />
                                 </div>
-                                <span asp-validation-for="Precio" class="text-danger"></span>
+
+                                <div class="col-md-4">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="IdTipoInmueble" class="form-label fw-bold">
+                                            <i class="bi bi-house-door"></i> Tipo de Inmueble *
+                                        </label>
+                                        <select asp-for="IdTipoInmueble" class="form-select" required>
+                                            <option value="">Seleccione un tipo</option>
+                                            @foreach(var tipo in tiposInmueble)
+                                            {
+                                                <option value="@tipo.IdTipoInmueble" selected="@(tipo.IdTipoInmueble == Model.IdTipoInmueble)">@tipo.Nombre</option>
+                                            }
+                                        </select>
+                                        <span asp-validation-for="IdTipoInmueble" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FILA 2: Propietario con autocompletado -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="IdPropietario" class="form-label fw-bold">
+                                            <i class="bi bi-person"></i> Propietario *
+                                        </label>
+                                        
+                                        <!-- Mostrar propietario actual o permitir cambiar -->
+                                        @if (propietarioActual != null)
+                                        {
+                                            <!-- Propietario seleccionado actualmente -->
+                                            <div id="propietario-selected" class="selected-item">
+                                                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                                    <span>
+                                                        <i class="bi bi-person-check"></i>
+                                                        <span id="propietario-info">@propietarioActual.Usuario.Apellido, @propietarioActual.Usuario.Nombre <small class="text-muted">(DNI: @propietarioActual.Usuario.Dni)</small></span>
+                                                    </span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="showPropietarioSearch()">
+                                                        <i class="bi bi-pencil"></i> Cambiar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                            
+                                            <!-- Input de búsqueda (inicialmente oculto) -->
+                                            <div id="propietario-search-container" class="position-relative" style="display: none;">
+                                                <input type="text" 
+                                                       id="propietario-search" 
+                                                       class="form-control" 
+                                                       placeholder="Buscar propietario por nombre, apellido o DNI..."
+                                                       autocomplete="off">
+                                                <div id="propietario-suggestions" class="suggestions-dropdown"></div>
+                                                <button type="button" class="btn btn-sm btn-secondary mt-2" onclick="cancelPropietarioChange()">
+                                                    <i class="bi bi-x"></i> Cancelar
+                                                </button>
+                                            </div>
+                                        }
+                                        else
+                                        {
+                                            <!-- Si no hay propietario actual, mostrar búsqueda -->
+                                            <div id="propietario-search-container" class="position-relative">
+                                                <input type="text" 
+                                                       id="propietario-search" 
+                                                       class="form-control" 
+                                                       placeholder="Buscar propietario por nombre, apellido o DNI..."
+                                                       autocomplete="off">
+                                                <div id="propietario-suggestions" class="suggestions-dropdown"></div>
+                                            </div>
+                                            
+                                            <div id="propietario-selected" class="selected-item" style="display: none;">
+                                                <div class="alert alert-info d-flex justify-content-between align-items-center">
+                                                    <span>
+                                                        <i class="bi bi-person-check"></i>
+                                                        <span id="propietario-info"></span>
+                                                    </span>
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearPropietario()">
+                                                        <i class="bi bi-x"></i> Cambiar
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                        
+                                        <!-- Campo hidden para el ID -->
+                                        <input asp-for="IdPropietario" type="hidden" />
+                                        
+                                        <span asp-validation-for="IdPropietario" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FILA 3: Uso y Ambientes -->
+                            <div class="row">
+                                <div class="col-md-8">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="Uso" class="form-label fw-bold">
+                                            <i class="bi bi-briefcase"></i> Uso *
+                                        </label>
+                                        <select asp-for="Uso" class="form-select" required>
+                                            <option value="">Seleccione el uso</option>
+                                            <option value="residencial" selected="@(Model.Uso == "residencial")">Residencial</option>
+                                            <option value="comercial" selected="@(Model.Uso == "comercial")">Comercial</option>
+                                            <option value="industrial" selected="@(Model.Uso == "industrial")">Industrial</option>
+                                            <option value="mixto" selected="@(Model.Uso == "mixto")">Mixto</option>
+                                        </select>
+                                        <span asp-validation-for="Uso" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="Ambientes" class="form-label fw-bold">
+                                            <i class="bi bi-door-open"></i> Ambientes *
+                                        </label>
+                                        <input asp-for="Ambientes" type="number" class="form-control" min="1" max="20" required />
+                                        <span asp-validation-for="Ambientes" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FILA 4: Precio y Estado -->
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="Precio" class="form-label fw-bold">
+                                            <i class="bi bi-currency-dollar"></i> Precio Mensual *
+                                        </label>
+                                        <div class="input-group">
+                                            <span class="input-group-text">$</span>
+                                            <input asp-for="Precio" type="number" step="0.01" min="1" class="form-control" required />
+                                        </div>
+                                        <span asp-validation-for="Precio" class="text-danger"></span>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="Estado" class="form-label fw-bold">
+                                            <i class="bi bi-flag"></i> Estado *
+                                        </label>
+                                        <select asp-for="Estado" class="form-select" required>
+                                            <option value="disponible" selected="@(Model.Estado == "disponible")">Disponible</option>
+                                            <option value="no_disponible" selected="@(Model.Estado == "no_disponible")">No Disponible</option>
+                                            <option value="alquilado" selected="@(Model.Estado == "alquilado")">Alquilado</option>
+                                            <option value="Venta" selected="@(Model.Estado == "Venta")">Para venta</option>
+                                        </select>
+                                        <span asp-validation-for="Estado" class="text-danger"></span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- FILA 5: Coordenadas -->
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <div class="form-group mb-3">
+                                        <label asp-for="Coordenadas" class="form-label fw-bold">
+                                            <i class="bi bi-map"></i> Coordenadas GPS (Opcional)
+                                        </label>
+                                        <div class="input-group">
+                                            <input asp-for="Coordenadas" class="form-control" placeholder="Ej: -34.6037,-58.3816" />
+                                            <button type="button" class="btn btn-outline-secondary" onclick="abrirGoogleMaps()">
+                                                <i class="bi bi-map"></i> Maps
+                                            </button>
+                                        </div>
+                                        <small class="form-text text-muted">Formato: latitud,longitud (opcional)</small>
+                                        <span asp-validation-for="Coordenadas" class="text-danger"></span>
+                                    </div>
+                                </div>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
-                            <div class="form-group mb-3">
-                                <label asp-for="Estado" class="form-label fw-bold">
-                                    <i class="bi bi-flag"></i> Estado *
-                                </label>
-                                <select asp-for="Estado" class="form-select" required>
-                                    <option value="disponible" selected="@(Model.Estado == "disponible")">Disponible</option>
-                                    <option value="no_disponible" selected="@(Model.Estado == "no_disponible")">No Disponible</option>
-                                    <option value="alquilado" selected="@(Model.Estado == "alquilado")">Alquilado</option>
-                                </select>
-                                <span asp-validation-for="Estado" class="text-danger"></span>
+                        <!-- Columna Derecha: Imagen de Portada -->
+                        <div class="col-lg-4">
+                            <h5 class="text-success mb-3"><i class="bi bi-image"></i> Imagen de Portada</h5>
+                            
+                            <!-- Imagen actual -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Imagen Actual:</label>
+                                <div id="imagen-actual" class="border rounded p-3 text-center bg-light" style="min-height: 200px;">
+                                    @if (!string.IsNullOrEmpty(Model.UrlPortada))
+                                    {
+                                        <img src="@Model.UrlPortada" class="img-fluid rounded" style="max-height: 200px;" alt="Portada actual">
+                                        <div class="mt-2">
+                                            <small class="text-success">
+                                                <i class="bi bi-check-circle"></i> Imagen actual
+                                            </small>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="text-muted">
+                                            <i class="bi bi-image" style="font-size: 3rem;"></i>
+                                            <h6 class="mt-2">Sin imagen de portada</h6>
+                                            <p class="mb-0 small">Este inmueble no tiene imagen principal</p>
+                                        </div>
+                                    }
+                                </div>
                             </div>
-                        </div>
-                    </div>
 
-                    <!-- FILA 5: Coordenadas -->
-                    <div class="row">
-                        <div class="col-md-12">
-                            <div class="form-group mb-3">
-                                <label asp-for="Coordenadas" class="form-label fw-bold">
-                                    <i class="bi bi-map"></i> Coordenadas GPS (Opcional)
+                            <!-- Cambiar imagen -->
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-camera"></i> Cambiar Imagen de Portada
                                 </label>
-                                <input asp-for="Coordenadas" class="form-control" placeholder="Ej: -34.6037,-58.3816" />
-                                <small class="form-text text-muted">Formato: latitud,longitud (opcional)</small>
-                                <span asp-validation-for="Coordenadas" class="text-danger"></span>
+                                <input name="PortadaFile" class="form-control" type="file" accept="image/*" id="portadaInput">
+                                <small class="form-text text-muted">
+                                    Formatos: JPG, PNG, GIF (máximo 5MB). Deje vacío para mantener la imagen actual.
+                                </small>
+                            </div>
+
+                            <!-- Vista previa de nueva imagen -->
+                            <div class="mb-3" id="nueva-preview-container" style="display: none;">
+                                <label class="form-label fw-bold text-warning">Nueva imagen:</label>
+                                <div id="portadaPreview" class="border rounded p-3 text-center" style="background-color: #fff3cd;">
+                                </div>
+                                <div class="mt-2">
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="cancelarCambioImagen()">
+                                        <i class="bi bi-x"></i> Cancelar cambio
+                                    </button>
+                                </div>
+                            </div>
+
+                            <!-- Información adicional -->
+                            <div class="alert alert-info">
+                                <h6 class="alert-heading"><i class="bi bi-info-circle"></i> Información</h6>
+                                <small>
+                                    • La imagen de portada es la que se muestra en las listas<br>
+                                    • Para gestionar más imágenes, use la galería desde la lista de inmuebles<br>
+                                    • Tamaño recomendado: 800x600 píxeles
+                                </small>
                             </div>
                         </div>
                     </div>
@@ -300,6 +375,9 @@
                     }
                 });
             }
+
+            // Configurar vista previa de imagen
+            configurarVistaPrevia();
         });
         
         function showPropietarioSearch() {
@@ -342,6 +420,62 @@
             searchContainer.style.display = 'block';
             searchInput.focus();
         }
+
+        // Configurar vista previa de imagen
+        function configurarVistaPrevia() {
+            const input = document.getElementById('portadaInput');
+            const preview = document.getElementById('portadaPreview');
+            const previewContainer = document.getElementById('nueva-preview-container');
+
+            input.addEventListener('change', function(e) {
+                const file = e.target.files[0];
+                
+                if (file) {
+                    if (file.size > 5 * 1024 * 1024) {
+                        alert('La imagen es demasiado grande (máximo 5MB)');
+                        this.value = '';
+                        previewContainer.style.display = 'none';
+                        return;
+                    }
+
+                    const reader = new FileReader();
+                    reader.onload = function(e) {
+                        preview.innerHTML = `
+                            <img src="${e.target.result}" class="img-fluid rounded" style="max-height: 200px;">
+                            <div class="mt-2">
+                                <small class="text-warning">
+                                    <i class="bi bi-exclamation-triangle"></i> ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)
+                                </small>
+                                <br>
+                                <small class="text-muted">Esta imagen reemplazará la actual al guardar</small>
+                            </div>
+                        `;
+                        previewContainer.style.display = 'block';
+                    };
+                    reader.readAsDataURL(file);
+                } else {
+                    previewContainer.style.display = 'none';
+                }
+            });
+        }
+
+        function cancelarCambioImagen() {
+            const input = document.getElementById('portadaInput');
+            const previewContainer = document.getElementById('nueva-preview-container');
+            
+            input.value = '';
+            previewContainer.style.display = 'none';
+        }
+
+        function abrirGoogleMaps() {
+            const direccion = document.querySelector('input[name="Direccion"]').value;
+            if (direccion) {
+                const url = `https://www.google.com/maps/search/${encodeURIComponent(direccion)}`;
+                window.open(url, '_blank');
+            } else {
+                window.open('https://www.google.com/maps', '_blank');
+            }
+        }
     </script>
     
     <style>
@@ -380,6 +514,15 @@
         @@keyframes fadeIn {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
+        }
+
+        #nueva-preview-container {
+            animation: slideIn 0.3s ease-in-out;
+        }
+
+       @@keyframes slideIn {
+            from { opacity: 0; transform: translateX(10px); }
+            to { opacity: 1; transform: translateX(0); }
         }
     </style>
 }

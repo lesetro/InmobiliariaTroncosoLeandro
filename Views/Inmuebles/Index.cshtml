@@ -5,7 +5,7 @@
 
 <div class="row justify-content-between align-items-center mb-4">
     <div class="col-md-6">
-        <h2>🏘️ Gestión de Inmuebles</h2>
+        <h2>🏢 Gestión de Inmuebles</h2>
     </div>
     <div class="col-md-6 text-end">
         <a asp-action="Create" class="btn btn-primary">
@@ -17,7 +17,7 @@
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show">
-        <strong>Error:</strong> @TempData["ErrorMessage"]
+        <strong>❌ Error:</strong> @TempData["ErrorMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
@@ -25,12 +25,12 @@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show">
-        <strong>Éxito:</strong> @TempData["SuccessMessage"]
+        <strong>✅ Éxito:</strong> @TempData["SuccessMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
-<!-- Filtros de búsqueda -->
+<!-- Formulario de búsqueda -->
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" asp-action="Index">
@@ -41,19 +41,20 @@
                            id="buscar" 
                            name="buscar" 
                            class="form-control" 
-                           placeholder="Dirección, tipo, uso, propietario..."
+                           placeholder="Dirección, tipo, propietario..."
                            value="@ViewBag.Buscar">
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <label for="estado" class="form-label">Estado</label>
                     <select name="estado" id="estado" class="form-select">
-                        <option value="">Todos los estados</option>
+                        <option value="">Todos</option>
                         <option value="disponible" selected="@(ViewBag.Estado == "disponible")">Disponible</option>
                         <option value="alquilado" selected="@(ViewBag.Estado == "alquilado")">Alquilado</option>
                         <option value="no_disponible" selected="@(ViewBag.Estado == "no_disponible")">No Disponible</option>
+                        <option value="venta" selected="@(ViewBag.Estado == "venta")">Para venta</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-4">
                     <button type="submit" class="btn btn-outline-primary me-2">
                         <i class="bi bi-search"></i> Buscar
                     </button>
@@ -74,7 +75,7 @@
 @if (!Model.Any())
 {
     <div class="text-center py-5">
-        <i class="bi bi-building" style="font-size: 4rem; color: #6c757d;"></i>
+        <i class="bi bi-house" style="font-size: 4rem; color: #6c757d;"></i>
         <h4 class="text-muted mt-3">No hay inmuebles</h4>
         <p class="text-muted">
             @if (!string.IsNullOrEmpty(ViewBag.Buscar) || !string.IsNullOrEmpty(ViewBag.Estado))
@@ -97,14 +98,15 @@ else
         <table class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
+                    <th style="width: 8%;">Portada</th>
                     <th style="width: 8%;">Código</th>
                     <th style="width: 25%;">Dirección</th>
                     <th style="width: 12%;">Tipo</th>
-                    <th style="width: 10%;">Ambientes</th>
+                    <th style="width: 8%;">Amb.</th>
                     <th style="width: 12%;">Precio</th>
                     <th style="width: 15%;">Propietario</th>
                     <th style="width: 10%;">Estado</th>
-                    <th style="width: 8%;">Acciones</th>
+                    <th style="width: 10%;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -112,32 +114,57 @@ else
                 {
                     <tr>
                         <td>
+                            @if (!string.IsNullOrWhiteSpace(item.UrlPortada))
+                            {
+                                <img src="@item.UrlPortada" 
+                                     alt="Portada" 
+                                     class="img-thumbnail" 
+                                     style="width: 80px; height: 80px; object-fit: cover;"
+                                     title="Imagen del inmueble">
+                            }
+                            else
+                            {
+                                <div class="bg-light d-flex align-items-center justify-content-center img-thumbnail" 
+                                     style="width: 50px; height: 50px;">
+                                    <i class="bi bi-image text-muted" style="font-size: 14px;"></i>
+                                </div>
+                            }
+                        </td>
+                        <td>
                             <span class="badge bg-secondary">#@item.IdInmueble</span>
                         </td>
                         <td>
                             <strong>@item.Direccion</strong>
-                            <br><small class="text-muted">@item.Uso</small>
+                            @if (!string.IsNullOrEmpty(item.Coordenadas))
+                            {
+                                <br>
+                                <small class="text-muted">@item.Coordenadas</small>
+                            }
                         </td>
+                        <td>@(item.TipoInmueble?.Nombre ?? "N/A")</td>
+                        <td>@item.Ambientes</td>
                         <td>
-                            <span class="badge bg-info text-dark">@item.TipoInmueble?.Nombre</span>
+                            <strong class="text-success">@item.Precio.ToString("C")</strong>
+                            <br>
+                            <small class="text-muted">@item.Uso</small>
                         </td>
-                        <td>
-                            <span class="badge bg-light text-dark">@item.Ambientes amb.</span>
-                        </td>
-                        <td>
-                            <strong class="text-success">@item.Precio.ToString("C", new System.Globalization.CultureInfo("es-AR"))</strong>
-                        </td>
-                        <td>
-                            <small>@item.Propietario?.Usuario?.Apellido, @item.Propietario?.Usuario?.Nombre</small>
-                        </td>
+                        <td>@(item.Propietario?.Usuario?.Apellido ?? "N/A"), @(item.Propietario?.Usuario?.Nombre ?? "N/A")</td>
                         <td>
                             <span class="badge @item.EstadoBadgeClass">@item.EstadoParaMostrar</span>
                         </td>
                         <td>
                             <div class="btn-group" role="group">
+                                <a asp-action="Details" asp-route-id="@item.IdInmueble" 
+                                   class="btn btn-success btn-sm" title="Detalle ">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </a>
                                 <a asp-action="Edit" asp-route-id="@item.IdInmueble" 
                                    class="btn btn-warning btn-sm" title="Editar">
                                     <i class="bi bi-pencil"></i>
+                                </a>
+                                <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@item.IdInmueble" 
+                                   class="btn btn-info btn-sm" title="Imágenes">
+                                    <i class="bi bi-images"></i>
                                 </a>
                                 <a asp-action="Delete" asp-route-id="@item.IdInmueble" 
                                    class="btn btn-danger btn-sm" title="Eliminar">
@@ -156,6 +183,7 @@ else
     {
         <nav aria-label="Paginación de inmuebles">
             <ul class="pagination justify-content-center">
+                <!-- Página anterior -->
                 @if (ViewBag.PaginaActual > 1)
                 {
                     <li class="page-item">
@@ -168,6 +196,7 @@ else
                     </li>
                 }
 
+                <!-- Páginas numéricas -->
                 @{
                     int inicioRango = Math.Max(1, ViewBag.PaginaActual - 2);
                     int finRango = Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2);
@@ -212,6 +241,7 @@ else
                     </li>
                 }
 
+                <!-- Página siguiente -->
                 @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
                 {
                     <li class="page-item">
@@ -226,6 +256,7 @@ else
             </ul>
         </nav>
 
+        <!-- Información de paginación -->
         <div class="text-center text-muted mt-3">
             <small>
                 Mostrando @((ViewBag.PaginaActual - 1) * ViewBag.ITEMS_POR_PAGINA + 1) - 
@@ -239,17 +270,10 @@ else
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Auto-focus en el campo de búsqueda si está vacío
             const buscarInput = document.getElementById('buscar');
             if (buscarInput && !buscarInput.value) {
                 buscarInput.focus();
-            }
-
-            // Auto-submit al cambiar estado
-            const estadoSelect = document.getElementById('estado');
-            if (estadoSelect) {
-                estadoSelect.addEventListener('change', function() {
-                    this.form.submit();
-                });
             }
         });
     </script>

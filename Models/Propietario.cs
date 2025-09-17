@@ -16,7 +16,7 @@ namespace Inmobiliaria_troncoso_leandro.Models
         public int IdUsuario { get; set; }
 
         [Required(ErrorMessage = "La fecha de alta es obligatoria")]
-        [Column("fecha_creacion")]
+        [Column("fecha_alta")]
         public DateTime? FechaAlta { get; set; } = DateTime.Now;
 
         [Column("estado")]

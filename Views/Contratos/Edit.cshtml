@@ -7,14 +7,14 @@
     <div class="col-md-12">
         <div class="card shadow">
             <div class="card-header bg-warning text-dark">
-                <h3 class="mb-0">Editar Contrato #@Model.IdContrato</h3>
+                <h3 class="mb-0"><i class="bi bi-pencil"></i> Editar Contrato #@Model.IdContrato</h3>
             </div>
             <div class="card-body">
 
                 @if (TempData["ErrorMessage"] != null)
                 {
                     <div class="alert alert-danger alert-dismissible fade show">
-                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <strong><i class="bi bi-x-circle"></i> Error:</strong> @TempData["ErrorMessage"]
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 }
@@ -38,58 +38,68 @@
                     <input type="hidden" asp-for="FechaCreacion" />
                     <input type="hidden" asp-for="FechaModificacion" value="@DateTime.Now" />
 
-                    <!-- FILA 1: Inmueble e Inquilino -->
+                    <!-- FILA 1: Inmueble, Inquilino y Propietario (CON AUTOCOMPLETADO) -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label asp-for="IdInmueble" class="form-label fw-bold">
                                     <i class="bi bi-house"></i> Inmueble *
                                 </label>
-                                <select asp-for="IdInmueble" 
-                                        class="form-select select-with-search" 
-                                        data-placeholder="Buscar inmueble..."
-                                        required>
-                                    <option value="">Seleccione un inmueble</option>
-                                    @if(ViewData["Inmuebles"] != null)
-                                    {
-                                        @foreach(var inmueble in (List<Inmueble>)ViewData["Inmuebles"])
-                                        {
-                                            <option value="@inmueble.IdInmueble" selected="@(inmueble.IdInmueble == Model.IdInmueble)">@inmueble.Direccion</option>
-                                        }
-                                    }
-                                </select>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="inmuebleSearch" class="form-control" 
+                                           placeholder="Busque otro inmueble o deje el actual..."
+                                           value="@(Model.Inmueble != null && !string.IsNullOrEmpty(Model.Inmueble.Direccion) ? 
+                                                    Html.Raw(Model.Inmueble.Direccion + (Model.Inmueble.TipoInmueble != null ? " - " + Model.Inmueble.TipoInmueble.Nombre : "")) : 
+                                                    "Inmueble ID: " + Model.IdInmueble)" />
+                                    <input asp-for="IdInmueble" type="hidden" id="idInmueble" />
+                                    <div id="inmuebleResults" class="autocomplete-results"></div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Valor actual cargado - Escriba 3+ letras para cambiar
+                                </small>
                                 <span asp-validation-for="IdInmueble" class="text-danger"></span>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label asp-for="IdInquilino" class="form-label fw-bold">
                                     <i class="bi bi-person"></i> Inquilino *
                                 </label>
-                                <select asp-for="IdInquilino" 
-                                        class="form-select select-with-search" 
-                                        data-placeholder="Buscar inquilino..."
-                                        required>
-                                    <option value="">Seleccione un inquilino</option>
-                                    @{
-                                        var inquilinos = ViewData["Inquilinos"] as List<Inquilino> ?? new List<Inquilino>();
-                                    }
-
-                                    @foreach(var inquilino in inquilinos)
-                                    {
-                                        @if(inquilino?.Usuario != null && 
-                                        !string.IsNullOrEmpty(inquilino.Usuario.Nombre) && 
-                                        !string.IsNullOrEmpty(inquilino.Usuario.Apellido) && 
-                                        !string.IsNullOrEmpty(inquilino.Usuario.Dni))
-                                    {
-                                        <option value="@inquilino.IdInquilino" selected="@(inquilino.IdInquilino == Model.IdInquilino)">
-                                            @inquilino.Usuario.Apellido, @inquilino.Usuario.Nombre - @inquilino.Usuario.Dni
-                                        </option>
-                                    }
-                                }
-                                </select>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="inquilinoSearch" class="form-control" 
+                                           placeholder="Busque otro inquilino o deje el actual..."
+                                           value="@(Model.Inquilino?.Usuario != null && !string.IsNullOrEmpty(Model.Inquilino.Usuario.Nombre) ? 
+                                                    Html.Raw((Model.Inquilino.Usuario.Apellido ?? "") + ", " + (Model.Inquilino.Usuario.Nombre ?? "") + " - DNI: " + (Model.Inquilino.Usuario.Dni ?? "")) : 
+                                                    "Inquilino ID: " + Model.IdInquilino)" />
+                                    <input asp-for="IdInquilino" type="hidden" id="idInquilino" />
+                                    <div id="inquilinoResults" class="autocomplete-results"></div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Valor actual cargado - Escriba 3+ letras para cambiar
+                                </small>
                                 <span asp-validation-for="IdInquilino" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdPropietario" class="form-label fw-bold">
+                                    <i class="bi bi-person-badge"></i> Propietario *
+                                </label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="propietarioSearch" class="form-control" 
+                                           placeholder="Busque otro propietario o deje el actual..."
+                                           value="@(Model.Propietario?.Usuario != null && !string.IsNullOrEmpty(Model.Propietario.Usuario.Nombre) ? 
+                                                    Html.Raw((Model.Propietario.Usuario.Apellido ?? "") + ", " + (Model.Propietario.Usuario.Nombre ?? "") + " - DNI: " + (Model.Propietario.Usuario.Dni ?? "")) : 
+                                                    "Propietario ID: " + Model.IdPropietario)" />
+                                    <input asp-for="IdPropietario" type="hidden" id="idPropietario" />
+                                    <div id="propietarioResults" class="autocomplete-results"></div>
+                                </div>
+                                <small class="form-text text-muted" id="propietario-help">
+                                    Valor actual cargado - Escriba 3+ letras para cambiar
+                                </small>
+                                <span asp-validation-for="IdPropietario" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -172,31 +182,21 @@
                         </div>
                     </div>
 
-                    <!-- FILA 4: Usuario Terminador -->
+                    <!-- FILA 4: Usuario Terminador e Información -->
                     <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label asp-for="IdUsuarioTerminador" class="form-label fw-bold">
                                     <i class="bi bi-person-x"></i> Usuario Terminador
                                 </label>
-                                <select asp-for="IdUsuarioTerminador" 
-                                        class="form-select select-with-search" 
-                                        data-placeholder="Buscar usuario terminador...">
-                                    <option value="">Ninguno</option>
-                                    @{
-                                         var usuarios = ViewData["Usuarios"] as List<Usuario> ?? new List<Usuario>();
-                                    }
-
-                                    @foreach(var usuario in usuarios)
-                                    {
-                                        @if(usuario != null && !string.IsNullOrEmpty(usuario.Nombre) && !string.IsNullOrEmpty(usuario.Apellido))
-                                    {
-                                        <option value="@usuario.IdUsuario" selected="@(usuario.IdUsuario == Model.IdUsuarioTerminador)">
-                                            @usuario.Apellido, @usuario.Nombre
-                                        </option>
-                                    }
-                                    }
-                                </select>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="usuarioTerminadorSearch" class="form-control" 
+                                           placeholder="Busque usuario terminador o deje vacío..."
+                                           value="@(Model.IdUsuarioTerminador.HasValue && Model.UsuarioTerminador?.Nombre != null ? 
+                                                    Html.Raw((Model.UsuarioTerminador.Apellido ?? "") + ", " + (Model.UsuarioTerminador.Nombre ?? "")) : "")" />
+                                    <input asp-for="IdUsuarioTerminador" type="hidden" id="idUsuarioTerminador" />
+                                    <div id="usuarioTerminadorResults" class="autocomplete-results"></div>
+                                </div>
                                 <small class="form-text text-muted">Solo necesario si el contrato fue finalizado por alguien específico</small>
                                 <span asp-validation-for="IdUsuarioTerminador" class="text-danger"></span>
                             </div>
@@ -209,6 +209,10 @@
                                     <li><strong>Creado:</strong> @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")</li>
                                     <li><strong>Última modificación:</strong> @Model.FechaModificacion.ToString("dd/MM/yyyy HH:mm")</li>
                                     <li><strong>Estado actual:</strong> @Model.Estado.ToUpper()</li>
+                                    @if (Model.MultaAplicada > 0)
+                                    {
+                                        <li><strong>Multa:</strong> @Model.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))</li>
+                                    }
                                 </ul>
                             </div>
                         </div>
@@ -220,12 +224,18 @@
                         <button type="submit" class="btn btn-warning btn-lg">
                             <i class="bi bi-check-circle"></i> Actualizar Contrato
                         </button>
+                        <a asp-action="Details" asp-route-id="@Model.IdContrato" class="btn btn-info btn-lg">
+                            <i class="bi bi-eye"></i> Ver Detalles
+                        </a>
                         <a asp-action="Index" class="btn btn-secondary btn-lg">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
-                        <a asp-action="Delete" asp-route-id="@Model.IdContrato" class="btn btn-danger btn-lg ms-auto">
-                            <i class="bi bi-flag-fill"></i> Finalizar Contrato
-                        </a>
+                        @if (Model.Estado == "vigente")
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.IdContrato" class="btn btn-danger btn-lg ms-auto">
+                                <i class="bi bi-flag-fill"></i> Finalizar Contrato
+                            </a>
+                        }
                     </div>
                 </form>
             </div>
@@ -238,46 +248,242 @@
     
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Hacer que los selects sean searchables
-            const selects = document.querySelectorAll('.select-with-search');
-            selects.forEach(select => {
-                // Agregar funcionalidad de búsqueda simple
-                const wrapper = document.createElement('div');
-                wrapper.className = 'select-search-wrapper position-relative';
+            
+            // CARGAR DATOS ACTUALES DEL CONTRATO AL INICIAR
+            cargarDatosActuales();
+            
+            // Variables para control de lógica
+            let inmuebleBloqueado = false;
+            let propietarioBloqueado = false;
+            
+            // Configurar autocompletados híbridos
+            setupAutocompletadoHibrido('inmuebleSearch', 'idInmueble', 'inmuebleResults', '/Contratos/BuscarInmueblesParaContrato', onInmuebleSelected);
+            setupAutocompletadoHibrido('propietarioSearch', 'idPropietario', 'propietarioResults', '/Contratos/BuscarPropietariosParaContrato', onPropietarioSelected);
+            setupAutocompletadoHibrido('inquilinoSearch', 'idInquilino', 'inquilinoResults', '/Contratos/BuscarInquilinosParaContrato');
+            setupAutocompletadoHibrido('usuarioTerminadorSearch', 'idUsuarioTerminador', 'usuarioTerminadorResults', '/api/search/usuarios');
+            
+            function cargarDatosActuales() {
+                // Los datos siempre vienen del @Model - no necesitamos buscar
+                // Los valores hidden ya tienen los IDs correctos
                 
-                const searchInput = document.createElement('input');
-                searchInput.type = 'text';
-                searchInput.className = 'form-control mb-2';
-                searchInput.placeholder = select.dataset.placeholder || 'Buscar...';
+                // Los inputs ya están precargados en el HTML inicial
+                // No necesitamos JavaScript para cargar datos básicos
+                console.log('Datos cargados desde Model en HTML inicial');
+            }
+            
+            // Eliminar las funciones problemáticas que hacían fetch sin términos
+            // Ya no son necesarias
+            
+            // Función de autocompletado híbrido con limpieza cruzada
+            function setupAutocompletadoHibrido(inputId, hiddenId, resultsId, url, onSelectCallback = null) {
+                const input = document.getElementById(inputId);
+                const hidden = document.getElementById(hiddenId);
+                const results = document.getElementById(resultsId);
+                let timeoutId;
                 
-                select.parentNode.insertBefore(wrapper, select);
-                wrapper.appendChild(searchInput);
-                wrapper.appendChild(select);
-                
-                // Filtrar opciones al escribir
-                searchInput.addEventListener('input', function() {
-                    const filter = this.value.toLowerCase();
-                    const options = select.querySelectorAll('option');
+                input.addEventListener('input', function() {
+                    clearTimeout(timeoutId);
+                    const termino = this.value.trim();
                     
-                    options.forEach(option => {
-                        if (option.value === '') return; // Mantener opción vacía
-                        
-                        const text = option.textContent.toLowerCase();
-                        option.style.display = text.includes(filter) ? '' : 'none';
-                    });
+                    // LIMPIAR CAMPOS CRUZADOS AL EMPEZAR A ESCRIBIR
+                    if (inputId === 'inmuebleSearch') {
+                        limpiarPropietario();
+                    } else if (inputId === 'propietarioSearch') {
+                        limpiarInmueble();
+                    }
+                    
+                    // Buscar inmediatamente cuando tenga 3+ caracteres
+                    if (termino.length < 3) {
+                        results.innerHTML = '';
+                        results.style.display = 'none';
+                        hidden.value = '';
+                        return;
+                    }
+                    
+                    // Debounce de 300ms
+                    timeoutId = setTimeout(() => {
+                        buscarDatos(termino, url, results, hidden, input, onSelectCallback);
+                    }, 300);
                 });
                 
-                // Limpiar búsqueda al seleccionar
-                select.addEventListener('change', function() {
-                    if (this.value) {
-                        searchInput.value = '';
-                        const options = this.querySelectorAll('option');
-                        options.forEach(option => option.style.display = '');
+                // Limpiar resultados al hacer click fuera
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !results.contains(e.target)) {
+                        results.style.display = 'none';
                     }
                 });
-            });
+            }
             
-            // Validación de fechas
+            // Función para buscar datos vía AJAX (igual que Create)
+            async function buscarDatos(termino, url, resultsContainer, hiddenField, inputField, callback) {
+                try {
+                    resultsContainer.innerHTML = '<div class="autocomplete-item loading">Buscando...</div>';
+                    resultsContainer.style.display = 'block';
+                    
+                    const response = await fetch(`${url}?termino=${encodeURIComponent(termino)}&limite=10`);
+                    const data = await response.json();
+                    
+                    if (data.error) {
+                        resultsContainer.innerHTML = `<div class="autocomplete-item error">${data.error}</div>`;
+                        return;
+                    }
+                    
+                    const items = data.data || data;
+                    
+                    if (!items || items.length === 0) {
+                        resultsContainer.innerHTML = '<div class="autocomplete-item no-results">No se encontraron resultados</div>';
+                        return;
+                    }
+                    
+                    // Crear elementos de resultados
+                    resultsContainer.innerHTML = '';
+                    items.forEach(item => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        div.textContent = item.texto;
+                        div.dataset.id = item.id;
+                        div.dataset.item = JSON.stringify(item);
+                        
+                        div.addEventListener('click', function() {
+                            inputField.value = item.texto;
+                            hiddenField.value = item.id;
+                            resultsContainer.style.display = 'none';
+                            
+                            if (callback) {
+                                callback(item);
+                            }
+                        });
+                        
+                        resultsContainer.appendChild(div);
+                    });
+                    
+                } catch (error) {
+                    resultsContainer.innerHTML = `<div class="autocomplete-item error">Error: ${error.message}</div>`;
+                }
+            }
+            
+            // Callbacks para mantener lógica inmueble ↔ propietario (IGUAL QUE CREATE)
+            async function onInmuebleSelected(inmueble) {
+                console.log('onInmuebleSelected llamado con:', inmueble);
+                if (propietarioBloqueado) return;
+                
+                try {
+                    // Obtener propietario del inmueble
+                    const response = await fetch(`/Contratos/ObtenerPropietarioDeInmueble?inmuebleId=${inmueble.id}`);
+                    const data = await response.json();
+                    
+                    console.log('Respuesta propietario:', data);
+                    
+                    if (data.success && data.data) {
+                        const propietario = data.data;
+                        
+                        // Llenar propietario automáticamente
+                        document.getElementById('propietarioSearch').value = propietario.texto;
+                        document.getElementById('idPropietario').value = propietario.id;
+                        
+                        // Bloquear propietario
+                        document.getElementById('propietarioSearch').disabled = true;
+                        propietarioBloqueado = true;
+                        
+                        // Actualizar mensaje de ayuda
+                        document.getElementById('propietario-help').textContent = 
+                            `Propietario asignado automáticamente: ${propietario.texto}`;
+                        document.getElementById('propietario-help').className = 'form-text text-success';
+                    }
+                } catch (error) {
+                    console.error('Error al obtener propietario:', error);
+                }
+            }
+            
+            async function onPropietarioSelected(propietario) {
+                console.log('onPropietarioSelected llamado con:', propietario);
+                if (inmuebleBloqueado) return;
+                
+                try {
+                    // Obtener inmuebles del propietario
+                    const response = await fetch(`/Contratos/ObtenerInmueblesPorPropietario?propietarioId=${propietario.id}&limite=15`);
+                    const data = await response.json();
+                    
+                    if (data.success && data.data && data.data.length > 0) {
+                        // Actualizar mensaje de ayuda
+                        document.getElementById('propietario-help').innerHTML = 
+                            `<i class="bi bi-house me-1 text-info"></i>${data.data.length} inmueble(s) disponible(s) de: ${propietario.texto}`;
+                        document.getElementById('propietario-help').className = 'form-text text-info';
+                        
+                        // Mostrar los inmuebles disponibles en el autocompletado
+                        const inmuebleResults = document.getElementById('inmuebleResults');
+                        inmuebleResults.innerHTML = '';
+                        
+                        data.data.forEach(inmueble => {
+                            const div = document.createElement('div');
+                            div.className = 'autocomplete-item';
+                            div.textContent = inmueble.texto;
+                            div.dataset.id = inmueble.id;
+                            div.dataset.item = JSON.stringify(inmueble);
+                            
+                            div.addEventListener('click', function() {
+                                document.getElementById('inmuebleSearch').value = inmueble.texto;
+                                document.getElementById('idInmueble').value = inmueble.id;
+                                inmuebleResults.style.display = 'none';
+                                
+                                // No llamar onInmuebleSelected porque ya tenemos el propietario
+                            });
+                            
+                            inmuebleResults.appendChild(div);
+                        });
+                        
+                        inmuebleResults.style.display = 'block';
+                        
+                        // Actualizar placeholder del input de inmuebles
+                        document.getElementById('inmuebleSearch').placeholder = 
+                            `Seleccione uno de los ${data.data.length} inmuebles disponibles`;
+                            
+                    } else {
+                        // No hay inmuebles disponibles
+                        document.getElementById('propietario-help').innerHTML = 
+                            `<i class="bi bi-exclamation-triangle me-1 text-warning"></i>${propietario.texto} no tiene inmuebles disponibles para alquilar`;
+                        document.getElementById('propietario-help').className = 'form-text text-warning';
+                    }
+                } catch (error) {
+                    console.error('Error al obtener inmuebles del propietario:', error);
+                    document.getElementById('propietario-help').innerHTML = 
+                        '<i class="bi bi-x-circle me-1 text-danger"></i>Error al cargar inmuebles del propietario';
+                    document.getElementById('propietario-help').className = 'form-text text-danger';
+                }
+            }
+            
+            // Limpiar selecciones - FUNCIONES CORREGIDAS
+            function limpiarInmueble() {
+                document.getElementById('inmuebleSearch').value = '';
+                document.getElementById('idInmueble').value = '';
+                document.getElementById('inmuebleSearch').placeholder = 'Busque otro inmueble o deje el actual...';
+                inmuebleBloqueado = false;
+                
+                // Limpiar resultados si están abiertos
+                const results = document.getElementById('inmuebleResults');
+                results.innerHTML = '';
+                results.style.display = 'none';
+            }
+            
+            function limpiarPropietario() {
+                document.getElementById('propietarioSearch').value = '';
+                document.getElementById('idPropietario').value = '';
+                document.getElementById('propietarioSearch').disabled = false;
+                document.getElementById('propietarioSearch').placeholder = 'Busque otro propietario o deje el actual...';
+                propietarioBloqueado = false;
+                
+                // Restaurar mensaje de ayuda
+                document.getElementById('propietario-help').textContent = 
+                    'Valor actual cargado - Escriba 3+ letras para cambiar';
+                document.getElementById('propietario-help').className = 'form-text text-muted';
+                
+                // Limpiar resultados si están abiertos
+                const results = document.getElementById('propietarioResults');
+                results.innerHTML = '';
+                results.style.display = 'none';
+            }
+            
+            // Validación de fechas (igual que original)
             const fechaInicio = document.querySelector('input[name="FechaInicio"]');
             const fechaFin = document.querySelector('input[name="FechaFin"]');
             const fechaFinAnticipada = document.querySelector('input[name="FechaFinAnticipada"]');
@@ -294,7 +500,6 @@
                     }
                 }
                 
-                // Validar fecha fin anticipada
                 if (fechaFinAnticipada.value) {
                     const anticipada = new Date(fechaFinAnticipada.value);
                     const inicio = new Date(fechaInicio.value);
@@ -317,17 +522,58 @@
     </script>
     
     <style>
-        .select-search-wrapper select {
-            max-height: 200px;
-            overflow-y: auto;
+        .autocomplete-wrapper {
+            position: relative;
         }
         
-        .select-search-wrapper option[style*="display: none"] {
-            display: none !important;
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .autocomplete-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .autocomplete-item.loading {
+            color: #6c757d;
+            font-style: italic;
+            cursor: default;
+        }
+        
+        .autocomplete-item.error {
+            color: #dc3545;
+            cursor: default;
+        }
+        
+        .autocomplete-item.no-results {
+            color: #6c757d;
+            font-style: italic;
+            cursor: default;
         }
         
         .card-header {
-            border-bottom: 3px solid rgba(255, 193, 7, 0.5);
+            border-bottom: 3px solid rgba(255, 193, 7, 0.3);
         }
         
         .form-label.fw-bold {
@@ -336,8 +582,14 @@
         }
         
         .alert-info {
+            background-color: #e3f2fd;
+            border-color: #90caf9;
+            color: #1565c0;
+        }
+        
+        .input-group-text {
             background-color: #f8f9fa;
-            border-color: #dee2e6;
+            border-color: #ced4da;
         }
     </style>
 }

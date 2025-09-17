@@ -5,11 +5,16 @@
 
 <div class="row justify-content-between align-items-center mb-4">
     <div class="col-md-6">
-        <h2>📋 Gestión de Contratos</h2>
+        <h2><i class="bi bi-file-text"></i> Gestión de Contratos</h2>
     </div>
     <div class="col-md-6 text-end">
         <a asp-action="Create" class="btn btn-primary">
             <i class="bi bi-plus-circle"></i> Crear Nuevo Contrato
+        </a>
+    </div>
+    <div class="col-md-6 text-end">
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="bi bi-plus-circle"></i> Crear Nueva Venta
         </a>
     </div>
 </div>
@@ -17,7 +22,7 @@
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show">
-        <strong>❌ Error:</strong> @TempData["ErrorMessage"]
+        <strong><i class="bi bi-x-circle"></i> Error:</strong> @TempData["ErrorMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
@@ -25,27 +30,31 @@
 @if (TempData["SuccessMessage"] != null)
 {
     <div class="alert alert-success alert-dismissible fade show">
-        <strong>✅ Éxito:</strong> @TempData["SuccessMessage"]
+        <strong><i class="bi bi-check-circle"></i> Éxito:</strong> @TempData["SuccessMessage"]
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
 
 <!-- Filtros de búsqueda -->
-<div class="card mb-4">
+<div class="card mb-4 shadow-sm">
     <div class="card-body">
         <form method="get" asp-action="Index">
             <div class="row g-3 align-items-end">
                 <div class="col-md-4">
-                    <label for="buscar" class="form-label">Buscar</label>
+                    <label for="buscar" class="form-label fw-bold">
+                        <i class="bi bi-search"></i> Buscar
+                    </label>
                     <input type="text" 
                            id="buscar" 
                            name="buscar" 
                            class="form-control" 
-                           placeholder="Dirección, inquilino, DNI..."
+                           placeholder="Dirección, inquilino, propietario, DNI..."
                            value="@ViewBag.Buscar">
                 </div>
                 <div class="col-md-3">
-                    <label for="estado" class="form-label">Estado</label>
+                    <label for="estado" class="form-label fw-bold">
+                        <i class="bi bi-flag"></i> Estado
+                    </label>
                     <select name="estado" id="estado" class="form-select">
                         <option value="">Todos los estados</option>
                         <option value="vigente" selected="@(ViewBag.Estado == "vigente")">Vigente</option>
@@ -63,7 +72,7 @@
                 </div>
                 <div class="col-md-2 text-end">
                     <small class="text-muted">
-                        Total: @ViewBag.TotalRegistros contratos
+                        <i class="bi bi-info-circle"></i> Total: @ViewBag.TotalRegistros contratos
                     </small>
                 </div>
             </div>
@@ -96,15 +105,32 @@ else
     <div class="table-responsive">
         <table class="table table-striped table-hover">
             <thead class="table-dark">
-            <tr>
-                <th style="width: 8%;">ID</th>
-                    <th style="width: 20%;">Inmueble</th>
-                    <th style="width: 18%;">Inquilino</th>
-                    <th style="width: 12%;">Fecha Inicio</th>
-                    <th style="width: 12%;">Fecha Fin</th>
-                    <th style="width: 10%;">Monto</th>
-                    <th style="width: 10%;">Estado</th>
-                    <th style="width: 10%;">Acciones</th>
+                <tr>
+                    <th style="width: 8%;">
+                        <i class="bi bi-hash"></i> ID
+                    </th>
+                    <th style="width: 18%;">
+                        <i class="bi bi-house"></i> Inmueble
+                    </th>
+                    <th style="width: 16%;">
+                        <i class="bi bi-person"></i> Inquilino
+                    </th>
+                    <th style="width: 16%;">
+                        <i class="bi bi-person-badge"></i> Propietario
+                    </th>
+                    <th style="width: 10%;">
+                        <i class="bi bi-calendar-check"></i> Inicio
+                    </th>
+                    <th style="width: 10%;">
+                        <i class="bi bi-calendar-x"></i> Fin
+                    </th>
+                    <th style="width: 10%;">
+                        <i class="bi bi-currency-dollar"></i> Monto
+                    </th>
+                    <th style="width: 8%;">
+                        <i class="bi bi-flag"></i> Estado
+                    </th>
+                    <th style="width: 4%;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -115,12 +141,22 @@ else
                             <span class="badge bg-secondary">#@contrato.IdContrato</span>
                         </td>
                         <td>
-                            <strong>@contrato.Inmueble?.Direccion</strong>
+                            <strong class="text-primary">@contrato.Inmueble?.Direccion</strong>
                         </td>
                         <td>
                             <div>
-                                <strong>@(contrato.Inquilino?.Usuario?.Nombre) @(contrato.Inquilino?.Usuario?.Apellido)</strong>
-                                <br><small class="text-muted">DNI: @contrato.Inquilino?.Usuario?.Dni</small>
+                                <strong>@(contrato.Inquilino?.Usuario?.Apellido), @(contrato.Inquilino?.Usuario?.Nombre)</strong>
+                                <br><small class="text-muted">
+                                    <i class="bi bi-card-text"></i> @contrato.Inquilino?.Usuario?.Dni
+                                </small>
+                            </div>
+                        </td>
+                        <td>
+                            <div>
+                                <strong>@(contrato.Propietario?.Usuario?.Apellido), @(contrato.Propietario?.Usuario?.Nombre)</strong>
+                                <br><small class="text-muted">
+                                    <i class="bi bi-card-text"></i> @contrato.Propietario?.Usuario?.Dni
+                                </small>
                             </div>
                         </td>
                         <td>
@@ -134,14 +170,20 @@ else
                             </span>
                             @if (contrato.FechaFinAnticipada.HasValue)
                             {
-                                <br><small class="text-muted">Anticipada: @contrato.FechaFinAnticipada.Value.ToString("dd/MM/yyyy")</small>
+                                <br><small class="text-muted">
+                                    <i class="bi bi-clock-history"></i> @contrato.FechaFinAnticipada.Value.ToString("dd/MM/yyyy")
+                                </small>
                             }
                         </td>
                         <td>
-                            <strong class="text-success">@contrato.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))</strong>
+                            <strong class="text-success">
+                                @contrato.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                            </strong>
                             @if (contrato.MultaAplicada > 0)
                             {
-                                <br><small class="text-danger">Multa: @contrato.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))</small>
+                                <br><small class="text-danger">
+                                    <i class="bi bi-exclamation-triangle"></i> @contrato.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                </small>
                             }
                         </td>
                         <td>
@@ -165,15 +207,26 @@ else
                             <span class="badge @estadoBadgeClass">@estadoTexto</span>
                         </td>
                         <td>
-                            <div class="btn-group" role="group">
+                            <div class="dropdown">
+                                <div class="btn-group" role="group">
+                                <a asp-action="Details" asp-route-id="@contrato.IdContrato" 
+                                   class="btn btn-success btn-sm" title="Detalle ">
+                                    <i class="bi bi-file-earmark-text"></i>
+                                </a>
                                 <a asp-action="Edit" asp-route-id="@contrato.IdContrato" 
                                    class="btn btn-warning btn-sm" title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@contrato.IdContrato" 
-                                   class="btn btn-danger btn-sm" title="Finalizar">
-                                    <i class="bi bi-x-circle"></i>
+                                <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@contrato.IdContrato" 
+                                   class="btn btn-info btn-sm" title="Imágenes">
+                                    <i class="bi bi-images"></i>
                                 </a>
+                                <a asp-action="Delete" asp-route-id="@contrato.IdContrato" 
+                                   class="btn btn-danger btn-sm" title="Eliminar">
+                                    <i class="bi bi-trash"></i>
+                                </a>
+                            </div>
+                                
                             </div>
                         </td>
                     </tr>
@@ -185,7 +238,7 @@ else
     <!-- Paginación -->
     @if (ViewBag.TotalPaginas > 1)
     {
-        <nav aria-label="Paginación de contratos">
+        <nav aria-label="Paginación de contratos" class="mt-4">
             <ul class="pagination justify-content-center">
                 <!-- Página anterior -->
                 @if (ViewBag.PaginaActual > 1)
@@ -195,7 +248,7 @@ else
                            asp-route-pagina="@(ViewBag.PaginaActual - 1)"
                            asp-route-buscar="@ViewBag.Buscar"
                            asp-route-estado="@ViewBag.Estado">
-                            Anterior
+                            <i class="bi bi-chevron-left"></i> Anterior
                         </a>
                     </li>
                 }
@@ -253,7 +306,7 @@ else
                            asp-route-pagina="@(ViewBag.PaginaActual + 1)"
                            asp-route-buscar="@ViewBag.Buscar"
                            asp-route-estado="@ViewBag.Estado">
-                            Siguiente
+                            Siguiente <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
                 }
@@ -263,8 +316,9 @@ else
         <!-- Información de paginación -->
         <div class="text-center text-muted mt-3">
             <small>
-                Mostrando @((ViewBag.PaginaActual - 1) * ViewBag.ITEMS_POR_PAGINA + 1) - 
-                @(Math.Min(ViewBag.PaginaActual * ViewBag.ITEMS_POR_PAGINA, ViewBag.TotalRegistros)) 
+                <i class="bi bi-info-circle"></i>
+                Mostrando @((ViewBag.PaginaActual - 1) * 10 + 1) - 
+                @(Math.Min(ViewBag.PaginaActual * 10, ViewBag.TotalRegistros)) 
                 de @ViewBag.TotalRegistros contratos
             </small>
         </div>
@@ -274,15 +328,6 @@ else
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Limpiar formulario de búsqueda
-            const limpiarBtn = document.querySelector('a[href*="Index"]:not([href*="pagina"])');
-            if (limpiarBtn) {
-                limpiarBtn.addEventListener('click', function(e) {
-                    e.preventDefault();
-                    window.location.href = '@Url.Action("Index")';
-                });
-            }
-
             // Auto-submit al cambiar estado
             const estadoSelect = document.getElementById('estado');
             if (estadoSelect) {
@@ -290,6 +335,65 @@ else
                     this.form.submit();
                 });
             }
+
+            // Confirmación para finalizar contratos
+            const finalizarLinks = document.querySelectorAll('a[href*="Delete"]');
+            finalizarLinks.forEach(link => {
+                link.addEventListener('click', function(e) {
+                    if (!confirm('¿Está seguro que desea finalizar este contrato? Esta acción no se puede deshacer.')) {
+                        e.preventDefault();
+                    }
+                });
+            });
+
+            // Tooltip para badges de estado
+            const badges = document.querySelectorAll('.badge');
+            badges.forEach(badge => {
+                badge.title = badge.textContent.trim();
+            });
         });
     </script>
+
+    <style>
+        .table th {
+            background-color: #343a40;
+            color: white;
+            font-weight: 600;
+            border-color: #454d55;
+        }
+        
+        .table-striped > tbody > tr:nth-of-type(even) > td {
+        background-color: #f8f9fa; 
+        }
+        
+        .table-hover tbody tr:hover {
+            background-color: rgba(0,123,255,.1);
+        }
+        
+        .badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+        
+        .dropdown-menu {
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+        
+        .dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .pagination .page-link {
+            border-color: #dee2e6;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #0d6efd;
+            border-color: #0d6efd;
+        }
+        
+        .card-body {
+            padding: 1.5rem;
+        }
+    </style>
 }

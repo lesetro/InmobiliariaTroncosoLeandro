@@ -38,8 +38,15 @@ class AutocompleteSearch {
         searchInput.addEventListener('keydown', (e) => this.handleKeydown(e));
         
         // Cerrar dropdown al hacer clic fuera
-        document.addEventListener('click', (e) => {
-            if (!e.target.closest(`#${this.inputId}`).parentElement) {
+           document.addEventListener('click', (e) => {
+            const inputElement = document.getElementById(this.inputId);
+            const isClickInsideComponent = inputElement && (
+                e.target === inputElement || 
+                inputElement.contains(e.target) || 
+                e.target.closest(`#${this.dropdownId}`)
+            );
+            
+            if (!isClickInsideComponent) {
                 this.hideDropdown();
             }
         });

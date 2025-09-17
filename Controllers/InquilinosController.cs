@@ -1,482 +1,247 @@
-
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
+using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
-using Inmobiliaria_troncoso_leandro.Services; 
-using System.Data;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
+{
+    public class InquilinosController : Controller
     {
-        public class InquilinosController : Controller
+        private readonly IRepositorioInquilino _repositorioInquilino;
+
+        public InquilinosController(IRepositorioInquilino repositorioInquilino)
         {
-            private readonly string _connectionString;
-            private readonly ISearchService _searchService; 
+            _repositorioInquilino = repositorioInquilino;
+        }
 
-            // CONSTRUCTOR ACTUALIZADO
-            public InquilinosController(IConfiguration configuration, ISearchService searchService)
+        // GET: Inquilinos
+        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", int itemsPorPagina = 10)
+        {
+            try
             {
-                _connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                                   throw new ArgumentNullException(nameof(configuration), "La cadena de conexión está nula");
-                _searchService = searchService; 
-            }
+                var (inquilinos, totalRegistros) = await _repositorioInquilino
+                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, itemsPorPagina);
 
-            // GET: Inquilinos
-            public IActionResult Index(int pagina = 1, string buscar = "")
+                // Calcular información de paginación
+                var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
+                
+                ViewBag.PaginaActual = pagina;
+                ViewBag.TotalPaginas = totalPaginas;
+                ViewBag.TotalRegistros = totalRegistros;
+                ViewBag.Buscar = buscar;
+                ViewBag.ITEMS_POR_PAGINA = itemsPorPagina;
+
+                return View(inquilinos);
+            }
+            catch (Exception ex)
             {
-                var listaInquilinos = new List<Inquilino>();
-                const int ITEMS_POR_PAGINA = 10;
-                int totalRegistros = 0;
-
-                try
-                {
-                    using (var connection = new MySqlConnection(_connectionString))
-                    {
-                        connection.Open();
-
-                        // Construir WHERE dinámico
-                        string whereClause = "WHERE inq.estado = 1";
-                        var parameters = new List<MySqlParameter>();
-
-                        if (!string.IsNullOrEmpty(buscar))
-                        {
-                            whereClause += @" AND (u.nombre LIKE @buscar 
-                                              OR u.apellido LIKE @buscar 
-                                              OR u.dni LIKE @buscar
-                                              OR u.email LIKE @buscar
-                                              OR u.telefono LIKE @buscar
-                                              OR CONCAT(u.nombre, ' ', u.apellido) LIKE @buscar)";
-                            parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
-                        }
-
-                        // Contar total de registros
-                        string countQuery = $@"
-                        SELECT COUNT(*) 
-                        FROM inquilino inq
-                        INNER JOIN usuario u ON inq.id_usuario = u.id_usuario
-                        {whereClause}";
-
-                        using (var countCommand = new MySqlCommand(countQuery, connection))
-                        {
-                            foreach (var param in parameters)
-                            {
-                                countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                            }
-                            totalRegistros = Convert.ToInt32(countCommand.ExecuteScalar());
-                        }
-
-                        // Consulta principal con paginación
-                        string query = $@"
-                        SELECT inq.id_inquilino, inq.id_usuario, inq.fecha_alta, inq.estado,
-                               u.dni, u.apellido, u.nombre, u.direccion, u.telefono, u.email
-                        FROM inquilino inq
-                        INNER JOIN usuario u ON inq.id_usuario = u.id_usuario
-                        {whereClause}
-                        ORDER BY u.apellido, u.nombre
-                        LIMIT @offset, @limit";
-
-                        using (var command = new MySqlCommand(query, connection))
-                        {
-                            foreach (var param in parameters)
-                            {
-                                command.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                            }
-                            command.Parameters.AddWithValue("@offset", (pagina - 1) * ITEMS_POR_PAGINA);
-                            command.Parameters.AddWithValue("@limit", ITEMS_POR_PAGINA);
-
-                            using (var reader = command.ExecuteReader())
-                            {
-                                while (reader.Read())
-                                {
-                                    listaInquilinos.Add(new Inquilino
-                                    {
-                                        IdInquilino = reader.GetInt32("id_inquilino"),
-                                        IdUsuario = reader.GetInt32("id_usuario"),
-                                        FechaAlta = reader.GetDateTime("fecha_alta"),
-                                        Estado = reader.GetBoolean("estado"),
-                                        Usuario = new Usuario
-                                        {
-                                            IdUsuario = reader.GetInt32("id_usuario"), // ← CORREGIDO: usar GetInt32
-                                            Dni = reader.GetString("dni"),
-                                            Apellido = reader.GetString("apellido"),
-                                            Nombre = reader.GetString("nombre"),
-                                            Direccion = reader.IsDBNull(reader.GetOrdinal("direccion")) ? null : reader.GetString("direccion"),
-                                            Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? null : reader.GetString("telefono"),
-                                            Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString("email")
-                                        }
-                                    });
-                                }
-                            }
-                        }
-                    }
-
-                    // Preparar datos de paginación para la vista
-                    ViewBag.PaginaActual = pagina;
-                    ViewBag.TotalPaginas = (int)Math.Ceiling((double)totalRegistros / ITEMS_POR_PAGINA);
-                    ViewBag.TotalRegistros = totalRegistros;
-                    ViewBag.Buscar = buscar;
-                    ViewBag.ITEMS_POR_PAGINA = ITEMS_POR_PAGINA;
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"Error al cargar los inquilinos: {ex.Message}";
-                }
-
-                return View(listaInquilinos);
+                TempData["ErrorMessage"] = $"Error al cargar los inquilinos: {ex.Message}";
+                return View(new List<Inquilino>());
             }
+        }
 
-            // MÉTODO NUEVO para API de búsqueda
-            [HttpGet]
-            public async Task<IActionResult> BuscarInquilinos(string termino, int limite = 10)
+        // GET: Inquilinos/Create
+        public IActionResult Create()
+        {
+            var inquilino = new Inquilino
+            {
+                Usuario = new Usuario
+                {
+                    Nombre = "",
+                    Apellido = "",
+                    Dni = "",
+                    Email = "",
+                    Telefono = "",
+                    Direccion = ""
+                }
+            };
+            return View(inquilino);
+        }
+
+        // POST: Inquilinos/Create
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Inquilino inquilino)
+        {
+            if (ModelState.IsValid)
             {
                 try
                 {
-                    var resultados = await _searchService.BuscarInquilinosAsync(termino, limite);
-                    return Json(resultados);
-                }
-                catch (Exception ex)
-                {
-                    return Json(new { error = ex.Message });
-                }
-            }
-
-            // POST: Inquilinos/Create
-            [HttpPost]
-            [ValidateAntiForgeryToken]
-            public IActionResult Create(Inquilino inquilino)
-            {
-                if (!ModelState.IsValid)
-                {
-                    return View(inquilino);
-                }
-
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                using var transaction = connection.BeginTransaction();
-                try
-                {
-                    // Verificar DNI único
-                    if (!string.IsNullOrEmpty(inquilino.Usuario.Dni) && ExisteDni(inquilino.Usuario.Dni, connection, transaction))
+                    // Verificar DNI único (solo si se proporciona)
+                    if (!string.IsNullOrEmpty(inquilino.Usuario?.Dni))
                     {
-                        ModelState.AddModelError("Usuario.Dni", "Ya existe un usuario con este DNI");
-                        return View(inquilino);
-                    }
-
-                    // Verificar Email único
-                    if (!string.IsNullOrEmpty(inquilino.Usuario.Email) && ExisteEmail(inquilino.Usuario.Email, connection, transaction))
-                    {
-                        ModelState.AddModelError("Usuario.Email", "Ya existe un usuario con este email");
-                        return View(inquilino);
-                    }
-
-                    // Crear usuario
-                    string queryUsuario = @"
-                    INSERT INTO usuario 
-                    (dni, nombre, apellido, telefono, email, direccion, password, rol, estado, fecha_creacion) 
-                    VALUES (@dni, @nombre, @apellido, @telefono, @email, @direccion, @password, @rol, @estado, @fecha_creacion);
-                    SELECT LAST_INSERT_ID();";
-
-                    int idUsuario;
-                    using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
-                    {
-                        commandUsuario.Parameters.AddWithValue("@dni", inquilino.Usuario.Dni);
-                        commandUsuario.Parameters.AddWithValue("@nombre", inquilino.Usuario.Nombre);
-                        commandUsuario.Parameters.AddWithValue("@apellido", inquilino.Usuario.Apellido);
-                        commandUsuario.Parameters.AddWithValue("@telefono", inquilino.Usuario.Telefono ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@email", inquilino.Usuario.Email ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@direccion", inquilino.Usuario.Direccion ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@password", BCrypt.Net.BCrypt.HashPassword("passwordtemporal"));
-                        commandUsuario.Parameters.AddWithValue("@rol", "inquilino");
-                        commandUsuario.Parameters.AddWithValue("@estado", true);
-                        commandUsuario.Parameters.AddWithValue("@fecha_creacion", DateTime.Now);
-
-                        idUsuario = Convert.ToInt32(commandUsuario.ExecuteScalar());
-                    }
-
-                    // Crear inquilino
-                    string queryInquilino = @"
-                    INSERT INTO inquilino 
-                    (id_usuario, fecha_alta, estado) 
-                    VALUES (@id_usuario, @fecha_alta, @estado)";
-
-                    using (var commandInquilino = new MySqlCommand(queryInquilino, connection, transaction))
-                    {
-                        commandInquilino.Parameters.AddWithValue("@id_usuario", idUsuario);
-                        commandInquilino.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
-                        commandInquilino.Parameters.AddWithValue("@estado", true);
-
-                        commandInquilino.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit();
-                    TempData["SuccessMessage"] = "Inquilino creado exitosamente";
-                    return RedirectToAction(nameof(Index));
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    ModelState.AddModelError("", $"Error al crear inquilino: {ex.Message}");
-                    return View(inquilino);
-                }
-            }
-
-            private bool ExisteDni(string dni, MySqlConnection connection, MySqlTransaction transaction)
-            {
-                string query = "SELECT COUNT(*) FROM usuario WHERE dni = @dni";
-                using var command = new MySqlCommand(query, connection, transaction);
-                command.Parameters.AddWithValue("@dni", dni);
-                return Convert.ToInt32(command.ExecuteScalar()) > 0;
-            }
-
-            private bool ExisteEmail(string email, MySqlConnection connection, MySqlTransaction transaction)
-            {
-                if (string.IsNullOrEmpty(email)) return false;
-                string query = "SELECT COUNT(*) FROM usuario WHERE email = @email";
-                using var command = new MySqlCommand(query, connection, transaction);
-                command.Parameters.AddWithValue("@email", email);
-                return Convert.ToInt32(command.ExecuteScalar()) > 0;
-            }
-            // GET: Inquilinos/Edit/5
-            public IActionResult Edit(int id)
-            {
-                try
-                {
-                    using var connection = new MySqlConnection(_connectionString);
-                    connection.Open();
-                    string query = @"
-                    SELECT i.id_inquilino, i.id_usuario, i.fecha_alta, i.estado,
-                           u.id_usuario, u.dni, u.nombre, u.apellido, u.telefono, u.email, u.direccion
-                    FROM inquilino i 
-                    INNER JOIN usuario u ON i.id_usuario = u.id_usuario 
-                    WHERE i.id_inquilino = @id";
-
-                    using var command = new MySqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@id", id);
-
-                    using var reader = command.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        var inquilino = new Inquilino
+                        bool dniExiste = await _repositorioInquilino.ExisteDniAsync(inquilino.Usuario.Dni);
+                        if (dniExiste)
                         {
-                            IdInquilino = reader.GetInt32("id_inquilino"),
-                            IdUsuario = reader.GetInt32("id_usuario"),
-                            FechaAlta = reader.GetDateTime("fecha_alta"),
-                            Estado = reader.GetBoolean("estado"),
-                            Usuario = new Usuario
-                            {
-                                IdUsuario = reader.GetInt32("id_usuario"),
-                                Dni = reader.GetString("dni"),
-                                Nombre = reader.GetString("nombre"),
-                                Apellido = reader.GetString("apellido"),
-                                Telefono = reader.GetString("telefono"),
-                                Email = reader.GetString("email"),
-                                Direccion = reader.GetString("direccion"),
-
-                            }
-                        };
-                        return View(inquilino);
-                    }
-                    TempData["ErrorMessage"] = "Inquilino no encontrado";
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"Error al cargar inquilino: {ex.Message}";
-                }
-
-                return RedirectToAction(nameof(Index));
-            }
-            // POST: Inquilinos/Edit/5
-            [HttpPost]
-            [ValidateAntiForgeryToken]
-            public IActionResult Edit(int id, Inquilino inquilino)
-            {
-                if (id != inquilino.IdInquilino)
-                {
-                    TempData["ErrorMessage"] = "ID de inquilino no coincide";
-                    return RedirectToAction(nameof(Index));
-                }
-
-                if (!ModelState.IsValid)
-                {
-                    return View(inquilino);
-                }
-
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                using var transaction = connection.BeginTransaction();
-                try
-                {
-                    // Verificar DNI único (excluyendo el usuario actual)
-                    string queryDni = "SELECT COUNT(*) FROM usuario WHERE dni = @dni AND id_usuario != @id_usuario";
-                    using (var commandDni = new MySqlCommand(queryDni, connection, transaction))
-                    {
-                        commandDni.Parameters.AddWithValue("@dni", inquilino.Usuario.Dni);
-                        commandDni.Parameters.AddWithValue("@id_usuario", inquilino.IdUsuario);
-                        if (Convert.ToInt32(commandDni.ExecuteScalar()) > 0)
-                        {
-                            ModelState.AddModelError("Usuario.Dni", "Ya existe otro usuario con este DNI");
+                            ModelState.AddModelError("Usuario.Dni", "Ya existe un inquilino con este DNI");
                             return View(inquilino);
                         }
                     }
 
-                    // Verificar Email único (excluyendo el usuario actual)
-                    if (!string.IsNullOrEmpty(inquilino.Usuario.Email))
+                    // Verificar Email único (si se proporciona)
+                    if (!string.IsNullOrEmpty(inquilino.Usuario?.Email))
                     {
-                        string queryEmail = "SELECT COUNT(*) FROM usuario WHERE email = @email AND id_usuario != @id_usuario";
-                        using (var commandEmail = new MySqlCommand(queryEmail, connection, transaction))
+                        bool emailExiste = await _repositorioInquilino.ExisteEmailAsync(inquilino.Usuario.Email);
+                        if (emailExiste)
                         {
-                            commandEmail.Parameters.AddWithValue("@email", inquilino.Usuario.Email);
-                            commandEmail.Parameters.AddWithValue("@id_usuario", inquilino.IdUsuario);
-                            if (Convert.ToInt32(commandEmail.ExecuteScalar()) > 0)
-                            {
-                                ModelState.AddModelError("Usuario.Email", "Ya existe otro usuario con este email");
-                                return View(inquilino);
-                            }
+                            ModelState.AddModelError("Usuario.Email", "Ya existe un inquilino con este email");
+                            return View(inquilino);
                         }
                     }
 
-                    // Actualizar usuario
-                    string queryUsuario = @"
-                    UPDATE usuario 
-                    SET dni = @dni, nombre = @nombre, apellido = @apellido, 
-                        telefono = @telefono, email = @email, direccion = @direccion
-                    WHERE id_usuario = @id_usuario";
-
-                    using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
+                    bool resultado = await _repositorioInquilino.CrearInquilinoConTransaccionAsync(inquilino);
+                    
+                    if (resultado)
                     {
-                        commandUsuario.Parameters.AddWithValue("@dni", inquilino.Usuario.Dni);
-                        commandUsuario.Parameters.AddWithValue("@nombre", inquilino.Usuario.Nombre);
-                        commandUsuario.Parameters.AddWithValue("@apellido", inquilino.Usuario.Apellido);
-                        commandUsuario.Parameters.AddWithValue("@telefono", inquilino.Usuario.Telefono ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@email", inquilino.Usuario.Email ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@direccion", inquilino.Usuario.Direccion ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@id_usuario", inquilino.IdUsuario);
-
-                        commandUsuario.ExecuteNonQuery();
+                        TempData["SuccessMessage"] = "Inquilino creado exitosamente";
+                        return RedirectToAction(nameof(Index));
                     }
-
-                    // Actualizar inquilino
-                    string queryInquilino = @"
-                    UPDATE inquilino 
-                    SET estado = @estado 
-                    WHERE id_inquilino = @id_inquilino";
-
-                    using (var commandInquilino = new MySqlCommand(queryInquilino, connection, transaction))
+                    else
                     {
-                        commandInquilino.Parameters.AddWithValue("@estado", inquilino.Estado);
-                        commandInquilino.Parameters.AddWithValue("@id_inquilino", inquilino.IdInquilino);
-
-                        commandInquilino.ExecuteNonQuery();
+                        ModelState.AddModelError("", "No se pudo crear el inquilino. Verifique los datos ingresados.");
                     }
-
-                    transaction.Commit();
-                    TempData["SuccessMessage"] = "Inquilino actualizado exitosamente";
-                    return RedirectToAction(nameof(Index));
                 }
                 catch (Exception ex)
                 {
-                    transaction.Rollback();
-                    ModelState.AddModelError("", $"Error al actualizar inquilino: {ex.Message}");
-                    return View(inquilino);
+                    ModelState.AddModelError("", $"Error al crear el inquilino: {ex.Message}");
                 }
             }
-            // GET: Inquilinos/Delete/5
-            public IActionResult Delete(int id)
+            
+            return View(inquilino);
+        }
+
+        // GET: Inquilinos/Edit/5
+        public async Task<IActionResult> Edit(int id)
+        {
+            if (id <= 0)
             {
-                try
-                {
-                    using var connection = new MySqlConnection(_connectionString);
-                    connection.Open();
-                    string query = @"
-                    SELECT i.id_inquilino, i.id_usuario, i.fecha_alta, i.estado,
-                           u.dni, u.nombre, u.apellido
-                    FROM inquilino i 
-                    INNER JOIN usuario u ON i.id_usuario = u.id_usuario 
-                    WHERE i.id_inquilino = @id";
-
-                    using var command = new MySqlCommand(query, connection);
-                    command.Parameters.AddWithValue("@id", id);
-
-                    using var reader = command.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        var inquilino = new Inquilino
-                        {
-                            IdInquilino = reader.GetInt32("id_inquilino"),
-                            IdUsuario = reader.GetInt32("id_usuario"),
-                            FechaAlta = reader.GetDateTime("fecha_alta"),
-                            Estado = reader.GetBoolean("estado"),
-                            Usuario = new Usuario
-                            {
-                                Dni = reader.GetString("dni"),
-                                Nombre = reader.GetString("nombre"),
-                                Apellido = reader.GetString("apellido"),
-                                Direccion = reader.GetString("direccion"),
-                                Email = reader.GetString("email"),
-                                Telefono = reader.GetString("telefono"),
-
-
-                            }
-                        };
-                        return View(inquilino);
-                    }
-                    TempData["ErrorMessage"] = "Inquilino no encontrado";
-                }
-                catch (Exception ex)
-                {
-                    TempData["ErrorMessage"] = $"Error al cargar inquilino: {ex.Message}";
-                }
-
-                return RedirectToAction(nameof(Index));
+                return NotFound();
             }
 
-            // POST: Inquilinos/Delete/5
-            [HttpPost, ActionName("Delete")]
-            [ValidateAntiForgeryToken]
-            public IActionResult DeleteConfirmed(int id)
+            try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                using var transaction = connection.BeginTransaction();
-                try
+                var inquilino = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
+                
+                if (inquilino == null)
                 {
-                    // Obtener id_usuario
-                    int idUsuario;
-                    string queryGetUsuario = "SELECT id_usuario FROM inquilino WHERE id_inquilino = @id_inquilino";
-                    using (var commandGet = new MySqlCommand(queryGetUsuario, connection, transaction))
-                    {
-                        commandGet.Parameters.AddWithValue("@id_inquilino", id);
-                        idUsuario = Convert.ToInt32(commandGet.ExecuteScalar());
-                    }
-
-                    // Actualizar estado en inquilino
-                    string queryInquilino = "UPDATE inquilino SET estado = @estado WHERE id_inquilino = @id_inquilino";
-                    using (var commandInquilino = new MySqlCommand(queryInquilino, connection, transaction))
-                    {
-                        commandInquilino.Parameters.AddWithValue("@estado", false);
-                        commandInquilino.Parameters.AddWithValue("@id_inquilino", id);
-                        commandInquilino.ExecuteNonQuery();
-                    }
-
-                    // Actualizar estado en usuario
-                    string queryUsuario = "UPDATE usuario SET estado = @estado WHERE id_usuario = @id_usuario";
-                    using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
-                    {
-                        commandUsuario.Parameters.AddWithValue("@estado", false);
-                        commandUsuario.Parameters.AddWithValue("@id_usuario", idUsuario);
-                        commandUsuario.ExecuteNonQuery();
-                    }
-
-                    transaction.Commit();
-                    TempData["SuccessMessage"] = "Inquilino eliminado exitosamente";
-                }
-                catch (Exception ex)
-                {
-                    transaction.Rollback();
-                    TempData["ErrorMessage"] = $"Error al eliminar inquilino: {ex.Message}";
+                    return NotFound();
                 }
 
+                return View(inquilino);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar el inquilino: {ex.Message}";
                 return RedirectToAction(nameof(Index));
             }
         }
 
+        // POST: Inquilinos/Edit/5
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Inquilino inquilino)
+        {
+            if (id != inquilino.IdInquilino)
+            {
+                return NotFound();
+            }
+
+            if (ModelState.IsValid)
+            {
+                try
+                {
+                    // Verificar DNI único (excluyendo el actual por IdUsuario)
+                    if (!string.IsNullOrEmpty(inquilino.Usuario?.Dni))
+                    {
+                        bool dniExiste = await _repositorioInquilino.ExisteDniAsync(inquilino.Usuario.Dni, inquilino.IdUsuario);
+                        if (dniExiste)
+                        {
+                            ModelState.AddModelError("Usuario.Dni", "Ya existe otro inquilino con este DNI");
+                            return View(inquilino);
+                        }
+                    }
+
+                    // Verificar Email único (si se proporciona, excluyendo el actual)
+                    if (!string.IsNullOrEmpty(inquilino.Usuario?.Email))
+                    {
+                        bool emailExiste = await _repositorioInquilino.ExisteEmailAsync(inquilino.Usuario.Email, inquilino.IdUsuario);
+                        if (emailExiste)
+                        {
+                            ModelState.AddModelError("Usuario.Email", "Ya existe otro inquilino con este email");
+                            return View(inquilino);
+                        }
+                    }
+
+                    bool resultado = await _repositorioInquilino.ActualizarInquilinoConTransaccionAsync(inquilino);
+                    
+                    if (resultado)
+                    {
+                        TempData["SuccessMessage"] = "Inquilino actualizado exitosamente";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "No se pudo actualizar el inquilino.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    ModelState.AddModelError("", $"Error al actualizar el inquilino: {ex.Message}");
+                }
+            }
+            
+            return View(inquilino);
+        }
+
+        // GET: Inquilinos/Delete/5
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var inquilino = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
+                
+                if (inquilino == null)
+                {
+                    return NotFound();
+                }
+
+                return View(inquilino);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar el inquilino: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: Inquilinos/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id)
+        {
+            try
+            {
+                bool resultado = await _repositorioInquilino.EliminarInquilinoConTransaccionAsync(id);
+                
+                if (resultado)
+                {
+                    TempData["SuccessMessage"] = "Inquilino eliminado exitosamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo eliminar el inquilino";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al eliminar el inquilino: {ex.Message}";
+            }
+            
+            return RedirectToAction(nameof(Index));
+        }
     }
+}

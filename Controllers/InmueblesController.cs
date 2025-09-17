@@ -1,234 +1,75 @@
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
-using Inmobiliaria_troncoso_leandro.Models;
-using Inmobiliaria_troncoso_leandro.Services; // ← AGREGAR ESTA LÍNEA
-using System.Data;
 using Microsoft.AspNetCore.Mvc.Rendering;
+using Inmobiliaria_troncoso_leandro.Data.Interfaces;
+using Inmobiliaria_troncoso_leandro.Models;
+using Inmobiliaria_troncoso_leandro.Services;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
     public class InmueblesController : Controller
     {
-        private readonly string _connectionString;
-        private readonly ISearchService _searchService; // ← AGREGAR ESTA LÍNEA
-        private const int ITEMS_POR_PAGINA = 10;
+        private readonly IRepositorioInmueble _repositorioInmueble;
+        private readonly ISearchService _searchService;
+        private readonly IWebHostEnvironment _environment;
 
-        // CONSTRUCTOR CORREGIDO
-        public InmueblesController(IConfiguration configuration, ISearchService searchService)
+        public InmueblesController(IRepositorioInmueble repositorioInmueble, ISearchService searchService, IWebHostEnvironment environment)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                               throw new ArgumentNullException(nameof(configuration), "La cadena de conexión está nula");
-            _searchService = searchService; // ← AGREGAR ESTA LÍNEA
+            _repositorioInmueble = repositorioInmueble;
+            _searchService = searchService;
+            _environment = environment;
+
         }
 
-        // MÉTODO INDEX CORREGIDO CON BÚSQUEDA Y PAGINACIÓN
-        public IActionResult Index(int pagina = 1, string buscar = "", string estado = "")
+        // GET: Inmuebles
+        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", string estado = "", int itemsPorPagina = 10)
         {
-            var listaInmuebles = new List<Inmueble>();
-            int totalRegistros = 0;
-
             try
             {
-                using (var connection = new MySqlConnection(_connectionString))
-                {
-                    connection.Open();
+                var (inmuebles, totalRegistros) = await _repositorioInmueble
+                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, estado, itemsPorPagina);
 
-                    // Construir WHERE dinámico
-                    var whereConditions = new List<string> { "i.estado != 'inactivo'" };
-                    var parameters = new List<MySqlParameter>();
+                // Calcular información de paginación
+                var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
 
-                    if (!string.IsNullOrEmpty(buscar))
-                    {
-                        whereConditions.Add(@"(i.direccion LIKE @buscar 
-                                              OR t.nombre LIKE @buscar 
-                                              OR i.uso LIKE @buscar
-                                              OR up.nombre LIKE @buscar
-                                              OR up.apellido LIKE @buscar
-                                              OR CONCAT(up.nombre, ' ', up.apellido) LIKE @buscar)");
-                        parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
-                    }
-
-                    if (!string.IsNullOrEmpty(estado))
-                    {
-                        whereConditions.Add("i.estado = @estado");
-                        parameters.Add(new MySqlParameter("@estado", estado));
-                    }
-
-                    string whereClause = "WHERE " + string.Join(" AND ", whereConditions);
-
-                    // Contar total de registros
-                    string countQuery = $@"
-                        SELECT COUNT(*) 
-                        FROM inmueble i
-                        INNER JOIN tipo_inmueble t ON i.id_tipo_inmueble = t.id_tipo_inmueble
-                        INNER JOIN propietario p ON i.id_propietario = p.id_propietario
-                        INNER JOIN usuario up ON p.id_usuario = up.id_usuario
-                        {whereClause}";
-
-                    using (var countCommand = new MySqlCommand(countQuery, connection))
-                    {
-                        foreach (var param in parameters)
-                        {
-                            countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                        }
-                        totalRegistros = Convert.ToInt32(countCommand.ExecuteScalar());
-                    }
-
-                    // Consulta principal con paginación
-                    string query = $@"
-                        SELECT i.id_inmueble, i.id_propietario, i.id_tipo_inmueble, i.direccion, 
-                               i.uso, i.ambientes, i.precio, i.coordenadas, i.estado, i.fecha_alta,
-                               t.nombre as tipo_nombre,
-                               up.nombre as propietario_nombre, up.apellido as propietario_apellido
-                        FROM inmueble i
-                        INNER JOIN tipo_inmueble t ON i.id_tipo_inmueble = t.id_tipo_inmueble
-                        INNER JOIN propietario p ON i.id_propietario = p.id_propietario
-                        INNER JOIN usuario up ON p.id_usuario = up.id_usuario
-                        {whereClause}
-                        ORDER BY i.direccion
-                        LIMIT @offset, @limit";
-
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        foreach (var param in parameters)
-                        {
-                            command.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                        }
-                        command.Parameters.AddWithValue("@offset", (pagina - 1) * ITEMS_POR_PAGINA);
-                        command.Parameters.AddWithValue("@limit", ITEMS_POR_PAGINA);
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            while (reader.Read())
-                            {
-                                listaInmuebles.Add(new Inmueble
-                                {
-                                    IdInmueble = reader.GetInt32("id_inmueble"),
-                                    IdPropietario = reader.GetInt32("id_propietario"),
-                                    IdTipoInmueble = reader.GetInt32("id_tipo_inmueble"),
-                                    Direccion = reader.GetString("direccion"),
-                                    Uso = reader.GetString("uso"),
-                                    Ambientes = reader.GetInt32("ambientes"),
-                                    Precio = reader.GetDecimal("precio"),
-                                    Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString("coordenadas"),
-                                    Estado = reader.GetString("estado"),
-                                    FechaAlta = reader.GetDateTime("fecha_alta"),
-                                    TipoInmueble = new TipoInmueble
-                                    {
-                                        Nombre = reader.GetString("tipo_nombre")
-                                    },
-                                    Propietario = new Propietario
-                                    {
-                                        Usuario = new Usuario
-                                        {
-                                            Nombre = reader.GetString("propietario_nombre"),
-                                            Apellido = reader.GetString("propietario_apellido")
-                                        }
-                                    }
-                                });
-                            }
-                        }
-                    }
-                }
-
-                // Preparar datos de paginación
                 ViewBag.PaginaActual = pagina;
-                ViewBag.TotalPaginas = (int)Math.Ceiling((double)totalRegistros / ITEMS_POR_PAGINA);
+                ViewBag.TotalPaginas = totalPaginas;
                 ViewBag.TotalRegistros = totalRegistros;
                 ViewBag.Buscar = buscar;
                 ViewBag.Estado = estado;
-                ViewBag.ITEMS_POR_PAGINA = ITEMS_POR_PAGINA;
+                ViewBag.ITEMS_POR_PAGINA = itemsPorPagina;
+
+                return View(inmuebles);
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error al cargar los inmuebles: {ex.Message}";
-            }
-
-            return View(listaInmuebles);
-        }
-
-        // MÉTODO POPULATEVIEWDATA CORREGIDO
-        private void PopulateViewData()
-        {
-            try
-            {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-
-                // Cargar propietarios activos con sus usuarios
-                var propietarios = new List<Propietario>();
-                string queryPropietarios = @"
-                    SELECT p.id_propietario, u.nombre, u.apellido, u.dni
-                    FROM propietario p 
-                    INNER JOIN usuario u ON p.id_usuario = u.id_usuario 
-                    WHERE p.estado = true AND u.estado = 'activo'
-                    ORDER BY u.apellido, u.nombre";
-
-                using (var command = new MySqlCommand(queryPropietarios, connection))
-                {
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        propietarios.Add(new Propietario
-                        {
-                            IdPropietario = reader.GetInt32("id_propietario"),
-                            Usuario = new Usuario
-                            {
-                                Nombre = reader.GetString("nombre"),
-                                Apellido = reader.GetString("apellido"),
-                                Dni = reader.GetString("dni")
-                            }
-                        });
-                    }
-                }
-
-                ViewData["Propietarios"] = propietarios;
-
-                // Cargar tipos de inmueble activos
-                var tiposInmueble = new List<TipoInmueble>();
-                string queryTipos = @"
-                    SELECT id_tipo_inmueble, nombre, descripcion
-                    FROM tipo_inmueble 
-                    WHERE estado = true
-                    ORDER BY nombre";
-
-                using (var command = new MySqlCommand(queryTipos, connection))
-                {
-                    using var reader = command.ExecuteReader();
-                    while (reader.Read())
-                    {
-                        tiposInmueble.Add(new TipoInmueble
-                        {
-                            IdTipoInmueble = reader.GetInt32("id_tipo_inmueble"),
-                            Nombre = reader.GetString("nombre"),
-                            Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion")
-                        });
-                    }
-                }
-
-                ViewData["TiposInmuebles"] = tiposInmueble;
-            }
-            catch (Exception ex)
-            {
-                // Crear listas vacías para evitar errores
-                ViewData["Propietarios"] = new List<Propietario>();
-                ViewData["TiposInmuebles"] = new List<TipoInmueble>();
-                Console.WriteLine($"Error en PopulateViewData: {ex.Message}");
+                return View(new List<Inmueble>());
             }
         }
 
         // GET: Inmuebles/Create
-        public IActionResult Create()
+        public async Task<IActionResult> Create()
         {
-            PopulateViewData();
-            return View(new Inmueble());
+            try
+            {
+                await PopulateViewDataAsync();
+                return View(new Inmueble());
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar datos: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
 
-        // POST: Inmuebles/Create - SIMPLIFICADO SIN IMÁGENES POR AHORA
+        // POST: Inmuebles/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Create(Inmueble inmueble)
+        public async Task<IActionResult> Create(Inmueble inmueble)
+
         {
+            Console.WriteLine($"PortadaFile: {inmueble.PortadaFile?.FileName ?? "NULL"}");
+            Console.WriteLine($"Tamaño: {inmueble.PortadaFile?.Length ?? 0} bytes");
             if (ModelState.IsValid)
             {
                 try
@@ -237,120 +78,64 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     if (!string.IsNullOrEmpty(inmueble.Coordenadas) && !IsValidCoordinates(inmueble.Coordenadas))
                     {
                         ModelState.AddModelError("Coordenadas", "Formato de coordenadas inválido (ej. -34.6037,-58.3816)");
-                        PopulateViewData();
+                        await PopulateViewDataAsync();
                         return View(inmueble);
                     }
 
-                    using (var connection = new MySqlConnection(_connectionString))
+                    // Verificar dirección única
+                    if (await _repositorioInmueble.ExisteDireccionAsync(inmueble.Direccion))
                     {
-                        connection.Open();
-
-                        // Verificar dirección única
-                        string queryCheckDireccion = "SELECT COUNT(*) FROM inmueble WHERE direccion = @direccion";
-                        using (var commandCheck = new MySqlCommand(queryCheckDireccion, connection))
-                        {
-                            commandCheck.Parameters.AddWithValue("@direccion", inmueble.Direccion);
-                            if (Convert.ToInt32(commandCheck.ExecuteScalar()) > 0)
-                            {
-                                ModelState.AddModelError("Direccion", "Ya existe un inmueble con esta dirección");
-                                PopulateViewData();
-                                return View(inmueble);
-                            }
-                        }
-
-                        // Crear inmueble
-                        string query = @"INSERT INTO inmueble 
-                                        (id_propietario, id_tipo_inmueble, direccion, uso, ambientes, 
-                                         precio, coordenadas, estado, fecha_alta) 
-                                        VALUES (@id_propietario, @id_tipo_inmueble, @direccion, @uso, @ambientes, 
-                                                @precio, @coordenadas, @estado, @fecha_alta)";
-
-                        using (var command = new MySqlCommand(query, connection))
-                        {
-                            command.Parameters.AddWithValue("@id_propietario", inmueble.IdPropietario);
-                            command.Parameters.AddWithValue("@id_tipo_inmueble", inmueble.IdTipoInmueble);
-                            command.Parameters.AddWithValue("@direccion", inmueble.Direccion);
-                            command.Parameters.AddWithValue("@uso", inmueble.Uso);
-                            command.Parameters.AddWithValue("@ambientes", inmueble.Ambientes);
-                            command.Parameters.AddWithValue("@precio", inmueble.Precio);
-                            command.Parameters.AddWithValue("@coordenadas", inmueble.Coordenadas ?? (object)DBNull.Value);
-                            command.Parameters.AddWithValue("@estado", "disponible");
-                            command.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
-
-                            command.ExecuteNonQuery();
-                        }
+                        ModelState.AddModelError("Direccion", "Ya existe un inmueble con esta dirección");
+                        await PopulateViewDataAsync();
+                        return View(inmueble);
                     }
+                    bool resultado = await _repositorioInmueble.CrearInmuebleConPortadaAsync(inmueble, _environment);
 
-                    TempData["SuccessMessage"] = "Inmueble creado exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    Console.WriteLine($"Resultado guardado: {resultado}");
+
+                    if (resultado)
+                    {
+                        TempData["SuccessMessage"] = "Inmueble creado exitosamente";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "No se pudo crear el inmueble. Verifique los datos ingresados.");
+                    }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine($"Error: {ex.Message}");
+                        ModelState.AddModelError("", $"Error al crear el inmueble: {ex.Message}");
+                    }
                 }
-                catch (Exception ex)
-                {
-                    ModelState.AddModelError("", $"Error al crear el inmueble: {ex.Message}");
-                }
+
+                await PopulateViewDataAsync();
+                return View(inmueble);
             }
 
-            PopulateViewData();
-            return View(inmueble);
-        }
 
-        // Método auxiliar para validar coordenadas
-        private bool IsValidCoordinates(string coordinates)
-        {
-            if (string.IsNullOrEmpty(coordinates)) return true;
-            var pattern = @"^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$";
-            return System.Text.RegularExpressions.Regex.IsMatch(coordinates, pattern);
-        }
-        // GET: Inmuebles/Edit/5
-        public IActionResult Edit(int id)
+        // GET: Inmuebles/Edit
+        public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
             {
                 return NotFound();
             }
 
-            Inmueble? inmueble = null;
-
             try
             {
-                using (var connection = new MySqlConnection(_connectionString))
-                {
-                    connection.Open();
-                    string query = "SELECT * FROM inmueble WHERE id_inmueble = @id";
-
-                    using (var command = new MySqlCommand(query, connection))
-                    {
-                        command.Parameters.AddWithValue("@id", id);
-
-                        using (var reader = command.ExecuteReader())
-                        {
-                            if (reader.Read())
-                            {
-                                inmueble = new Inmueble
-                                {
-                                    IdInmueble = reader.GetInt32("id_inmueble"),
-                                    IdPropietario = reader.GetInt32("id_propietario"),
-                                    IdTipoInmueble = reader.GetInt32("id_tipo_inmueble"),
-                                    Direccion = reader.GetString("direccion"),
-                                    Uso = reader.GetString("uso"),
-                                    Ambientes = reader.GetInt32("ambientes"),
-                                    Precio = reader.GetDecimal("precio"),
-                                    Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString("coordenadas"),
-                                    Estado = reader.GetString("estado"),
-                                    FechaAlta = reader.GetDateTime("fecha_alta")
-                                };
-                            }
-                        }
-                    }
-                }
+                var inmueble = await _repositorioInmueble.ObtenerInmueblePorIdAsync(id);
 
                 if (inmueble == null)
                 {
                     return NotFound();
                 }
+                Console.WriteLine($"Inmueble cargado: ID={inmueble.IdInmueble}, IdTipoInmueble={inmueble.IdTipoInmueble}");
 
-                PopulateViewData();
+                await PopulateViewDataAsync();
                 return View(inmueble);
+
             }
             catch (Exception ex)
             {
@@ -359,10 +144,10 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        // POST: Inmuebles/Edit/5
+        // POST: Inmuebles/Edit
         [HttpPost]
         [ValidateAntiForgeryToken]
-        public IActionResult Edit(int id, Inmueble inmueble)
+        public async Task<IActionResult> Edit(int id, Inmueble inmueble)
         {
             if (id != inmueble.IdInmueble)
             {
@@ -377,58 +162,29 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     if (!string.IsNullOrEmpty(inmueble.Coordenadas) && !IsValidCoordinates(inmueble.Coordenadas))
                     {
                         ModelState.AddModelError("Coordenadas", "Formato de coordenadas inválido (ej. -34.6037,-58.3816)");
-                        PopulateViewData();
+                        await PopulateViewDataAsync();
                         return View(inmueble);
                     }
 
-                    using (var connection = new MySqlConnection(_connectionString))
+                    // Verificar dirección única (excluyendo el actual)
+                    if (await _repositorioInmueble.ExisteDireccionAsync(inmueble.Direccion, inmueble.IdInmueble))
                     {
-                        connection.Open();
-
-                        // Verificar dirección única (excluyendo el inmueble actual)
-                        string queryCheckDireccion = "SELECT COUNT(*) FROM inmueble WHERE direccion = @direccion AND id_inmueble != @id_inmueble";
-                        using (var commandCheck = new MySqlCommand(queryCheckDireccion, connection))
-                        {
-                            commandCheck.Parameters.AddWithValue("@direccion", inmueble.Direccion);
-                            commandCheck.Parameters.AddWithValue("@id_inmueble", inmueble.IdInmueble);
-                            if (Convert.ToInt32(commandCheck.ExecuteScalar()) > 0)
-                            {
-                                ModelState.AddModelError("Direccion", "Ya existe otro inmueble con esta dirección");
-                                PopulateViewData();
-                                return View(inmueble);
-                            }
-                        }
-
-                        // Actualizar inmueble
-                        string query = @"UPDATE inmueble 
-                                        SET id_propietario = @id_propietario, id_tipo_inmueble = @id_tipo_inmueble, 
-                                            direccion = @direccion, uso = @uso, ambientes = @ambientes, 
-                                            precio = @precio, coordenadas = @coordenadas, estado = @estado 
-                                        WHERE id_inmueble = @id";
-
-                        using (var command = new MySqlCommand(query, connection))
-                        {
-                            command.Parameters.AddWithValue("@id_propietario", inmueble.IdPropietario);
-                            command.Parameters.AddWithValue("@id_tipo_inmueble", inmueble.IdTipoInmueble);
-                            command.Parameters.AddWithValue("@direccion", inmueble.Direccion);
-                            command.Parameters.AddWithValue("@uso", inmueble.Uso);
-                            command.Parameters.AddWithValue("@ambientes", inmueble.Ambientes);
-                            command.Parameters.AddWithValue("@precio", inmueble.Precio);
-                            command.Parameters.AddWithValue("@coordenadas", inmueble.Coordenadas ?? (object)DBNull.Value);
-                            command.Parameters.AddWithValue("@estado", inmueble.Estado);
-                            command.Parameters.AddWithValue("@id", id);
-
-                            int rowsAffected = command.ExecuteNonQuery();
-
-                            if (rowsAffected == 0)
-                            {
-                                return NotFound();
-                            }
-                        }
+                        ModelState.AddModelError("Direccion", "Ya existe otro inmueble con esta dirección");
+                        await PopulateViewDataAsync();
+                        return View(inmueble);
                     }
 
-                    TempData["SuccessMessage"] = "Inmueble actualizado exitosamente";
-                    return RedirectToAction(nameof(Index));
+                    bool resultado = await _repositorioInmueble.ActualizarInmuebleConPortadaAsync(inmueble, _environment);
+
+                    if (resultado)
+                    {
+                        TempData["SuccessMessage"] = "Inmueble actualizado exitosamente";
+                        return RedirectToAction(nameof(Index));
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("", "No se pudo actualizar el inmueble.");
+                    }
                 }
                 catch (Exception ex)
                 {
@@ -436,12 +192,12 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 }
             }
 
-            PopulateViewData();
+            await PopulateViewDataAsync();
             return View(inmueble);
         }
 
-        // GET: Inmuebles/Delete/5
-        public IActionResult Delete(int id)
+        // GET: Inmuebles/Delete
+        public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0)
             {
@@ -450,67 +206,16 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
+                var inmueble = await _repositorioInmueble.ObtenerInmuebleConDetallesAsync(id);
 
-                // Cargar datos del inmueble con información relacionada
-                string query = @"
-                    SELECT i.id_inmueble, i.id_propietario, i.id_tipo_inmueble, i.direccion, i.uso, 
-                           i.ambientes, i.precio, i.coordenadas, i.estado, i.fecha_alta,
-                           p.id_usuario, u.nombre AS propietario_nombre, u.apellido AS propietario_apellido,
-                           u.telefono AS propietario_telefono,
-                           t.nombre AS tipo_inmueble_nombre,
-                           (SELECT COUNT(*) FROM contrato WHERE id_inmueble = i.id_inmueble AND estado = 'vigente') as contratos_vigentes
-                    FROM inmueble i
-                    INNER JOIN propietario p ON i.id_propietario = p.id_propietario
-                    INNER JOIN usuario u ON p.id_usuario = u.id_usuario
-                    INNER JOIN tipo_inmueble t ON i.id_tipo_inmueble = t.id_tipo_inmueble
-                    WHERE i.id_inmueble = @id";
-
-                Inmueble? inmueble = null;
-                using (var command = new MySqlCommand(query, connection))
+                if (inmueble == null)
                 {
-                    command.Parameters.AddWithValue("@id", id);
-                    using var reader = command.ExecuteReader();
-                    if (reader.Read())
-                    {
-                        inmueble = new Inmueble
-                        {
-                            IdInmueble = reader.GetInt32("id_inmueble"),
-                            IdPropietario = reader.GetInt32("id_propietario"),
-                            IdTipoInmueble = reader.GetInt32("id_tipo_inmueble"),
-                            Direccion = reader.GetString("direccion"),
-                            Uso = reader.GetString("uso"),
-                            Ambientes = reader.GetInt32("ambientes"),
-                            Precio = reader.GetDecimal("precio"),
-                            Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString("coordenadas"),
-                            Estado = reader.GetString("estado"),
-                            FechaAlta = reader.GetDateTime("fecha_alta"),
-                            Propietario = new Propietario
-                            {
-                                IdUsuario = reader.GetInt32("id_usuario"),
-                                Usuario = new Usuario
-                                {
-                                    Nombre = reader.GetString("propietario_nombre"),
-                                    Apellido = reader.GetString("propietario_apellido"),
-                                    Telefono = reader.IsDBNull(reader.GetOrdinal("propietario_telefono")) ? null : reader.GetString("propietario_telefono")
-                                }
-                            },
-                            TipoInmueble = new TipoInmueble
-                            {
-                                Nombre = reader.GetString("tipo_inmueble_nombre")
-                            }
-                        };
-
-                        // Pasar información adicional a la vista
-                        ViewBag.ContratosVigentes = reader.GetInt32("contratos_vigentes");
-                    }
-                    else
-                    {
-                        TempData["ErrorMessage"] = "Inmueble no encontrado";
-                        return RedirectToAction(nameof(Index));
-                    }
+                    return NotFound();
                 }
+
+                // Verificar si tiene contratos vigentes
+                var contratosVigentes = await _repositorioInmueble.ContarContratosVigentesAsync(id);
+                ViewBag.ContratosVigentes = contratosVigentes;
 
                 return View(inmueble);
             }
@@ -524,52 +229,40 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         // POST: Inmuebles/Delete
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
-        public IActionResult DeleteConfirmed(int id)
+        public async Task<IActionResult> DeleteConfirmed(int id)
         {
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-
-                // Verificar contratos vigentes
-                string contractQuery = "SELECT COUNT(*) FROM contrato WHERE id_inmueble = @id AND estado = 'vigente'";
-                using (var contractCommand = new MySqlCommand(contractQuery, connection))
+                // Verificar contratos vigentes antes de eliminar
+                var contratosVigentes = await _repositorioInmueble.ContarContratosVigentesAsync(id);
+                if (contratosVigentes > 0)
                 {
-                    contractCommand.Parameters.AddWithValue("@id", id);
-                    var contratosVigentes = Convert.ToInt32(contractCommand.ExecuteScalar());
-
-                    if (contratosVigentes > 0)
-                    {
-                        TempData["ErrorMessage"] = "No se puede eliminar el inmueble porque tiene contratos vigentes";
-                        return RedirectToAction(nameof(Delete), new { id });
-                    }
+                    TempData["ErrorMessage"] = "No se puede eliminar el inmueble porque tiene contratos vigentes";
+                    return RedirectToAction(nameof(Delete), new { id });
                 }
 
-                // Cambiar estado a 'inactivo' (soft delete)
-                string deleteQuery = "UPDATE inmueble SET estado = 'inactivo' WHERE id_inmueble = @id";
-                using (var deleteCommand = new MySqlCommand(deleteQuery, connection))
+                bool resultado = await _repositorioInmueble.EliminarInmuebleAsync(id);
+
+                if (resultado)
                 {
-                    deleteCommand.Parameters.AddWithValue("@id", id);
-                    int rowsAffected = deleteCommand.ExecuteNonQuery();
-
-                    if (rowsAffected == 0)
-                    {
-                        TempData["ErrorMessage"] = "No se pudo eliminar el inmueble";
-                        return RedirectToAction(nameof(Delete), new { id });
-                    }
+                    TempData["SuccessMessage"] = "Inmueble eliminado exitosamente";
                 }
-
-                TempData["SuccessMessage"] = "Inmueble eliminado exitosamente";
-                return RedirectToAction(nameof(Index));
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo eliminar el inmueble";
+                }
             }
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error al eliminar el inmueble: {ex.Message}";
-                return RedirectToAction(nameof(Delete), new { id });
             }
+
+            return RedirectToAction(nameof(Index));
         }
 
         // APIs para búsqueda y autocompletado
+
+
         [HttpGet]
         public async Task<IActionResult> BuscarInmuebles(string termino, int limite = 10)
         {
@@ -596,6 +289,89 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             {
                 return Json(new { error = ex.Message });
             }
+        }
+        [HttpGet]
+
+        [HttpGet]
+        public async Task<IActionResult> BuscarTiposInmuebleParaAutocompletar(string termino, int limite = 10)
+        {
+            try
+            {
+                var resultados = await _searchService.BuscarTiposInmueblesAsync(termino, limite);
+                return Json(resultados);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
+        }
+
+        public async Task<IActionResult> Details(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var inmueble = await _repositorioInmueble.ObtenerInmuebleConDetallesAsync(id);
+
+                if (inmueble == null)
+                {
+                    return NotFound();
+                }
+
+                return View(inmueble);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar el inmueble: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+        
+
+
+        // Métodos auxiliares
+        private async Task PopulateViewDataAsync()
+        {
+            try
+            {
+                var propietarios = await _repositorioInmueble.ObtenerPropietariosActivosAsync();
+                var tiposInmueble = await _repositorioInmueble.ObtenerTiposInmuebleActivosAsync();
+
+
+                // ENVIAR COMO LISTAS SIMPLES, NO COMO SELECTLIST
+                ViewData["Propietarios"] = propietarios; // List<Propietario>
+                ViewData["TiposInmueble"] = tiposInmueble; // List<TipoInmueble>
+
+                // DEBUGGING
+                Console.WriteLine($"Propietarios cargados: {propietarios.Count}");
+                Console.WriteLine($"Tipos inmueble cargados: {tiposInmueble.Count}");
+
+                // Mostrar algunos propietarios para debug
+                foreach (var p in propietarios.Take(3))
+                {
+                    Console.WriteLine($"Propietario: ID={p.IdPropietario}, Nombre={p.Usuario?.Apellido}, {p.Usuario?.Nombre}");
+                }
+                foreach (var t in tiposInmueble.Take(5))
+                {
+                    Console.WriteLine($"Tipo Inmueble: ID={t.IdTipoInmueble}, Nombre={t.Nombre}");
+                }
+            }
+            catch (Exception ex)
+            {
+                ViewData["Propietarios"] = new List<Propietario>();
+                ViewData["TiposInmueble"] = new List<TipoInmueble>();
+                Console.WriteLine($"Error en PopulateViewDataAsync: {ex.Message}");
+            }
+        }
+        private bool IsValidCoordinates(string coordinates)
+        {
+            if (string.IsNullOrEmpty(coordinates)) return true;
+            var pattern = @"^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$";
+            return System.Text.RegularExpressions.Regex.IsMatch(coordinates, pattern);
         }
     }
 }

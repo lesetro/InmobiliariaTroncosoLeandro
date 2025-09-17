@@ -1,53 +1,152 @@
 @model Inmobiliaria_troncoso_leandro.Models.Propietario
-
 @{
     ViewData["Title"] = "Editar Propietario";
 }
 
-<h1>Editar Propietario</h1>
+<div class="row justify-content-center">
+    <div class="col-lg-8 col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-warning text-dark">
+                <h3 class="card-title mb-0">
+                    <i class="bi bi-pencil-square"></i>
+                    Editar Propietario #@Model.IdPropietario
+                </h3>
+            </div>
+            <div class="card-body">
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
 
-<form asp-action="Edit">
-    <input type="hidden" asp-for="IdPropietario" />
-    <div class="form-group">
-        <label asp-for="Usuario.Nombre" class="control-label"></label>
-        <input asp-for="Usuario.Nombre" class="form-control" />
-        <span asp-validation-for="Usuario.Nombre" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Usuario.Apellido" class="control-label"></label>
-        <input asp-for="Usuario.Apellido" class="form-control" />
-        <span asp-validation-for="Usuario.Apellido" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Usuario.Dni" class="control-label"></label>
-        <input asp-for="Usuario.Dni" class="form-control" />
-        <span asp-validation-for="Usuario.Dni" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Usuario.Telefono" class="control-label"></label>
-        <input asp-for="Usuario.Telefono" class="form-control" />
-        <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Usuario.Email" class="control-label"></label>
-        <input asp-for="Usuario.Email" class="form-control" />
-        <span asp-validation-for="Usuario.Email" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <label asp-for="Estado" class="control-label"></label>
-        <input type="radio" asp-for="Estado" value="true" /> Activo
-        <input type="radio" asp-for="Estado" value="false" /> Inactivo
-        <span asp-validation-for="Estado" class="text-danger"></span>
-    </div>
-    <div class="form-group">
-        <input type="submit" value="Guardar" class="btn btn-primary" />
-    </div>
-</form>
+                <form asp-action="Edit" class="needs-validation" novalidate>
+                    <input type="hidden" asp-for="IdPropietario" />
+                    <input type="hidden" asp-for="IdUsuario" />
+                    
+                    <div asp-validation-summary="All" class="alert alert-danger" style="display:none;"></div>
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Usuario.Nombre" class="form-label">
+                                    <i class="bi bi-person"></i> Nombre
+                                </label>
+                                <input asp-for="Usuario.Nombre" class="form-control" placeholder="Ingrese el nombre" />
+                                <span asp-validation-for="Usuario.Nombre" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Usuario.Apellido" class="form-label">
+                                    <i class="bi bi-person"></i> Apellido
+                                </label>
+                                <input asp-for="Usuario.Apellido" class="form-control" placeholder="Ingrese el apellido" />
+                                <span asp-validation-for="Usuario.Apellido" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
 
-<div>
-    <a asp-action="Index">Volver</a>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Usuario.Dni" class="form-label">
+                                    <i class="bi bi-card-text"></i> DNI
+                                </label>
+                                <input asp-for="Usuario.Dni" class="form-control" placeholder="Ej: 12345678" />
+                                <span asp-validation-for="Usuario.Dni" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Usuario.Telefono" class="form-label">
+                                    <i class="bi bi-telephone"></i> Teléfono
+                                </label>
+                                <input asp-for="Usuario.Telefono" class="form-control" placeholder="Ej: 2664123456" />
+                                <span asp-validation-for="Usuario.Telefono" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Usuario.Email" class="form-label">
+                            <i class="bi bi-envelope"></i> Email
+                        </label>
+                        <input asp-for="Usuario.Email" type="email" class="form-control" placeholder="ejemplo@correo.com" />
+                        <span asp-validation-for="Usuario.Email" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-3">
+                        <label asp-for="Usuario.Direccion" class="form-label">
+                            <i class="bi bi-geo-alt"></i> Dirección
+                        </label>
+                        <input asp-for="Usuario.Direccion" class="form-control" placeholder="Calle, número, ciudad" />
+                        <span asp-validation-for="Usuario.Direccion" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mb-4">
+                        <label class="form-label">
+                            <i class="bi bi-toggle-on"></i> Estado del Propietario
+                        </label>
+                        <div class="mt-2">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" asp-for="Estado" value="true" id="estadoActivo" />
+                                <label class="form-check-label text-success" for="estadoActivo">
+                                    <i class="bi bi-check-circle"></i> Activo
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" asp-for="Estado" value="false" id="estadoInactivo" />
+                                <label class="form-check-label text-danger" for="estadoInactivo">
+                                    <i class="bi bi-x-circle"></i> Inactivo
+                                </label>
+                            </div>
+                        </div>
+                        <span asp-validation-for="Estado" class="text-danger"></span>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver
+                        </a>
+                        <button type="submit" class="btn btn-warning text-dark">
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        // Validación personalizada en el cliente
+        (function() {
+            'use strict';
+            window.addEventListener('load', function() {
+                var forms = document.getElementsByClassName('needs-validation');
+                var validation = Array.prototype.filter.call(forms, function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (form.checkValidity() === false) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+            }, false);
+        })();
+
+        // Auto-focus en el primer campo
+        document.addEventListener('DOMContentLoaded', function() {
+            const firstInput = document.querySelector('input[name="Usuario.Nombre"]');
+            if (firstInput) {
+                firstInput.focus();
+                firstInput.select(); // Selecciona el texto para facilitar la edición
+            }
+        });
+    </script>
 }

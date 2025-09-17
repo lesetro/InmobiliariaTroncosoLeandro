@@ -3,6 +3,7 @@
     ViewData["Title"] = "Gestionar Imágenes del Inmueble";
     int idInmueble = ViewData["IdInmueble"] as int? ?? 0;
 }
+
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>📷 Gestionar Imágenes del Inmueble</h2>
     <div>
@@ -10,7 +11,10 @@
             <i class="fas fa-plus me-2"></i>Agregar Imagen
         </a>
         <a asp-controller="Inmuebles" asp-action="Details" asp-route-id="@idInmueble" class="btn btn-secondary">
-            <i class="fas fa-arrow-left me-2"></i>Volver al Inmueble
+            <i class="fas fa-arrow-left me-2"></i>Ver detalle
+        </a>
+        <a asp-controller="Inmuebles" asp-action="Index" class="btn btn-secondary">
+            <i class="fas fa-list me-2"></i>Lista Inmuebles
         </a>
     </div>
 </div>
@@ -31,6 +35,14 @@
     </div>
 }
 
+@if (TempData["WarningMessage"] != null)
+{
+    <div class="alert alert-warning alert-dismissible fade show">
+        <strong>⚠️ Advertencia:</strong> @TempData["WarningMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
 @if (!Model.Any())
 {
     <div class="text-center py-5">
@@ -45,26 +57,37 @@
 else
 {
     <div class="row">
-        @foreach (var imagen in Model)
+        @foreach (var imagen in Model.OrderBy(i => i.Orden).Select((img, index) => new { img, index }))
         {
             <div class="col-md-4 col-lg-3 mb-4">
-                <div class="card h-100 shadow-sm">
-                    <div class="position-relative">
-                        <img src="@imagen.Url" 
-                             alt="@(imagen.Descripcion ?? "Imagen del inmueble")" 
-                             class="card-img-top"
-                             style="height: 200px; object-fit: cover;"
+                <div class="card h-100 shadow-sm imagen-card">
+                    <div class="position-relative imagen-container">
+                        <img src="@imagen.img.Url" 
+                             alt="@(imagen.img.Descripcion ?? "Imagen del inmueble")" 
+                             class="card-img-top imagen-preview"
+                             style="height: 200px; object-fit: cover; cursor: pointer;"
                              loading="lazy"
+                             onclick="abrirModal('@imagen.img.Url', '@Html.Raw(Html.Encode(imagen.img.Descripcion ?? "Sin descripción"))', '@imagen.img.Orden', '@imagen.img.FechaCreacion.ToString("dd/MM/yyyy HH:mm")', @imagen.index)"
                              onerror="this.src='/images/placeholder.png'; this.alt='Imagen no disponible';">
+                        
+                        <!-- Overlay de hover -->
+                        <div class="image-overlay" onclick="abrirModal('@imagen.img.Url', '@Html.Raw(Html.Encode(imagen.img.Descripcion ?? "Sin descripción"))', '@imagen.img.Orden', '@imagen.img.FechaCreacion.ToString("dd/MM/yyyy HH:mm")', @imagen.index)">
+                            <div class="overlay-content">
+                                <i class="fas fa-search-plus fa-2x text-white"></i>
+                                <p class="text-white mb-0 mt-2">Click para ampliar</p>
+                            </div>
+                        </div>
+                        
                         <div class="position-absolute top-0 end-0 m-2">
-                            <span class="badge bg-primary">Orden: @imagen.Orden</span>
+                            <span class="badge bg-primary">Orden: @imagen.img.Orden</span>
                         </div>
                     </div>
+                    
                     <div class="card-body d-flex flex-column">
-                        @if (!string.IsNullOrEmpty(imagen.Descripcion))
+                        @if (!string.IsNullOrEmpty(imagen.img.Descripcion))
                         {
                             <p class="card-text text-muted flex-grow-1">
-                                <small>@imagen.Descripcion</small>
+                                <small>@imagen.img.Descripcion</small>
                             </p>
                         }
                         else
@@ -73,18 +96,25 @@ else
                                 <small><em>Sin descripción</em></small>
                             </p>
                         }
+                        
                         <div class="text-center mt-auto">
                             <small class="text-muted d-block mb-2">
-                                Agregada: @imagen.FechaCreacion.ToString("dd/MM/yyyy")
+                                Agregada: @imagen.img.FechaCreacion.ToString("dd/MM/yyyy")
                             </small>
-                            <div class="btn-group w-80" role="group">
-                                <a asp-action="Edit" asp-route-id="@imagen.IdImagen" 
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" 
+                                        class="btn btn-info btn-sm" 
+                                        onclick="abrirModal('@imagen.img.Url', '@Html.Raw(Html.Encode(imagen.img.Descripcion ?? "Sin descripción"))', '@imagen.img.Orden', '@imagen.img.FechaCreacion.ToString("dd/MM/yyyy HH:mm")', @imagen.index)"
+                                        title="Ver en grande">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a asp-action="Edit" asp-route-id="@imagen.img.IdImagen" 
                                    class="btn btn-warning btn-sm" title="Editar">
-                                    <i class="bi bi-pencil"></i>
+                                    <i class="fas fa-pencil-alt"></i>
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@imagen.IdImagen" 
+                                <a asp-action="Delete" asp-route-id="@imagen.img.IdImagen" 
                                    class="btn btn-danger btn-sm" title="Eliminar">
-                                    <i class="bi bi-trash"></i>
+                                    <i class="fas fa-trash"></i>
                                 </a>
                             </div>
                         </div>
@@ -99,33 +129,226 @@ else
             <h6><i class="fas fa-info-circle me-2"></i>Información:</h6>
             <ul class="mb-0">
                 <li>Total de imágenes: <strong>@Model.Count()</strong></li>
+                <li>Haz click en cualquier imagen para verla en grande</li>
                 <li>El orden de las imágenes determina cómo se muestran en el carrusel</li>
-                <li>Puedes agregar múltiples imágenes</li>
+                <li>Usa las flechas del modal para navegar entre imágenes</li>
             </ul>
         </div>
     </div>
 }
 
+<!-- Modal para ver imagen en grande -->
+<div class="modal fade" id="imageModal" tabindex="-1" aria-labelledby="imageModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="imageModalLabel">
+                    <i class="fas fa-image me-2"></i>Vista de Imagen
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body text-center p-0">
+                <div class="position-relative">
+                    <img id="modalImage" src="" alt="" class="img-fluid w-100" style="max-height: 70vh; object-fit: contain;">
+                    
+                    <!-- Controles de navegación -->
+                    <button id="prevImage" type="button" class="btn btn-primary position-absolute top-50 start-0 translate-middle-y ms-3" style="z-index: 10;">
+                        <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <button id="nextImage" type="button" class="btn btn-primary position-absolute top-50 end-0 translate-middle-y me-3" style="z-index: 10;">
+                        <i class="fas fa-chevron-right"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <div class="flex-grow-1">
+                    <div id="imageInfo" class="text-start">
+                        <p class="mb-1"><strong>Descripción:</strong> <span id="imageDescription">-</span></p>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <small class="text-muted">Orden: <span id="imageOrder">-</span></small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Fecha: <span id="imageDate">-</span></small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted">Imagen: <span id="imageIndex">-</span> de @Model.Count()</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cerrar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @section Scripts {
-    <script src="https://kit.fontawesome.com/your-fontawesome-kit.js" crossorigin="anonymous"></script>
+    <script>
+        // Variables globales
+        let currentImageIndex = 0;
+        let images = [];
+        
+        // Función para abrir el modal con JavaScript puro
+        function abrirModal(src, description, order, date, index) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            const imageDescription = document.getElementById('imageDescription');
+            const imageOrder = document.getElementById('imageOrder');
+            const imageDate = document.getElementById('imageDate');
+            const imageIndex = document.getElementById('imageIndex');
+            
+            // Configurar la imagen y datos
+            modalImage.src = src;
+            imageDescription.textContent = description;
+            imageOrder.textContent = order;
+            imageDate.textContent = date;
+            imageIndex.textContent = (index + 1);
+            currentImageIndex = index;
+            
+            // Mostrar el modal
+            const bsModal = new bootstrap.Modal(modal);
+            bsModal.show();
+            
+            // Habilitar/deshabilitar botones de navegación
+            const prevBtn = document.getElementById('prevImage');
+            const nextBtn = document.getElementById('nextImage');
+            const totalImages = @Model.Count();
+            
+            prevBtn.disabled = index === 0;
+            nextBtn.disabled = index === totalImages - 1;
+            
+            // Ocultar botones si solo hay una imagen
+            if (totalImages <= 1) {
+                prevBtn.style.display = 'none';
+                nextBtn.style.display = 'none';
+            }
+        }
+        
+        // Función para navegar entre imágenes
+        function navegarImagen(direccion) {
+            const imagenes = document.querySelectorAll('.imagen-preview');
+            const totalImages = imagenes.length;
+            
+            if (direccion === 'prev' && currentImageIndex > 0) {
+                currentImageIndex--;
+            } else if (direccion === 'next' && currentImageIndex < totalImages - 1) {
+                currentImageIndex++;
+            }
+            
+            // Obtener datos de la nueva imagen
+            const nuevaImagen = imagenes[currentImageIndex];
+            if (nuevaImagen) {
+                const src = nuevaImagen.src;
+                const description = nuevaImagen.alt;
+                const order = nuevaImagen.parentElement.querySelector('.badge').textContent.replace('Orden: ', '');
+                const date = nuevaImagen.closest('.card').querySelector('small').textContent.replace('Agregada: ', '');
+                
+                // Actualizar modal
+                document.getElementById('modalImage').src = src;
+                document.getElementById('imageDescription').textContent = description;
+                document.getElementById('imageOrder').textContent = order;
+                document.getElementById('imageDate').textContent = date;
+                document.getElementById('imageIndex').textContent = (currentImageIndex + 1);
+                
+                // Actualizar botones
+                document.getElementById('prevImage').disabled = currentImageIndex === 0;
+                document.getElementById('nextImage').disabled = currentImageIndex === totalImages - 1;
+            }
+        }
+        
+        document.addEventListener('DOMContentLoaded', function() {
+            // Event listeners para navegación
+            document.getElementById('prevImage').addEventListener('click', () => navegarImagen('prev'));
+            document.getElementById('nextImage').addEventListener('click', () => navegarImagen('next'));
+            
+            // Navegación con teclado
+            document.addEventListener('keydown', function(e) {
+                const modal = document.getElementById('imageModal');
+                if (modal.classList.contains('show')) {
+                    if (e.key === 'ArrowLeft') {
+                        navegarImagen('prev');
+                    } else if (e.key === 'ArrowRight') {
+                        navegarImagen('next');
+                    } else if (e.key === 'Escape') {
+                        bootstrap.Modal.getInstance(modal).hide();
+                    }
+                }
+            });
+        });
+    </script>
+    
     <style>
-        .card {
-            transition: transform 0.2s;
+        .imagen-card {
+            transition: transform 0.2s, box-shadow 0.2s;
         }
-        .card:hover {
-            transform: translateY(-2px);
+        
+        .imagen-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.15);
         }
+        
+        .imagen-container {
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .image-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+        
+        .imagen-container:hover .image-overlay {
+            opacity: 1;
+        }
+        
+        .overlay-content {
+            text-align: center;
+        }
+        
         .btn-group .btn {
             border-radius: 0;
         }
+        
         .btn-group .btn:first-child {
-            border-top-left-radius: 1.5rem;
-            border-bottom-left-radius: 1.5rem;
-        }
-        .btn-group .btn:last-child {
-            border-top-right-radius: 1.5rem;
-            border-bottom-right-radius: 1.5rem;
+            border-top-left-radius: 0.375rem;
+            border-bottom-left-radius: 0.375rem;
         }
         
+        .btn-group .btn:last-child {
+            border-top-right-radius: 0.375rem;
+            border-bottom-right-radius: 0.375rem;
+        }
+        
+        #modalImage {
+            max-width: 100%;
+            height: auto;
+        }
+        
+        .modal-xl {
+            max-width: 95%;
+        }
+        
+        @@media (max-width: 768px) {
+            .modal-xl {
+                max-width: 100%;
+                margin: 0;
+            }
+            
+            #prevImage, #nextImage {
+                display: none;
+            }
+        }
     </style>
 }

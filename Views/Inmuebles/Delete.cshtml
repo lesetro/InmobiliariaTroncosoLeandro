@@ -1,168 +1,402 @@
 @model Inmobiliaria_troncoso_leandro.Models.Inmueble
 @{
-    ViewData["Title"] = "Eliminar Inmueble";
+    ViewData["Title"] = $"Eliminar Inmueble #{Model.IdInmueble}";
     bool tieneContratosVigentes = ViewBag.ContratosVigentes > 0;
+    int totalImagenes = ViewBag.TotalImagenes ?? Model.Imagenes?.Count ?? 0;
+    int totalIntereses = ViewBag.TotalIntereses ?? 0;
+    bool puedeEliminar = !tieneContratosVigentes;
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-10">
-        <div class="card shadow border-danger">
-            <div class="card-header bg-danger text-white">
-                <h3 class="mb-0">Eliminar Inmueble</h3>
-            </div>
-            <div class="card-body">
-                
-                @if (tieneContratosVigentes)
-                {
-                    <div class="alert alert-warning">
-                        <h5 class="alert-heading">No se puede eliminar</h5>
-                        <p>Este inmueble tiene <strong>@ViewBag.ContratosVigentes contrato(s) vigente(s)</strong> y no puede ser eliminado.</p>
-                        <p class="mb-0">Para poder eliminarlo, primero debe finalizar todos los contratos asociados.</p>
-                    </div>
-                }
-                else
-                {
-                    <div class="alert alert-danger">
-                        <h5 class="alert-heading">¿Confirmar eliminación?</h5>
-                        <p class="mb-0">Esta acción cambiará el estado del inmueble a "no disponible" y eliminará todas sus imágenes permanentemente.</p>
-                    </div>
-                }
+<div class="container-fluid">
+    <!-- Breadcrumb -->
+    <nav aria-label="breadcrumb" class="mb-3">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a asp-action="Index" class="text-decoration-none">
+                    <i class="fas fa-home me-1"></i>Inmuebles
+                </a>
+            </li>
+            <li class="breadcrumb-item">
+                <a asp-action="Details" asp-route-id="@Model.IdInmueble" class="text-decoration-none">
+                    Inmueble #@Model.IdInmueble
+                </a>
+            </li>
+            <li class="breadcrumb-item active" aria-current="page">Eliminar</li>
+        </ol>
+    </nav>
 
-                <div class="row">
-                    <!-- Información del Inmueble -->
-                    <div class="col-md-8">
-                        <h5>Detalles del inmueble:</h5>
-                        <dl class="row">
-                            <dt class="col-sm-3">Dirección:</dt>
-                            <dd class="col-sm-9">@Model.Direccion</dd>
-                            
-                            <dt class="col-sm-3">Tipo:</dt>
-                            <dd class="col-sm-9">@Model.TipoInmueble?.Nombre</dd>
-                            
-                            <dt class="col-sm-3">Propietario:</dt>
-                            <dd class="col-sm-9">
-                                @($"{Model.Propietario?.Usuario?.Nombre} {Model.Propietario?.Usuario?.Apellido}")
-                                @if (!string.IsNullOrEmpty(Model.Propietario?.Usuario?.Telefono))
-                                {
-                                    <br><small class="text-muted">Tel: @Model.Propietario.Usuario.Telefono</small>
-                                }
-                            </dd>
-                            
-                            <dt class="col-sm-3">Uso:</dt>
-                            <dd class="col-sm-9">
-                                <span class="badge @(Model.Uso == "Comercial" ? "bg-warning text-dark" : "bg-primary")">
-                                    @Model.Uso
-                                </span>
-                            </dd>
-                            
-                            <dt class="col-sm-3">Ambientes:</dt>
-                            <dd class="col-sm-9">@Model.Ambientes</dd>
-                            
-                            <dt class="col-sm-3">Precio:</dt>
-                            <dd class="col-sm-9 fw-bold text-success">@Model.Precio.ToString("C", new System.Globalization.CultureInfo("es-AR"))</dd>
-                            
-                            <dt class="col-sm-3">Estado actual:</dt>
-                            <dd class="col-sm-9">
-                                @{
-                                    var estadoBadgeClass = Model.Estado switch
-                                    {
-                                        "disponible" => "bg-success",
-                                        "alquilado" => "bg-danger",
-                                        "no_disponible" => "bg-secondary",
-                                        "inactivo" => "bg-dark text-white",
-                                        _ => "bg-secondary"
-                                    };
-                                }
-                                <span class="badge @estadoBadgeClass">@Model.Estado</span>
-                            </dd>
-                            
-                            <dt class="col-sm-3">Fecha Alta:</dt>
-                            <dd class="col-sm-9">@Model.FechaAlta.ToString("dd/MM/yyyy")</dd>
-                            
-                            @if (!string.IsNullOrEmpty(Model.Coordenadas))
-                            {
-                                <dt class="col-sm-3">Ubicación:</dt>
-                                <dd class="col-sm-9">
-                                    <a href="https://www.google.com/maps?q=@Model.Coordenadas" target="_blank">
-                                        Ver en Google Maps
-                                    </a>
-                                </dd>
-                            }
-                        </dl>
+    <!-- Header de confirmación -->
+    <div class="row justify-content-center">
+        <div class="col-md-11">
+            <div class="card shadow @(puedeEliminar ? "border-danger" : "border-warning")">
+                <div class="card-header @(puedeEliminar ? "bg-danger" : "bg-warning") text-white">
+                    <div class="d-flex align-items-center">
+                        <i class="@(puedeEliminar ? "fas fa-trash-alt" : "fas fa-exclamation-triangle") me-3 fa-2x"></i>
+                        <div>
+                            <h3 class="mb-0">
+                                @(puedeEliminar ? "Confirmar Eliminación" : "No se puede eliminar")
+                            </h3>
+                            <small class="opacity-75">Inmueble #@Model.IdInmueble - @Model.Direccion</small>
+                        </div>
                     </div>
-
-                    <!-- Estadísticas -->
-                    <div class="col-md-4">
-                        <h5>Datos relacionados:</h5>
-                        <div class="card bg-light">
-                            <div class="card-body">
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Contratos vigentes:</span>
-                                    <span class="badge @(ViewBag.ContratosVigentes > 0 ? "bg-warning text-dark" : "bg-success")">
-                                        @ViewBag.ContratosVigentes
-                                    </span>
+                </div>
+                <div class="card-body">
+                    
+                    <!-- Alerta principal -->
+                    @if (!puedeEliminar)
+                    {
+                        <div class="alert alert-warning border-warning">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-warning"></i>
                                 </div>
-                                <div class="d-flex justify-content-between mb-2">
-                                    <span>Imágenes:</span>
-                                    <span class="badge bg-info">@ViewBag.TotalImagenes</span>
-                                </div>
-                                <div class="d-flex justify-content-between">
-                                    <span>Personas interesadas:</span>
-                                    <span class="badge bg-secondary">@ViewBag.TotalIntereses</span>
+                                <div class="flex-grow-1">
+                                    <h5 class="alert-heading mb-2">
+                                        <i class="fas fa-ban me-2"></i>Eliminación no permitida
+                                    </h5>
+                                    <p class="mb-2">
+                                        Este inmueble tiene <strong class="text-danger">@ViewBag.ContratosVigentes contrato(s) vigente(s)</strong> 
+                                        y no puede ser eliminado mientras tenga compromisos activos.
+                                    </p>
+                                    <hr class="my-3">
+                                    <div class="mb-0">
+                                        <h6 class="fw-bold">Para poder eliminarlo, debe:</h6>
+                                        <ol class="mb-0">
+                                            <li>Finalizar todos los contratos vigentes</li>
+                                            <li>Cambiar el estado de los contratos de "vigente" a "finalizado"</li>
+                                            <li>Luego podrá proceder con la eliminación del inmueble</li>
+                                        </ol>
+                                    </div>
                                 </div>
                             </div>
                         </div>
-
-                        @if (!tieneContratosVigentes)
-                        {
-                            <div class="alert alert-warning mt-3">
-                                <h6>Consecuencias de la eliminación:</h6>
-                                <ul class="mb-0 small">
-                                    <li>El estado cambiará a "no disponible"</li>
-                                    <li>Se eliminarán @ViewBag.TotalImagenes imagen(es)</li>
-                                    <li>Se eliminarán @ViewBag.TotalIntereses registro(s) de interés</li>
-                                    <li>El inmueble seguirá existiendo pero no será visible</li>
-                                </ul>
-                            </div>
-                        }
-                    </div>
-                </div>
-
-                <hr class="my-4">
-
-                <div class="d-flex gap-2 justify-content-center">
-                    @if (!tieneContratosVigentes)
-                    {
-                        <form asp-action="Delete" method="post" class="d-inline">
-                            <input type="hidden" name="id" value="@Model.IdInmueble" />
-                            <button type="submit" 
-                                    class="btn btn-danger btn-lg"
-                                    onclick="return confirm('¿ESTÁS COMPLETAMENTE SEGURO? Esta acción eliminará el inmueble y todas sus imágenes.')">
-                                Confirmar Eliminación
-                            </button>
-                        </form>
                     }
                     else
                     {
-                        <div class="alert alert-info text-center">
-                            <p class="mb-2">Para poder eliminar este inmueble, primero debes:</p>
-                            <ol class="text-start">
-                                <li>Finalizar todos los contratos vigentes</li>
-                                <li>Cambiar el estado de los contratos de "vigente" a "finalizado"</li>
-                                <li>Luego podrás eliminar el inmueble</li>
-                            </ol>
+                        <div class="alert alert-danger border-danger">
+                            <div class="d-flex">
+                                <div class="me-3">
+                                    <i class="fas fa-exclamation-triangle fa-2x text-danger"></i>
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h5 class="alert-heading mb-2">
+                                        <i class="fas fa-warning me-2"></i>Acción irreversible
+                                    </h5>
+                                    <p class="mb-2">
+                                        Está a punto de eliminar permanentemente este inmueble. Esta acción 
+                                        <strong>NO se puede deshacer</strong> y eliminará toda la información relacionada.
+                                    </p>
+                                    <hr class="my-3">
+                                    <div class="mb-0">
+                                        <h6 class="fw-bold text-danger">Se eliminarán:</h6>
+                                        <ul class="mb-0">
+                                            <li><strong>@totalImagenes</strong> imagen(es) de la galería</li>
+                                            <li><strong>@totalIntereses</strong> registro(s) de interés</li>
+                                            <li>Toda la información del inmueble</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     }
-                    
-                    <a asp-action="Details" asp-route-id="@Model.IdInmueble" 
-                       class="btn btn-secondary btn-lg">
-                        Volver a Detalles
-                    </a>
-                    <a asp-action="Index" 
-                       class="btn btn-outline-secondary btn-lg">
-                        Volver a Lista
-                    </a>
+
+                    <div class="row">
+                        <!-- Información detallada del inmueble -->
+                        <div class="col-lg-8">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-info-circle me-2"></i>Información del Inmueble
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <div class="row">
+                                        <div class="col-md-6">
+                                            <dl class="row">
+                                                <dt class="col-sm-5">Código:</dt>
+                                                <dd class="col-sm-7">
+                                                    <span class="badge bg-secondary fs-6">#@Model.IdInmueble</span>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Dirección:</dt>
+                                                <dd class="col-sm-7">
+                                                    <strong>@Model.Direccion</strong>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Tipo:</dt>
+                                                <dd class="col-sm-7">
+                                                    <span class="badge bg-info text-dark">@Model.TipoInmueble?.Nombre</span>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Uso:</dt>
+                                                <dd class="col-sm-7">
+                                                    <span class="badge @(Model.Uso == "Comercial" ? "bg-warning text-dark" : "bg-primary")">
+                                                        @Model.Uso
+                                                    </span>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Ambientes:</dt>
+                                                <dd class="col-sm-7">
+                                                    <span class="badge bg-light text-dark border">@Model.Ambientes</span>
+                                                </dd>
+                                            </dl>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <dl class="row">
+                                                <dt class="col-sm-5">Precio:</dt>
+                                                <dd class="col-sm-7">
+                                                    <strong class="text-success fs-5">@Model.Precio.ToString("C", new System.Globalization.CultureInfo("es-AR"))</strong>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Estado:</dt>
+                                                <dd class="col-sm-7">
+                                                    <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span>
+                                                </dd>
+                                                
+                                                <dt class="col-sm-5">Fecha Alta:</dt>
+                                                <dd class="col-sm-7">@Model.FechaAlta.ToString("dd/MM/yyyy")</dd>
+                                                
+                                                <dt class="col-sm-5">Propietario:</dt>
+                                                <dd class="col-sm-7">
+                                                    <div>
+                                                        <strong>@($"{Model.Propietario?.Usuario?.Apellido}, {Model.Propietario?.Usuario?.Nombre}")</strong>
+                                                        @if (!string.IsNullOrEmpty(Model.Propietario?.Usuario?.Telefono))
+                                                        {
+                                                            <br><small class="text-muted">
+                                                                <i class="fas fa-phone me-1"></i>@Model.Propietario.Usuario.Telefono
+                                                            </small>
+                                                        }
+                                                    </div>
+                                                </dd>
+                                                
+                                                @if (!string.IsNullOrEmpty(Model.Coordenadas))
+                                                {
+                                                    <dt class="col-sm-5">Ubicación:</dt>
+                                                    <dd class="col-sm-7">
+                                                        <a href="https://www.google.com/maps?q=@Model.Coordenadas" 
+                                                           target="_blank" 
+                                                           class="btn btn-sm btn-outline-primary">
+                                                            <i class="fas fa-map-marker-alt me-1"></i>Ver en Mapa
+                                                        </a>
+                                                    </dd>
+                                                }
+                                            </dl>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Panel de estadísticas y consecuencias -->
+                        <div class="col-lg-4">
+                            <div class="card bg-light">
+                                <div class="card-header">
+                                    <h5 class="mb-0">
+                                        <i class="fas fa-chart-bar me-2"></i>Datos Relacionados
+                                    </h5>
+                                </div>
+                                <div class="card-body">
+                                    <!-- Estadísticas principales -->
+                                    <div class="row text-center mb-3">
+                                        <div class="col-4">
+                                            <div class="p-2 border rounded">
+                                                <div class="@(ViewBag.ContratosVigentes > 0 ? "text-danger" : "text-success")">
+                                                    <i class="fas fa-file-contract fa-2x"></i>
+                                                </div>
+                                                <div class="fw-bold fs-4">@ViewBag.ContratosVigentes</div>
+                                                <small class="text-muted">Contratos<br>Vigentes</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-2 border rounded">
+                                                <div class="text-info">
+                                                    <i class="fas fa-images fa-2x"></i>
+                                                </div>
+                                                <div class="fw-bold fs-4">@totalImagenes</div>
+                                                <small class="text-muted">Imágenes<br>Galería</small>
+                                            </div>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="p-2 border rounded">
+                                                <div class="text-warning">
+                                                    <i class="fas fa-heart fa-2x"></i>
+                                                </div>
+                                                <div class="fw-bold fs-4">@totalIntereses</div>
+                                                <small class="text-muted">Personas<br>Interesadas</small>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    @if (puedeEliminar)
+                                    {
+                                        <!-- Consecuencias de la eliminación -->
+                                        <div class="alert alert-warning border-warning">
+                                            <h6 class="fw-bold">
+                                                <i class="fas fa-exclamation-triangle me-2"></i>Consecuencias:
+                                            </h6>
+                                            <ul class="small mb-0">
+                                                <li>El inmueble será <strong>eliminado permanentemente</strong></li>
+                                                <li>Se eliminarán <strong>@totalImagenes imagen(es)</strong> de la galería</li>
+                                                <li>Se eliminarán <strong>@totalIntereses registro(s)</strong> de interés</li>
+                                                <li>Esta acción <strong>NO se puede deshacer</strong></li>
+                                            </ul>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <!-- Acciones requeridas -->
+                                        <div class="alert alert-info border-info">
+                                            <h6 class="fw-bold">
+                                                <i class="fas fa-list-check me-2"></i>Acciones Requeridas:
+                                            </h6>
+                                            <div class="d-grid gap-2 mt-3">
+                                                <a asp-controller="Contratos" asp-action="Index" asp-route-idInmueble="@Model.IdInmueble" 
+                                                   class="btn btn-outline-info btn-sm">
+                                                    <i class="fas fa-file-contract me-1"></i>Ver Contratos (@ViewBag.ContratosVigentes)
+                                                </a>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-info-circle me-1"></i>
+                                                    Debe finalizar todos los contratos antes de eliminar
+                                                </small>
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- Tiempo activo -->
+                                    <div class="text-center mt-3 pt-3 border-top">
+                                        <div class="text-muted">
+                                            <i class="fas fa-clock me-2"></i>
+                                            <strong>@((DateTime.Now - Model.FechaAlta).Days)</strong> días activo
+                                        </div>
+                                        <small class="text-muted">Desde @Model.FechaAlta.ToString("dd/MM/yyyy")</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones de acción -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <hr class="mb-4">
+                            <div class="d-flex gap-3 justify-content-center flex-wrap">
+                                @if (puedeEliminar)
+                                {
+                                    <!-- Formulario de eliminación con doble confirmación -->
+                                    <form asp-action="Delete" method="post" class="d-inline" id="formEliminar">
+                                        <input type="hidden" name="id" value="@Model.IdInmueble" />
+                                        <button type="button" 
+                                                class="btn btn-danger btn-lg px-5" 
+                                                id="btnEliminar"
+                                                onclick="iniciarEliminacion()">
+                                            <i class="fas fa-trash-alt me-2"></i>Eliminar Inmueble
+                                        </button>
+                                    </form>
+                                }
+                                else
+                                {
+                                    <!-- Botón deshabilitado con tooltip -->
+                                    <button type="button" 
+                                            class="btn btn-danger btn-lg px-5" 
+                                            disabled
+                                            data-bs-toggle="tooltip"
+                                            title="No se puede eliminar mientras tenga contratos vigentes">
+                                        <i class="fas fa-ban me-2"></i>No se puede eliminar
+                                    </button>
+                                }
+                                
+                                <!-- Botones de navegación -->
+                                <a asp-action="Edit" asp-route-id="@Model.IdInmueble" 
+                                   class="btn btn-warning btn-lg px-4">
+                                    <i class="fas fa-edit me-2"></i>Editar en su lugar
+                                </a>
+                                
+                                <a asp-action="Details" asp-route-id="@Model.IdInmueble" 
+                                   class="btn btn-info btn-lg px-4">
+                                    <i class="fas fa-eye me-2"></i>Ver Detalles
+                                </a>
+                                
+                                <a asp-action="Index" 
+                                   class="btn btn-secondary btn-lg px-4">
+                                    <i class="fas fa-list me-2"></i>Volver a Lista
+                                </a>
+                            </div>
+                        </div>
+                    </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de confirmación múltiple -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1" aria-labelledby="modalConfirmacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="modalConfirmacionLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Confirmación Final de Eliminación
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center mb-4">
+                    <i class="fas fa-trash-alt text-danger" style="font-size: 4rem;"></i>
+                </div>
+                
+                <div class="alert alert-danger">
+                    <h6 class="fw-bold">ÚLTIMA OPORTUNIDAD PARA CANCELAR</h6>
+                    <p class="mb-0">
+                        Está a punto de eliminar <strong>permanentemente</strong> el inmueble:
+                        <br><strong class="fs-5">@Model.Direccion</strong>
+                    </p>
+                </div>
+
+                <div class="row text-center mb-4">
+                    <div class="col-4">
+                        <div class="text-danger">
+                            <i class="fas fa-home fa-2x"></i>
+                        </div>
+                        <small>Inmueble<br><strong>#@Model.IdInmueble</strong></small>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-danger">
+                            <i class="fas fa-images fa-2x"></i>
+                        </div>
+                        <small>@totalImagenes Imágenes<br><strong>Eliminadas</strong></small>
+                    </div>
+                    <div class="col-4">
+                        <div class="text-danger">
+                            <i class="fas fa-heart fa-2x"></i>
+                        </div>
+                        <small>@totalIntereses Intereses<br><strong>Eliminados</strong></small>
+                    </div>
+                </div>
+
+                <div class="bg-light p-3 rounded">
+                    <h6 class="text-center mb-3">Para confirmar, escriba exactamente:</h6>
+                    <div class="text-center mb-3">
+                        <code class="fs-5 bg-warning text-dark px-3 py-2 rounded">ELIMINAR @Model.IdInmueble</code>
+                    </div>
+                    <input type="text" 
+                           class="form-control form-control-lg text-center" 
+                           id="textoConfirmacion" 
+                           placeholder="Escriba el texto de confirmación aquí..."
+                           autocomplete="off">
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary btn-lg" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-2"></i>Cancelar
+                </button>
+                <button type="button" 
+                        class="btn btn-danger btn-lg" 
+                        id="btnConfirmarEliminacion" 
+                        disabled
+                        onclick="confirmarEliminacionFinal()">
+                    <i class="fas fa-trash-alt me-2"></i>Eliminar Definitivamente
+                    <span class="spinner-border spinner-border-sm ms-2 d-none" id="spinnerEliminar"></span>
+                </button>
             </div>
         </div>
     </div>
@@ -170,35 +404,139 @@
 
 @section Scripts {
     <script>
+        let contadorClicks = 0;
+        const TEXTO_CONFIRMACION = 'ELIMINAR @Model.IdInmueble';
+        
         document.addEventListener('DOMContentLoaded', function() {
-            const deleteForm = document.querySelector('form[asp-action="Delete"]');
-            if (deleteForm) {
-                const deleteButton = deleteForm.querySelector('button[type="submit"]');
-                let confirmClicks = 0;
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+
+            // Validación del texto de confirmación
+            const textoInput = document.getElementById('textoConfirmacion');
+            const btnConfirmar = document.getElementById('btnConfirmarEliminacion');
+
+            function validarConfirmacion() {
+                const textoValido = textoInput.value.trim() === TEXTO_CONFIRMACION;
+                btnConfirmar.disabled = !textoValido;
                 
-                deleteButton.addEventListener('click', function(e) {
-                    if (confirmClicks === 0) {
-                        e.preventDefault();
-                        this.classList.remove('btn-danger');
-                        this.classList.add('btn-warning');
-                        this.innerHTML = 'Haz clic de nuevo para confirmar eliminación';
-                        confirmClicks++;
-                        
-                        // Resetear después de 4 segundos
-                        setTimeout(() => {
-                            this.classList.remove('btn-warning');
-                            this.classList.add('btn-danger');
-                            this.innerHTML = 'Confirmar Eliminación';
-                            confirmClicks = 0;
-                        }, 4000);
-                        
-                        return false;
-                    }
-                    
-                    // Segunda confirmación
-                    return confirm('ÚLTIMA CONFIRMACIÓN: ¿Realmente deseas eliminar este inmueble y todas sus imágenes?');
+                // Cambiar estilo del botón según validación
+                if (textoValido) {
+                    btnConfirmar.classList.remove('btn-secondary');
+                    btnConfirmar.classList.add('btn-danger');
+                } else {
+                    btnConfirmar.classList.remove('btn-danger');
+                    btnConfirmar.classList.add('btn-secondary');
+                }
+            }
+
+            if (textoInput) {
+                textoInput.addEventListener('input', validarConfirmacion);
+            }
+
+            // Limpiar modal al cerrarse
+            const modal = document.getElementById('modalConfirmacion');
+            if (modal) {
+                modal.addEventListener('hidden.bs.modal', function() {
+                    textoInput.value = '';
+                    btnConfirmar.disabled = true;
+                    btnConfirmar.classList.remove('btn-danger');
+                    btnConfirmar.classList.add('btn-secondary');
+                    contadorClicks = 0;
                 });
             }
         });
+
+        function iniciarEliminacion() {
+            contadorClicks++;
+            const btnEliminar = document.getElementById('btnEliminar');
+            
+            if (contadorClicks === 1) {
+                // Primera confirmación
+                btnEliminar.classList.remove('btn-danger');
+                btnEliminar.classList.add('btn-warning');
+                btnEliminar.innerHTML = '<i class="fas fa-exclamation-triangle me-2"></i>¿Está seguro? Haga clic nuevamente';
+                
+                // Resetear después de 5 segundos
+                setTimeout(() => {
+                    if (contadorClicks === 1) {
+                        btnEliminar.classList.remove('btn-warning');
+                        btnEliminar.classList.add('btn-danger');
+                        btnEliminar.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Eliminar Inmueble';
+                        contadorClicks = 0;
+                    }
+                }, 5000);
+                
+            } else if (contadorClicks === 2) {
+                // Segunda confirmación - abrir modal
+                const modal = new bootstrap.Modal(document.getElementById('modalConfirmacion'));
+                modal.show();
+                
+                // Resetear botón
+                btnEliminar.classList.remove('btn-warning');
+                btnEliminar.classList.add('btn-danger');
+                btnEliminar.innerHTML = '<i class="fas fa-trash-alt me-2"></i>Eliminar Inmueble';
+            }
+        }
+
+        function confirmarEliminacionFinal() {
+            const btnConfirmar = document.getElementById('btnConfirmarEliminacion');
+            const spinner = document.getElementById('spinnerEliminar');
+            const form = document.getElementById('formEliminar');
+            
+            // Mostrar loading
+            btnConfirmar.disabled = true;
+            spinner.classList.remove('d-none');
+            btnConfirmar.querySelector('i').classList.add('d-none');
+            
+            // Enviar formulario
+            form.submit();
+        }
     </script>
 }
+
+<style>
+    .border-warning {
+        border-color: #ffc107 !important;
+    }
+    
+    .border-danger {
+        border-color: #dc3545 !important;
+    }
+    
+    .border-info {
+        border-color: #0dcaf0 !important;
+    }
+    
+    .modal-content {
+        border: none;
+        box-shadow: 0 1rem 3rem rgba(0, 0, 0, 0.2);
+    }
+    
+    .form-check-input:checked {
+        background-color: #dc3545;
+        border-color: #dc3545;
+    }
+    
+    .alert {
+        border-width: 2px;
+    }
+    
+    .btn-lg {
+        min-width: 150px;
+    }
+    
+    @@media (max-width: 768px) {
+        .d-flex.gap-3.justify-content-center.flex-wrap {
+            flex-direction: column;
+            align-items: center;
+        }
+        
+        .btn-lg {
+            width: 100%;
+            max-width: 300px;
+        }
+    }
+</style>

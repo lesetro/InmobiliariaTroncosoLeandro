@@ -4,10 +4,25 @@
 }
 
 <div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow border-warning">
-            <div class="card-header bg-warning text-dark">
-                <h3 class="mb-0">Finalizar Contrato</h3>
+    <div class="col-md-10">
+        
+        <!-- Alerta de confirmación -->
+        <div class="alert alert-danger border-danger shadow" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem; margin-right: 1rem;"></i>
+                <div>
+                    <h4 class="alert-heading mb-1">Confirmar Finalización de Contrato</h4>
+                    <p class="mb-0">Esta acción finalizará el contrato y liberará el inmueble. Esta operación no se puede deshacer.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del contrato -->
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0">
+                    <i class="bi bi-flag-fill"></i> Finalizar Contrato #@Model.IdContrato
+                </h3>
             </div>
             <div class="card-body">
 
@@ -19,86 +34,270 @@
                     </div>
                 }
 
-                <div class="alert alert-warning">
-                    <h5 class="alert-heading">¿Confirmar finalización?</h5>
-                    <p class="mb-0">Esta acción cambiará el estado del contrato a "finalizado" y no se puede deshacer.</p>
-                </div>
-
                 <div class="row">
-                    <div class="col-md-12">
-                        <h5>Detalles del contrato:</h5>
-                        <dl class="row">
-                            <dt class="col-sm-3">ID Contrato:</dt>
-                            <dd class="col-sm-9">
-                                <span class="badge bg-secondary">#@Model.IdContrato</span>
-                            </dd>
+                    <!-- Información principal del contrato -->
+                    <div class="col-md-6">
+                        <div class="card border-info h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-file-text"></i> Datos del Contrato</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong class="text-primary">Inmueble:</strong><br>
+                                    <span class="h6">@Model.Inmueble?.Direccion</span><br>
+                                    <small class="text-muted">
+                                        Tipo: @Model.Inmueble?.TipoInmueble?.Nombre | 
+                                        Ambientes: @Model.Inmueble?.Ambientes | 
+                                        Uso: @Model.Inmueble?.Uso
+                                    </small>
+                                </div>
 
-                            <dt class="col-sm-3">Inmueble:</dt>
-                            <dd class="col-sm-9">
-                                <strong>@Model.Inmueble?.Direccion</strong>
-                            </dd>
+                                <div class="mb-3">
+                                    <strong class="text-success">Monto Mensual:</strong><br>
+                                    <span class="h5 text-success">
+                                        @Model.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                    </span>
+                                </div>
 
-                            <dt class="col-sm-3">Inquilino:</dt>
-                            <dd class="col-sm-9">
-                                <strong>@(Model.Inquilino?.Usuario?.Nombre) @(Model.Inquilino?.Usuario?.Apellido)</strong>
-                                <br><small class="text-muted">DNI: @Model.Inquilino?.Usuario?.Dni</small>
-                            </dd>
+                                <div class="mb-3">
+                                    <strong class="text-info">Período:</strong><br>
+                                    <span class="badge bg-info">@Model.FechaInicio.ToString("dd/MM/yyyy")</span>
+                                    <i class="bi bi-arrow-right mx-2"></i>
+                                    <span class="badge bg-warning text-dark">@Model.FechaFin.ToString("dd/MM/yyyy")</span>
+                                </div>
 
-                            <dt class="col-sm-3">Período:</dt>
-                            <dd class="col-sm-9">
-                                <span class="badge bg-info">@Model.FechaInicio.ToString("dd/MM/yyyy")</span>
-                                <i class="bi bi-arrow-right mx-2"></i>
-                                <span class="badge bg-warning text-dark">@Model.FechaFin.ToString("dd/MM/yyyy")</span>
-                            </dd>
-
-                            <dt class="col-sm-3">Monto Mensual:</dt>
-                            <dd class="col-sm-9">
-                                <strong class="text-success">@Model.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))</strong>
-                            </dd>
-
-                            <dt class="col-sm-3">Estado Actual:</dt>
-                            <dd class="col-sm-9">
                                 @{
-                                    var estadoBadgeClass = Model.Estado switch
-                                    {
-                                        "vigente" => "bg-success",
-                                        "finalizado" => "bg-secondary",
-                                        "finalizado_anticipado" => "bg-warning text-dark",
-                                        _ => "bg-light text-dark"
-                                    };
+                                    var duracionOriginal = (Model.FechaFin - Model.FechaInicio).Days;
+                                    var hoy = DateTime.Today;
+                                    var duracionReal = (hoy - Model.FechaInicio).Days;
+                                    var esAnticipado = hoy < Model.FechaFin;
                                 }
-                                <span class="badge @estadoBadgeClass">@Model.Estado.ToUpper()</span>
-                            </dd>
-                        </dl>
+
+                                <div class="mb-0">
+                                    <strong class="@(esAnticipado ? "text-warning" : "text-success")">Duración:</strong><br>
+                                    @if (esAnticipado)
+                                    {
+                                        <span class="text-warning">
+                                            <i class="bi bi-clock-history"></i>
+                                            @duracionReal días transcurridos de @duracionOriginal días totales
+                                        </span><br>
+                                        <small class="text-muted">
+                                            Finalización anticipada por @(duracionOriginal - duracionReal) días
+                                        </small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success">
+                                            <i class="bi bi-check-circle"></i>
+                                            @duracionOriginal días (contrato completado)
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información de las partes -->
+                    <div class="col-md-6">
+                        <div class="card border-primary h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-people"></i> Partes Involucradas</h5>
+                            </div>
+                            <div class="card-body">
+                                <!-- Inquilino -->
+                                <div class="mb-3">
+                                    <strong class="text-primary">
+                                        <i class="bi bi-person"></i> Inquilino:
+                                    </strong><br>
+                                    <span class="h6">@Model.Inquilino?.Usuario?.NombreCompleto</span><br>
+                                    <small class="text-muted">
+                                        DNI: @Model.Inquilino?.Usuario?.Dni
+                                        @if (!string.IsNullOrEmpty(Model.Inquilino?.Usuario?.Telefono))
+                                        {
+                                            <span> | Tel: @Model.Inquilino.Usuario.Telefono</span>
+                                        }
+                                    </small>
+                                </div>
+
+                                <!-- Propietario -->
+                                <div class="mb-3">
+                                    <strong class="text-success">
+                                        <i class="bi bi-person-badge"></i> Propietario:
+                                    </strong><br>
+                                    <span class="h6">@Model.Propietario?.Usuario?.NombreCompleto</span><br>
+                                    <small class="text-muted">
+                                        DNI: @Model.Propietario?.Usuario?.Dni
+                                        @if (!string.IsNullOrEmpty(Model.Propietario?.Usuario?.Telefono))
+                                        {
+                                            <span> | Tel: @Model.Propietario.Usuario.Telefono</span>
+                                        }
+                                    </small>
+                                </div>
+
+                                <!-- Creador -->
+                                <div class="mb-0">
+                                    <strong class="text-info">
+                                        <i class="bi bi-person-check"></i> Creado por:
+                                    </strong><br>
+                                    <span>@Model.UsuarioCreador?.NombreCompleto</span><br>
+                                    <small class="text-muted">
+                                        @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
-                <div class="alert alert-info mt-3">
-                    <h6>Consecuencias de la finalización:</h6>
-                    <ul class="mb-0">
-                        <li>El contrato será marcado como "finalizado"</li>
-                        <li>El inmueble quedará disponible para nuevos contratos</li>
-                        <li>Esta acción es permanente y no se puede deshacer</li>
-                        <li>Se actualizará la fecha de modificación</li>
-                    </ul>
+                <!-- Consecuencias de la finalización -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-info-circle"></i> Consecuencias de la finalización:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Estado del contrato:</strong> Cambiará a "Finalizado" @(esAnticipado ? "Anticipado" : "")</li>
+                                <li><strong>Estado del inmueble:</strong> Volverá a "Disponible" para nuevos contratos</li>
+                                <li><strong>Fecha de finalización:</strong> Se registrará como @DateTime.Today.ToString("dd/MM/yyyy")</li>
+                                @if (esAnticipado)
+                                {
+                                    <li><strong>Finalización anticipada:</strong> Se marcará la fecha de fin anticipada</li>
+                                }
+                                <li><strong>Irreversible:</strong> Esta acción no se puede deshacer</li>
+                            </ul>
+                        </div>
+                    </div>
                 </div>
 
-                <hr class="my-4">
-
-                <div class="d-flex gap-2 justify-content-center">
-                    <form asp-action="Delete" method="post" class="d-inline">
-                        <input type="hidden" asp-for="IdContrato" />
-                        <button type="submit" 
-                                class="btn btn-warning btn-lg"
-                                onclick="return confirm('¿Está seguro que desea finalizar este contrato? Esta acción no se puede deshacer.')">
-                            <i class="bi bi-check-circle"></i> Finalizar Contrato
-                        </button>
-                    </form>
-                    <a asp-action="Index" class="btn btn-secondary btn-lg">
-                        <i class="bi bi-x-circle"></i> Cancelar
-                    </a>
+                <!-- Formulario de confirmación -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="border border-danger rounded p-3 bg-light">
+                            <h6 class="text-danger">
+                                <i class="bi bi-shield-exclamation"></i> Confirmación requerida
+                            </h6>
+                            <p class="mb-3">
+                                Para finalizar este contrato, confirme que comprende las consecuencias y que tiene
+                                autorización para realizar esta acción.
+                            </p>
+                            
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                <input type="hidden" asp-for="IdContrato" />
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="confirmarFinalizacion" required>
+                                    <label class="form-check-label text-danger fw-bold" for="confirmarFinalizacion">
+                                        Confirmo que deseo finalizar este contrato definitivamente
+                                    </label>
+                                </div>
+                                
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <button type="submit" 
+                                            class="btn btn-danger btn-lg" 
+                                            id="btnFinalizar"
+                                            disabled>
+                                        <i class="bi bi-flag-fill"></i> Sí, Finalizar Contrato
+                                    </button>
+                                    <a asp-action="Details" asp-route-id="@Model.IdContrato" 
+                                       class="btn btn-secondary btn-lg">
+                                        <i class="bi bi-x-circle"></i> Cancelar
+                                    </a>
+                                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                                        <i class="bi bi-arrow-left"></i> Volver al Listado
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
                 </div>
+
+                @if (Model.MultaAplicada > 0)
+                {
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="bi bi-exclamation-circle"></i> Multa pendiente:</h6>
+                        <p class="mb-0">
+                            Este contrato tiene una multa aplicada de <strong>@Model.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))</strong>.
+                            Asegúrese de que haya sido gestionada apropiadamente antes de finalizar.
+                        </p>
+                    </div>
+                }
+
             </div>
         </div>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkbox = document.getElementById('confirmarFinalizacion');
+            const btnFinalizar = document.getElementById('btnFinalizar');
+            
+            // Habilitar/deshabilitar botón según checkbox
+            checkbox.addEventListener('change', function() {
+                btnFinalizar.disabled = !this.checked;
+                
+                if (this.checked) {
+                    btnFinalizar.classList.remove('btn-danger');
+                    btnFinalizar.classList.add('btn-danger');
+                    btnFinalizar.innerHTML = '<i class="bi bi-flag-fill"></i> Sí, Finalizar Contrato';
+                } else {
+                    btnFinalizar.innerHTML = '<i class="bi bi-flag-fill"></i> Sí, Finalizar Contrato';
+                }
+            });
+            
+            // Confirmación adicional al enviar
+            const form = btnFinalizar.closest('form');
+            form.addEventListener('submit', function(e) {
+                if (!confirm('¿Está ABSOLUTAMENTE SEGURO que desea finalizar este contrato? Esta acción no se puede deshacer.')) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Deshabilitar botón para evitar doble envío
+                btnFinalizar.disabled = true;
+                btnFinalizar.innerHTML = '<i class="bi bi-hourglass-split"></i> Finalizando...';
+            });
+            
+            // Advertencia si el usuario intenta salir
+            let formSubmitted = false;
+            form.addEventListener('submit', function() {
+                formSubmitted = true;
+            });
+            
+            window.addEventListener('beforeunload', function(e) {
+                if (checkbox.checked && !formSubmitted) {
+                    e.preventDefault();
+                    e.returnValue = '¿Está seguro que desea salir? Los cambios no se han guardado.';
+                }
+            });
+        });
+    </script>
+    
+    <style>
+        .alert-danger {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .card-header {
+            border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .border-danger {
+            border-width: 2px !important;
+        }
+        
+        .btn[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .form-check-label {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+    </style>
+}

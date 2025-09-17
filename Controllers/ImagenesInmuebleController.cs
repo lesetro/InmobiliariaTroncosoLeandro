@@ -1,56 +1,47 @@
 using Microsoft.AspNetCore.Mvc;
-using MySql.Data.MySqlClient;
 using Inmobiliaria_troncoso_leandro.Models;
+using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
     public class ImagenesInmuebleController : Controller
     {
-        private readonly string _connectionString;
+        private readonly IRepositorioImagen _repositorioImagen;
+        private readonly IWebHostEnvironment _environment;
 
-        public ImagenesInmuebleController(IConfiguration configuration)
+        public ImagenesInmuebleController(IRepositorioImagen repositorioImagen, IWebHostEnvironment environment)
         {
-            _connectionString = configuration.GetConnectionString("DefaultConnection") ??
-                throw new ArgumentNullException(nameof(configuration), "La cadena de conexión está nula");
+            _repositorioImagen = repositorioImagen;
+            _environment = environment;
         }
 
         // GET: ImagenesInmueble/Index 
-        public IActionResult Index(int idInmueble)
+        public async Task<IActionResult> Index(int idInmueble)
         {
             if (idInmueble <= 0)
             {
                 return NotFound("ID de inmueble inválido");
             }
 
-            var imagenes = new List<ImagenInmueble>();
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = @"
-                    SELECT id_imagen, id_inmueble, url, descripcion, orden, fecha_creacion
-                    FROM imagen_inmueble
-                    WHERE id_inmueble = @idInmueble
-                    ORDER BY orden";
-                
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@idInmueble", idInmueble);
-                
-                using var reader = command.ExecuteReader();
-                while (reader.Read())
+                // Verificar que el inmueble existe
+                if (!await _repositorioImagen.ExisteInmuebleAsync(idInmueble))
                 {
-                    imagenes.Add(new ImagenInmueble
-                    {
-                        IdImagen = reader.GetInt32("id_imagen"),
-                        IdInmueble = reader.GetInt32("id_inmueble"),
-                        Url = reader.GetString("url"),
-                        Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion"),
-                        Orden = reader.GetInt32("orden"),
-                        FechaCreacion = reader.GetDateTime("fecha_creacion")
-                    });
+                    TempData["ErrorMessage"] = "El inmueble especificado no existe";
+                    return RedirectToAction("Index", "Inmuebles");
                 }
 
+                // Obtener imágenes del inmueble
+                var imagenes = await _repositorioImagen.ObtenerImagenesPorInmuebleAsync(idInmueble);
+                
+                // Obtener estadísticas para mostrar en la vista
+                var estadisticas = await _repositorioImagen.ObtenerEstadisticasGaleriaAsync(idInmueble);
+                
                 ViewData["IdInmueble"] = idInmueble;
+                ViewData["EstadisticasGaleria"] = estadisticas;
+                ViewData["TotalImagenes"] = imagenes.Count;
+                
                 return View(imagenes);
             }
             catch (Exception ex)
@@ -60,41 +51,41 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        // GET: ImagenesInmueble/Create/5
-        public IActionResult Create(int idInmueble)
+        // GET: ImagenesInmueble/Create
+        public async Task<IActionResult> Create(int idInmueble)
         {
             if (idInmueble <= 0)
             {
                 return NotFound("ID de inmueble inválido");
             }
 
-            // Obtener el siguiente orden disponible
-            int siguienteOrden = 1;
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = "SELECT COALESCE(MAX(orden), 0) + 1 FROM imagen_inmueble WHERE id_inmueble = @idInmueble";
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@idInmueble", idInmueble);
-                var result = command.ExecuteScalar();
-                if (result != null && result != DBNull.Value)
+                // Verificar que el inmueble existe
+                if (!await _repositorioImagen.ExisteInmuebleAsync(idInmueble))
                 {
-                    siguienteOrden = Convert.ToInt32(result);
+                    TempData["ErrorMessage"] = "El inmueble especificado no existe";
+                    return RedirectToAction("Index", "Inmuebles");
                 }
+
+                // Obtener el siguiente orden disponible
+                int siguienteOrden = await _repositorioImagen.ObtenerSiguienteOrdenAsync(idInmueble);
+
+                var imagen = new ImagenInmueble 
+                { 
+                    IdInmueble = idInmueble,
+                    Orden = siguienteOrden,
+                    Url = "" // Valor por defecto para satisfacer el required
+                };
+
+                ViewData["IdInmueble"] = idInmueble;
+                return View(imagen);
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error al obtener orden: {ex.Message}";
+                TempData["ErrorMessage"] = $"Error al preparar formulario: {ex.Message}";
+                return RedirectToAction(nameof(Index), new { idInmueble });
             }
-
-            var imagen = new ImagenInmueble 
-            { 
-                IdInmueble = idInmueble,
-                Orden = siguienteOrden,
-                Url = "" // Valor por defecto para satisfacer el required
-            };
-            return View(imagen);
         }
 
         // POST: ImagenesInmueble/Create
@@ -102,74 +93,64 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ImagenInmueble imagen, IFormFile? ImagenFile)
         {
+            // Validar que se envió un archivo
             if (ImagenFile == null || ImagenFile.Length == 0)
             {
                 ModelState.AddModelError("ImagenFile", "Debe seleccionar una imagen válida");
+                ViewData["IdInmueble"] = imagen.IdInmueble;
                 return View(imagen);
             }
 
             try
             {
-                // Validar formato y tamaño
-                var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-                var extension = Path.GetExtension(ImagenFile.FileName).ToLowerInvariant();
-                
-                if (!extensionesPermitidas.Contains(extension))
+                // Validar archivo usando el repositorio
+                if (!await _repositorioImagen.ValidarArchivoImagenAsync(ImagenFile))
                 {
-                    ModelState.AddModelError("ImagenFile", "Solo se permiten imágenes JPG, JPEG, PNG, GIF o BMP");
+                    ModelState.AddModelError("ImagenFile", 
+                        "Archivo inválido. Solo se permiten imágenes JPG, JPEG, PNG, GIF, BMP o WEBP de máximo 5MB");
+                    ViewData["IdInmueble"] = imagen.IdInmueble;
                     return View(imagen);
                 }
 
-                if (ImagenFile.Length > 5 * 1024 * 1024) // 5MB
+                // Verificar que el inmueble existe
+                if (!await _repositorioImagen.ExisteInmuebleAsync(imagen.IdInmueble))
                 {
-                    ModelState.AddModelError("ImagenFile", "La imagen no puede superar 5MB");
+                    ModelState.AddModelError("", "El inmueble especificado no existe");
+                    ViewData["IdInmueble"] = imagen.IdInmueble;
                     return View(imagen);
                 }
 
-                // Crear directorio si no existe
-                var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "inmuebles");
-                if (!Directory.Exists(uploadsDir))
-                {
-                    Directory.CreateDirectory(uploadsDir);
-                }
-
-                // Generar nombre único
-                var fileName = $"{imagen.IdInmueble}_{Guid.NewGuid()}{extension}";
-                var filePath = Path.Combine(uploadsDir, fileName);
-
-                // Guardar imagen
-                using (var stream = new FileStream(filePath, FileMode.Create))
-                {
-                    await ImagenFile.CopyToAsync(stream);
-                }
-
-                // Insertar en la base de datos
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = @"
-                    INSERT INTO imagen_inmueble (id_inmueble, url, descripcion, orden, fecha_creacion)
-                    VALUES (@idInmueble, @url, @descripcion, @orden, @fechaCreacion)";
+                // Crear imagen con archivo
+                bool resultado = await _repositorioImagen.CrearImagenConArchivoAsync(imagen, ImagenFile, _environment);
                 
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@idInmueble", imagen.IdInmueble);
-                command.Parameters.AddWithValue("@url", $"/images/inmuebles/{fileName}");
-                command.Parameters.AddWithValue("@descripcion", imagen.Descripcion != null ? (object)imagen.Descripcion : DBNull.Value);
-                command.Parameters.AddWithValue("@orden", imagen.Orden);
-                command.Parameters.AddWithValue("@fechaCreacion", DateTime.Now);
-                command.ExecuteNonQuery();
-
-                TempData["SuccessMessage"] = "Imagen agregada exitosamente";
-                return RedirectToAction(nameof(Index), new { idInmueble = imagen.IdInmueble });
+                if (resultado)
+                {
+                    TempData["SuccessMessage"] = "Imagen agregada exitosamente a la galería";
+                    return RedirectToAction(nameof(Index), new { idInmueble = imagen.IdInmueble });
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Error al guardar la imagen. Intente nuevamente.");
+                    ViewData["IdInmueble"] = imagen.IdInmueble;
+                    return View(imagen);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError("ImagenFile", ex.Message);
+                ViewData["IdInmueble"] = imagen.IdInmueble;
+                return View(imagen);
             }
             catch (Exception ex)
             {
-                ModelState.AddModelError("", $"Error al crear imagen: {ex.Message}");
+                ModelState.AddModelError("", $"Error inesperado: {ex.Message}");
+                ViewData["IdInmueble"] = imagen.IdInmueble;
                 return View(imagen);
             }
         }
 
         // GET: ImagenesInmueble/Edit
-        public IActionResult Edit(int id)
+        public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
             {
@@ -178,33 +159,16 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = @"
-                    SELECT id_imagen, id_inmueble, url, descripcion, orden, fecha_creacion
-                    FROM imagen_inmueble
-                    WHERE id_imagen = @id";
+                var imagen = await _repositorioImagen.ObtenerImagenPorIdAsync(id);
                 
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@id", id);
-                
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
+                if (imagen == null)
                 {
-                    var imagen = new ImagenInmueble
-                    {
-                        IdImagen = reader.GetInt32("id_imagen"),
-                        IdInmueble = reader.GetInt32("id_inmueble"),
-                        Url = reader.GetString("url"),
-                        Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion"),
-                        Orden = reader.GetInt32("orden"),
-                        FechaCreacion = reader.GetDateTime("fecha_creacion")
-                    };
-                    return View(imagen);
+                    TempData["ErrorMessage"] = "Imagen no encontrada";
+                    return RedirectToAction("Index", "Inmuebles");
                 }
-                
-                TempData["ErrorMessage"] = "Imagen no encontrada";
-                return RedirectToAction("Index", "Inmuebles");
+
+                ViewData["IdInmueble"] = imagen.IdInmueble;
+                return View(imagen);
             }
             catch (Exception ex)
             {
@@ -223,104 +187,59 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return NotFound();
             }
 
+            // Validar modelo 
+            ModelState.Remove("ImagenFile"); // No es requerido en edición
             if (!ModelState.IsValid)
             {
+                ViewData["IdInmueble"] = imagen.IdInmueble;
                 return View(imagen);
             }
 
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-
-                string newUrl = imagen.Url;
-
-                // Si hay nueva imagen
+                // Si hay nuevo archivo, validarlo
                 if (ImagenFile != null && ImagenFile.Length > 0)
                 {
-                    // Validar formato y tamaño
-                    var extensionesPermitidas = new[] { ".jpg", ".jpeg", ".png", ".gif", ".bmp" };
-                    var extension = Path.GetExtension(ImagenFile.FileName).ToLowerInvariant();
-                    
-                    if (!extensionesPermitidas.Contains(extension))
+                    if (!await _repositorioImagen.ValidarArchivoImagenAsync(ImagenFile))
                     {
-                        ModelState.AddModelError("ImagenFile", "Solo se permiten imágenes JPG, JPEG, PNG, GIF o BMP");
+                        ModelState.AddModelError("ImagenFile", 
+                            "Archivo inválido. Solo se permiten imágenes JPG, JPEG, PNG, GIF, BMP o WEBP de máximo 5MB");
+                        ViewData["IdInmueble"] = imagen.IdInmueble;
                         return View(imagen);
                     }
-
-                    if (ImagenFile.Length > 5 * 1024 * 1024) // 5MB
-                    {
-                        ModelState.AddModelError("ImagenFile", "La imagen no puede superar 5MB");
-                        return View(imagen);
-                    }
-
-                    // Eliminar imagen antigua si existe
-                    if (!string.IsNullOrEmpty(imagen.Url))
-                    {
-                        var oldFilePath = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", imagen.Url.TrimStart('/'));
-                        if (System.IO.File.Exists(oldFilePath))
-                        {
-                            try
-                            {
-                                System.IO.File.Delete(oldFilePath);
-                            }
-                            catch (Exception ex)
-                            {
-                                // Log pero no fallar por esto
-                                Console.WriteLine($"No se pudo eliminar archivo anterior: {ex.Message}");
-                            }
-                        }
-                    }
-
-                    // Crear directorio si no existe
-                    var uploadsDir = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", "images", "inmuebles");
-                    if (!Directory.Exists(uploadsDir))
-                    {
-                        Directory.CreateDirectory(uploadsDir);
-                    }
-
-                    // Generar nombre único
-                    var fileName = $"{imagen.IdInmueble}_{Guid.NewGuid()}{extension}";
-                    var filePath = Path.Combine(uploadsDir, fileName);
-
-                    // Guardar nueva imagen
-                    using (var stream = new FileStream(filePath, FileMode.Create))
-                    {
-                        await ImagenFile.CopyToAsync(stream);
-                    }
-                    newUrl = $"/images/inmuebles/{fileName}";
                 }
 
-                // Actualizar en la base de datos
-                string query = @"
-                    UPDATE imagen_inmueble
-                    SET url = @url, descripcion = @descripcion, orden = @orden
-                    WHERE id_imagen = @idImagen";
+                // Actualizar imagen
+                bool resultado = await _repositorioImagen.ActualizarImagenConArchivoAsync(imagen, ImagenFile, _environment);
                 
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@url", newUrl);
-                command.Parameters.AddWithValue("@descripcion", imagen.Descripcion != null ? (object)imagen.Descripcion : DBNull.Value);
-                command.Parameters.AddWithValue("@orden", imagen.Orden);
-                command.Parameters.AddWithValue("@idImagen", imagen.IdImagen);
-                
-                int rowsAffected = command.ExecuteNonQuery();
-                if (rowsAffected == 0)
+                if (resultado)
                 {
-                    return NotFound();
+                    TempData["SuccessMessage"] = "Imagen actualizada exitosamente";
+                    return RedirectToAction(nameof(Index), new { idInmueble = imagen.IdInmueble });
                 }
-
-                TempData["SuccessMessage"] = "Imagen actualizada exitosamente";
-                return RedirectToAction(nameof(Index), new { idInmueble = imagen.IdInmueble });
+                else
+                {
+                    ModelState.AddModelError("", "Error al actualizar la imagen");
+                    ViewData["IdInmueble"] = imagen.IdInmueble;
+                    return View(imagen);
+                }
+            }
+            catch (ArgumentException ex)
+            {
+                ModelState.AddModelError("ImagenFile", ex.Message);
+                ViewData["IdInmueble"] = imagen.IdInmueble;
+                return View(imagen);
             }
             catch (Exception ex)
             {
                 ModelState.AddModelError("", $"Error al actualizar imagen: {ex.Message}");
+                ViewData["IdInmueble"] = imagen.IdInmueble;
                 return View(imagen);
             }
         }
 
         // GET: ImagenesInmueble/Delete
-        public IActionResult Delete(int id)
+        public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0)
             {
@@ -329,33 +248,23 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
             try
             {
-                using var connection = new MySqlConnection(_connectionString);
-                connection.Open();
-                string query = @"
-                    SELECT id_imagen, id_inmueble, url, descripcion, orden, fecha_creacion
-                    FROM imagen_inmueble
-                    WHERE id_imagen = @id";
+                var imagen = await _repositorioImagen.ObtenerImagenPorIdAsync(id);
                 
-                using var command = new MySqlCommand(query, connection);
-                command.Parameters.AddWithValue("@id", id);
-                
-                using var reader = command.ExecuteReader();
-                if (reader.Read())
+                if (imagen == null)
                 {
-                    var imagen = new ImagenInmueble
-                    {
-                        IdImagen = reader.GetInt32("id_imagen"),
-                        IdInmueble = reader.GetInt32("id_inmueble"),
-                        Url = reader.GetString("url"),
-                        Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString("descripcion"),
-                        Orden = reader.GetInt32("orden"),
-                        FechaCreacion = reader.GetDateTime("fecha_creacion")
-                    };
-                    return View(imagen);
+                    TempData["ErrorMessage"] = "Imagen no encontrada";
+                    return RedirectToAction("Index", "Inmuebles");
                 }
-                
-                TempData["ErrorMessage"] = "Imagen no encontrada";
-                return RedirectToAction("Index", "Inmuebles");
+
+                // Verificar si se puede eliminar
+                if (!await _repositorioImagen.PuedeEliminarImagenAsync(id))
+                {
+                    TempData["ErrorMessage"] = "No se puede eliminar esta imagen";
+                    return RedirectToAction(nameof(Index), new { idInmueble = imagen.IdInmueble });
+                }
+
+                ViewData["IdInmueble"] = imagen.IdInmueble;
+                return View(imagen);
             }
             catch (Exception ex)
             {
@@ -365,113 +274,155 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // POST: ImagenesInmueble/Delete
-[HttpPost, ActionName("Delete")]
-[ValidateAntiForgeryToken]
-public IActionResult DeleteConfirmed(int id, int idInmueble)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        connection.Open();
-
-        // Obtener información de la imagen antes de eliminar
-        string querySelect = @"
-            SELECT ii.url, ii.descripcion, i.direccion 
-            FROM imagen_inmueble ii
-            LEFT JOIN inmueble i ON ii.id_inmueble = i.id_inmueble 
-            WHERE ii.id_imagen = @id";
-        
-        string url = string.Empty;
-        string descripcion = string.Empty;
-        string direccionInmueble = string.Empty;
-        
-        using (var commandSelect = new MySqlCommand(querySelect, connection))
-        {
-            commandSelect.Parameters.AddWithValue("@id", id);
-            using var reader = commandSelect.ExecuteReader();
-            
-            if (reader.Read())
-            {
-                url = reader.IsDBNull(reader.GetOrdinal("url")) ? string.Empty : reader.GetString("url");
-                descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? "Sin descripción" : reader.GetString("descripcion");
-                direccionInmueble = reader.IsDBNull(reader.GetOrdinal("direccion")) ? "Desconocida" : reader.GetString("direccion");
-            }
-            else
-            {
-                TempData["ErrorMessage"] = "Imagen no encontrada";
-                return RedirectToAction(nameof(Index), new { idInmueble });
-            }
-        }
-
-        // Eliminar registro de la base de datos
-        string queryDelete = "DELETE FROM imagen_inmueble WHERE id_imagen = @id";
-        using (var commandDelete = new MySqlCommand(queryDelete, connection))
-        {
-            commandDelete.Parameters.AddWithValue("@id", id);
-            int rowsAffected = commandDelete.ExecuteNonQuery();
-            
-            if (rowsAffected == 0)
-            {
-                TempData["ErrorMessage"] = "No se pudo eliminar la imagen de la base de datos";
-                return RedirectToAction(nameof(Index), new { idInmueble });
-            }
-        }
-
-        // Eliminar archivo físico
-        bool archivoEliminado = false;
-        if (!string.IsNullOrEmpty(url))
+        [HttpPost, ActionName("Delete")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id, int idInmueble)
         {
             try
             {
-                string rutaCompleta = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", url.TrimStart('/'));
-                
-                if (System.IO.File.Exists(rutaCompleta))
+                // Obtener información de la imagen antes de eliminar (para mensajes)
+                var imagen = await _repositorioImagen.ObtenerImagenPorIdAsync(id);
+                if (imagen == null)
                 {
-                    System.IO.File.Delete(rutaCompleta);
+                    TempData["ErrorMessage"] = "Imagen no encontrada";
+                    return RedirectToAction(nameof(Index), new { idInmueble });
+                }
+
+                // Guardar orden para reorganización posterior
+                int ordenEliminado = imagen.Orden;
+                string descripcionImagen = imagen.Descripcion ?? "Sin descripción";
+
+                // Eliminar imagen (esto incluye archivo físico y registro en BD)
+                bool resultado = await _repositorioImagen.EliminarImagenAsync(id);
+                
+                if (resultado)
+                {
+                    // Reorganizar el orden de las imágenes restantes
+                    await _repositorioImagen.ReorganizarOrdenDespuesDeEliminarAsync(idInmueble, ordenEliminado);
                     
-                    // Verificar que se eliminó
-                    if (!System.IO.File.Exists(rutaCompleta))
-                    {
-                        archivoEliminado = true;
-                    }
+                    // Limpiar posibles archivos huérfanos
+                    await _repositorioImagen.LimpiarImagenesHuerfanasAsync(idInmueble, _environment);
+                    
+                    TempData["SuccessMessage"] = $"Imagen '{descripcionImagen}' eliminada exitosamente de la galería";
                 }
                 else
                 {
-                    // Intentar ruta alternativa
-                    string rutaAlternativa = Path.Combine(Directory.GetCurrentDirectory(), "wwwroot", url.Replace('/', Path.DirectorySeparatorChar).TrimStart(Path.DirectorySeparatorChar));
-                    
-                    if (System.IO.File.Exists(rutaAlternativa))
-                    {
-                        System.IO.File.Delete(rutaAlternativa);
-                        archivoEliminado = true;
-                    }
+                    TempData["ErrorMessage"] = "No se pudo eliminar la imagen";
                 }
             }
-            catch (Exception fileEx)
+            catch (Exception ex)
             {
-                // No fallar por esto, pero avisar
-                TempData["WarningMessage"] = $"Imagen eliminada de la base de datos, pero no se pudo eliminar el archivo físico: {fileEx.Message}";
+                TempData["ErrorMessage"] = $"Error al eliminar imagen: {ex.Message}";
+            }
+            
+            return RedirectToAction(nameof(Index), new { idInmueble });
+        }
+
+        // MÉTODO ADICIONAL: Reordenar imágenes (AJAX)
+        [HttpPost]
+        public async Task<IActionResult> ReordenarImagenes(int idInmueble, [FromBody] Dictionary<int, int> nuevosOrdenes)
+        {
+            try
+            {
+                if (!await _repositorioImagen.ExisteInmuebleAsync(idInmueble))
+                {
+                    return Json(new { success = false, message = "Inmueble no encontrado" });
+                }
+
+                bool resultado = await _repositorioImagen.ActualizarOrdenImagenesAsync(idInmueble, nuevosOrdenes);
+                
+                if (resultado)
+                {
+                    return Json(new { success = true, message = "Orden actualizado exitosamente" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Error al actualizar el orden" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
             }
         }
 
-        // Mensaje de éxito
-        string mensajeExito = archivoEliminado 
-            ? $"Imagen '{descripcion}' eliminada completamente"
-            : $"Imagen '{descripcion}' eliminada de la base de datos";
-            
-        if (!string.IsNullOrEmpty(direccionInmueble))
+        // MÉTODO ADICIONAL: Obtener estadísticas de galería (AJAX)
+        [HttpGet]
+        public async Task<IActionResult> EstadisticasGaleria(int idInmueble)
         {
-            mensajeExito += $" del inmueble en {direccionInmueble}";
+            try
+            {
+                var estadisticas = await _repositorioImagen.ObtenerEstadisticasGaleriaAsync(idInmueble);
+                return Json(estadisticas);
+            }
+            catch (Exception ex)
+            {
+                return Json(new { error = ex.Message });
+            }
         }
-        
-        TempData["SuccessMessage"] = mensajeExito;
-        return RedirectToAction(nameof(Index), new { idInmueble });
+
+        // MÉTODO ADICIONAL: Limpiar imágenes huérfanas 
+        [HttpPost]
+        public async Task<IActionResult> LimpiarImagenesHuerfanas(int idInmueble)
+        {
+            try
+            {
+                bool resultado = await _repositorioImagen.LimpiarImagenesHuerfanasAsync(idInmueble, _environment);
+                
+                if (resultado)
+                {
+                    TempData["SuccessMessage"] = "Limpieza de archivos huérfanos completada";
+                }
+                else
+                {
+                    TempData["WarningMessage"] = "No se pudieron limpiar todos los archivos huérfanos";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error durante la limpieza: {ex.Message}";
+            }
+            
+            return RedirectToAction(nameof(Index), new { idInmueble });
+        }
+
+        // MÉTODO ADICIONAL: Eliminar todas las imágenes de un inmueble
+        [HttpPost]
+        public async Task<IActionResult> EliminarTodasLasImagenes(int idInmueble)
+        {
+            try
+            {
+                if (!await _repositorioImagen.ExisteInmuebleAsync(idInmueble))
+                {
+                    TempData["ErrorMessage"] = "Inmueble no encontrado";
+                    return RedirectToAction("Index", "Inmuebles");
+                }
+
+                int totalImagenes = await _repositorioImagen.ContarImagenesPorInmuebleAsync(idInmueble);
+                
+                if (totalImagenes == 0)
+                {
+                    TempData["InfoMessage"] = "No hay imágenes para eliminar";
+                    return RedirectToAction(nameof(Index), new { idInmueble });
+                }
+
+                bool resultado = await _repositorioImagen.EliminarTodasLasImagenesInmuebleAsync(idInmueble, _environment);
+                
+                if (resultado)
+                {
+                    TempData["SuccessMessage"] = $"Se eliminaron {totalImagenes} imágenes de la galería exitosamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Error al eliminar las imágenes de la galería";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al eliminar imágenes: {ex.Message}";
+            }
+            
+            return RedirectToAction(nameof(Index), new { idInmueble });
+        }
     }
-    catch (Exception ex)
-    {
-        TempData["ErrorMessage"] = $"Error al eliminar imagen: {ex.Message}";
-        return RedirectToAction(nameof(Index), new { idInmueble });
-    }
-}
-}   
 }

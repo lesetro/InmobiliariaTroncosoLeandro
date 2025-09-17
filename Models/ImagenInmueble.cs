@@ -14,10 +14,10 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Column("id_inmueble")]
         public int IdInmueble { get; set; }
 
-        
+        [Required(ErrorMessage = "La URL es obligatoria")]
         [StringLength(500, ErrorMessage = "La URL no puede exceder 500 caracteres")]
         [Column("url")]
-        public required string Url { get; set; } = " ";
+        public string Url { get; set; } = "";
 
         [StringLength(200, ErrorMessage = "La descripción no puede exceder 200 caracteres")]
         [Column("descripcion")]
@@ -29,8 +29,31 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Column("fecha_creacion")]
         public DateTime FechaCreacion { get; set; } = DateTime.Now;
 
-        // Navegación hacia Inmueble
+    
         [NotMapped]
         public virtual Inmueble? Inmueble { get; set; }
+
+        
+        [NotMapped]
+        public string NombreArchivo
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(Url)) return "Sin archivo";
+                return Path.GetFileName(Url);
+            }
+        }
+
+        [NotMapped]
+        public bool EsImagenValida => !string.IsNullOrWhiteSpace(Url);
+
+        [NotMapped]
+        public string TamanioFormateado { get; set; } = "";
+
+        [NotMapped]
+        public string IconoTipo => "bi-images";
+
+        [NotMapped]
+        public string CssClassOrden => $"orden-{Orden}";
     }
 }
