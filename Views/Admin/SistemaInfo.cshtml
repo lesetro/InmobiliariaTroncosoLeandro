@@ -1,0 +1,143 @@
+@{
+    ViewData["Title"] = "Información del Sistema";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-cpu"></i> Información del Sistema
+        </h1>
+    </div>
+
+    <!-- Información Técnica -->
+    <div class="row">
+        <!-- Información de la Aplicación -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-app"></i> Información de la Aplicación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Nombre:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Aplicacion.Nombre</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Versión:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Aplicacion.Version</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Framework:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Aplicacion.Framework</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ambiente:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Aplicacion.Ambiente</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Fecha compilación:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Aplicacion.FechaCompilacion</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Servidor -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-server"></i> Información del Servidor
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Sistema:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Servidor.Sistema</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Procesador:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Servidor.Procesador</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Memoria total:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Servidor.MemoriaTotal</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Tiempo activo:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Servidor.TiempoActividad</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Usuario Actual -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-person-circle"></i> Usuario Actual
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Nombre:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Usuario.Nombre</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Email:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Usuario.Email</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Rol:</strong></td>
+                            <td><span class="badge badge-primary">@ViewBag.SistemaInfo.Usuario.Rol</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>ID Usuario:</strong></td>
+                            <td>@ViewBag.SistemaInfo.Usuario.IdUsuario</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Herramientas Rápidas -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-tools"></i> Herramientas del Sistema
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <form method="post" asp-controller="Admin" asp-action="LimpiarCache" style="display: inline;">
+                        <button type="submit" class="btn btn-info btn-sm mr-2">
+                            <i class="bi bi-trash"></i> Limpiar Caché
+                        </button>
+                    </form>
+                    
+                    <form method="post" asp-controller="Admin" asp-action="ReiniciarAplicacion" style="display: inline;">
+                        <button type="submit" class="btn btn-warning btn-sm mr-2" onclick="return confirm('¿Está seguro que desea reiniciar?')">
+                            <i class="bi bi-arrow-clockwise"></i> Reiniciar
+                        </button>
+                    </form>
+                    <a href="@Url.Action("Configuracion", "Admin")" class="btn btn-secondary btn-sm">
+                        <i class="bi bi-gear"></i> Configuración
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

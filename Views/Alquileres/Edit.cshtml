@@ -1,0 +1,98 @@
+@model Inmobiliaria_troncoso_leandro.Models.Pago
+
+@{
+    ViewData["Title"] = "Editar Pago";
+}
+
+<h2>Editar Pago de Alquiler</h2>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success">@TempData["SuccessMessage"]</div>
+}
+
+<form asp-action="Edit" method="post" enctype="multipart/form-data">
+    @Html.AntiForgeryToken()
+    <input type="hidden" asp-for="IdPago" />
+    <input type="hidden" asp-for="IdContrato" />
+    <input type="hidden" asp-for="IdInmueble" />
+    <input type="hidden" asp-for="TipoPago" />
+
+    <div class="row">
+        <div class="col-md-6">
+            <div class="form-group">
+                <label asp-for="NumeroPago" class="control-label"></label>
+                <input asp-for="NumeroPago" class="form-control" />
+                <span asp-validation-for="NumeroPago" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FechaPago" class="control-label"></label>
+                <input asp-for="FechaPago" type="date" class="form-control" />
+                <span asp-validation-for="FechaPago" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="FechaVencimiento" class="control-label"></label>
+                <input asp-for="FechaVencimiento" type="date" class="form-control" />
+                <span asp-validation-for="FechaVencimiento" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="Estado" class="control-label"></label>
+                <select asp-for="Estado" class="form-control">
+                    <option value="pagado">Pagado</option>
+                    <option value="pendiente">Pendiente</option>
+                </select>
+                <span asp-validation-for="Estado" class="text-danger"></span>
+            </div>
+        </div>
+
+        <div class="col-md-6">
+            <div class="form-group">
+                <label asp-for="Concepto" class="control-label"></label>
+                <input asp-for="Concepto" class="form-control" />
+                <span asp-validation-for="Concepto" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="MontoBase" class="control-label"></label>
+                <input asp-for="MontoBase" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="MontoBase" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label asp-for="MontoDiarioMora" class="control-label"></label>
+                <input asp-for="MontoDiarioMora" type="number" step="0.01" class="form-control" />
+                <span asp-validation-for="MontoDiarioMora" class="text-danger"></span>
+            </div>
+
+            <div class="form-group">
+                <label class="control-label">Comprobante</label>
+                @if (!string.IsNullOrEmpty(Model.ComprobanteNombre))
+                {
+                    <div class="alert alert-info">
+                        Archivo actual: @Model.ComprobanteNombre
+                    </div>
+                }
+                <input type="file" name="ComprobanteArchivo" class="form-control" accept=".pdf,.jpg,.jpeg,.png" />
+                <small class="form-text text-muted">Formatos: PDF, JPG, PNG (Máx. 5MB)</small>
+            </div>
+        </div>
+    </div>
+
+    <div class="form-group">
+        <label asp-for="Observaciones" class="control-label"></label>
+        <textarea asp-for="Observaciones" class="form-control" rows="3"></textarea>
+        <span asp-validation-for="Observaciones" class="text-danger"></span>
+    </div>
+
+    <div class="form-group mt-3">
+        <button type="submit" class="btn btn-primary">Guardar Cambios</button>
+        <a href="@Url.Action("Index")" class="btn btn-secondary">Cancelar</a>
+    </div>
+</form>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

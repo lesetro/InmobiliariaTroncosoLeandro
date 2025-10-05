@@ -1,0 +1,215 @@
+@{
+    ViewData["Title"] = "Configuración del Sistema";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-gear"></i> Configuración del Sistema
+        </h1>
+    </div>
+    <div>
+            <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>volver
+            </a>
+    </div>
+
+    <!-- Información del Sistema -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-info-circle"></i> Información General
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Nombre del Sistema:</strong></td>
+                            <td>@ViewBag.Configuracion.SistemaInfo.Nombre</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Versión:</strong></td>
+                            <td>@ViewBag.Configuracion.SistemaInfo.Version</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ambiente:</strong></td>
+                            <td>@ViewBag.Configuracion.SistemaInfo.Ambiente</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-list-ul"></i> Configuración de Paginación
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Elementos por página:</strong></td>
+                            <td>@ViewBag.Configuracion.Paginacion.ItemsPorPaginaDefault</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Máximo por página:</strong></td>
+                            <td>@ViewBag.Configuracion.Paginacion.MaximoItemsPorPagina</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Archivos y Contratos -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-file-earmark"></i> Configuración de Archivos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Tamaño máximo:</strong></td>
+                            <td>@ViewBag.Configuracion.Archivos.TamañoMaximoMB MB</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Formatos permitidos:</strong></td>
+                            <td>@string.Join(", ", ViewBag.Configuracion.Archivos.FormatosPermitidos)</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Ruta almacenamiento:</strong></td>
+                            <td>@ViewBag.Configuracion.Archivos.RutaAlmacenamiento</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-file-text"></i> Configuración de Contratos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Días alerta vencimiento:</strong></td>
+                            <td>@ViewBag.Configuracion.Contratos.DiasAlertaVencimiento días</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Duración mínima:</strong></td>
+                            <td>@ViewBag.Configuracion.Contratos.DuracionMinimaMeses meses</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Renovación automática:</strong></td>
+                            <td>@(ViewBag.Configuracion.Contratos.RenovacionAutomatica ? "Habilitada" : "Deshabilitada")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Pagos y Usuarios -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-credit-card"></i> Configuración de Pagos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Tasa mora mensual:</strong></td>
+                            <td>@ViewBag.Configuracion.Pagos.TasaMoraMensual%</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Días de gracia:</strong></td>
+                            <td>@ViewBag.Configuracion.Pagos.DiasGracia días</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Cálculo automático:</strong></td>
+                            <td>@(ViewBag.Configuracion.Pagos.CalculoMoraAutomatico ? "Habilitado" : "Deshabilitado")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-people"></i> Configuración de Usuarios
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <table class="table table-borderless">
+                        <tr>
+                            <td><strong>Tiempo de sesión:</strong></td>
+                            <td>@ViewBag.Configuracion.Usuarios.TiempoSesionHoras horas</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Password temporal:</strong></td>
+                            <td>@ViewBag.Configuracion.Usuarios.PasswordTemporal</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Forzar cambio password:</strong></td>
+                            <td>@(ViewBag.Configuracion.Usuarios.ForzarCambioPassword ? "Sí" : "No")</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Registro público:</strong></td>
+                            <td>@(ViewBag.Configuracion.Usuarios.PermitirRegistroPublico ? "Permitido" : "Bloqueado")</td>
+                        </tr>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Email -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header bg-dark text-white">
+                    <h6 class="m-0 font-weight-bold">
+                        <i class="bi bi-envelope"></i> Configuración de Email
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <strong>Servidor SMTP:</strong><br>
+                            <span class="text-muted">@ViewBag.Configuracion.Email.ServidorSmtp</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Puerto:</strong><br>
+                            <span class="text-muted">@ViewBag.Configuracion.Email.Puerto</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Email empresa:</strong><br>
+                            <span class="text-muted">@ViewBag.Configuracion.Email.EmailEmpresa</span>
+                        </div>
+                        <div class="col-md-3">
+                            <strong>Notificaciones:</strong><br>
+                            <span class="text-muted">@(ViewBag.Configuracion.Email.EnviarNotificaciones ? "Habilitadas" : "Deshabilitadas")</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,809 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Inmobiliaria CISMA</title>
+    
+    <!-- Meta tags para SEO -->
+    <meta name="description" content="Inmobiliaria CISMA - Tu hogar te está esperando. Encuentra la propiedad perfecta en Villa Mercedes, San Luis. Alquileres, ventas y administración.">
+    <meta name="keywords" content="inmobiliaria, villa mercedes, san luis, alquiler, venta, propiedades, casas, departamentos">
+    <meta name="author" content="Inmobiliaria CISMA">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:title" content="@ViewData["Title"] - Inmobiliaria CISMA">
+    <meta property="og:description" content="Encuentra la propiedad perfecta con la inmobiliaria más confiable de Villa Mercedes">
+  
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="~/favicon.ico">
+    
+    <!-- CSS -->
+    <link href="~/lib/bootstrap/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link href="~/lib/fontawesome-free/css/all.min.css" rel="stylesheet" type="text/css">
+    <link href="https://fonts.googleapis.com/css?family=Nunito:200,200i,300,300i,400,400i,600,600i,700,700i,800,800i,900,900i" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-icons/1.10.0/font/bootstrap-icons.min.css" rel="stylesheet">
+    <link href="~/css/site.css" rel="stylesheet" />
+    
+    <!-- CSS específico para páginas públicas -->
+    <style>
+        /* ===== LAYOUT PRINCIPAL - STICKY FOOTER ===== */
+        html, body {
+            height: 100%;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        .main-content-wrapper {
+            flex: 1 0 auto;
+            margin-top: 76px; /* Altura del navbar fixed */
+        }
+
+        .footer-public {
+            flex-shrink: 0;
+            margin-top: auto;
+        }
+
+        /* ===== VARIABLES CSS ===== */
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #e74c3c;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --success-color: #2ecc71;
+            --warning-color: #f39c12;
+            --info-color: #3498db;
+            --gradient-primary: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+            --gradient-secondary: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+            --gradient-accent: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        
+        .navbar-brand img {
+            height: 40px;
+            margin-right: 10px;
+        }
+        
+        .navbar-public {
+            background: rgba(255, 255, 255, 0.95) !important;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .navbar-public.scrolled {
+            background: rgba(255, 255, 255, 0.98) !important;
+            box-shadow: 0 2px 20px rgba(0,0,0,0.15);
+        }
+
+        .navbar-brand i {
+            color: var(--warning-color) !important;
+        }
+
+        .navbar-brand span {
+            color: var(--primary-color) !important;
+        }
+
+        .nav-link {
+            color: var(--dark-color) !important;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-link:hover {
+            color: var(--primary-color) !important;
+            transform: translateY(-1px);
+        }
+
+        .nav-link i {
+            color: var(--primary-color);
+            margin-right: 5px;
+        }
+        
+        .btn-login {
+            background: var(--gradient-primary);
+            border: none;
+            color: white;
+            transition: all 0.3s ease;
+            padding: 8px 20px;
+            border-radius: 25px;
+            font-weight: 600;
+        }
+        
+        .btn-login:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(52, 152, 219, 0.3);
+            color: white;
+            background: var(--gradient-accent);
+        }
+
+        .dropdown-menu {
+            border: none;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.1);
+            border-radius: 10px;
+        }
+
+        .dropdown-item {
+            transition: all 0.3s ease;
+            padding: 10px 20px;
+        }
+
+        .dropdown-item:hover {
+            background: var(--gradient-primary);
+            color: white;
+            transform: translateX(5px);
+        }
+
+        .dropdown-item i {
+            width: 20px;
+            color: var(--primary-color);
+        }
+
+        .dropdown-item:hover i {
+            color: white;
+        }
+        
+        /* ===== FOOTER MEJORADO ===== */
+        .footer-public {
+            background: var(--gradient-primary);
+            color: white;
+            position: relative;
+            overflow: hidden;
+            margin-top: 4rem;
+        }
+
+        .footer-public::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.05) 50%, transparent 60%);
+            animation: shimmer 3s infinite;
+        }
+
+        @@keyframes shimmer {
+            0% { transform: translateX(-100%); }
+            100% { transform: translateX(100%); }
+        }
+
+        .footer-content {
+            position: relative;
+            z-index: 1;
+            padding: 3rem 0;
+        }
+
+        .footer-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 2rem;
+            height: 100%;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+        }
+
+        .footer-section:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .footer-section h5, .footer-section h6 {
+            color: white;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            font-size: 1.2rem;
+            position: relative;
+        }
+
+        .footer-section h5::after, .footer-section h6::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 0;
+            width: 50px;
+            height: 3px;
+            background: var(--gradient-secondary);
+            border-radius: 2px;
+        }
+
+        .company-info {
+            text-align: center;
+        }
+
+        .company-logo {
+            font-size: 3rem;
+            color: var(--warning-color);
+            margin-bottom: 1rem;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @@keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        .company-name {
+            font-size: 1.8rem;
+            font-weight: 800;
+            margin-bottom: 1rem;
+            color: white;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .company-description {
+            font-size: 1rem;
+            line-height: 1.6;
+            margin-bottom: 1.5rem;
+            color: rgba(255, 255, 255, 0.9);
+        }
+        
+        .social-icons {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin-top: 1.5rem;
+        }
+
+        .social-icons a {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            border-radius: 50%;
+            text-decoration: none;
+            transition: all 0.3s ease;
+            font-size: 1.2rem;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .social-icons a:hover {
+            transform: translateY(-5px) scale(1.1);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            border-color: white;
+        }
+
+        .social-icons a.facebook:hover { 
+            background: var(--gradient-primary);
+            color: white;
+        }
+        .social-icons a.instagram:hover { 
+            background: var(--gradient-secondary);
+            color: white;
+        }
+        .social-icons a.whatsapp:hover { 
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            color: white;
+        }
+        .social-icons a.linkedin:hover { 
+            background: linear-gradient(135deg, #0077B5, #005885);
+            color: white;
+        }
+
+        .footer-links {
+            list-style: none;
+            padding: 0;
+        }
+
+        .footer-links li {
+            margin-bottom: 1rem;
+        }
+
+        .footer-links a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            font-size: 1rem;
+            padding: 5px 0;
+        }
+
+        .footer-links a:hover {
+            color: white;
+            transform: translateX(10px);
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .footer-links a i {
+            margin-right: 12px;
+            width: 18px;
+            font-size: 1rem;
+            color: var(--warning-color);
+        }
+
+        .contact-info p {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 1rem;
+            font-size: 1rem;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, 0.9);
+        }
+
+        .contact-info i {
+            margin-right: 12px;
+            width: 18px;
+            color: var(--warning-color);
+            margin-top: 2px;
+            font-size: 1.1rem;
+        }
+
+        .contact-info a {
+            color: rgba(255, 255, 255, 0.9);
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .contact-info a:hover {
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+
+        .footer-bottom {
+            background: rgba(0, 0, 0, 0.2);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1.5rem 0;
+        }
+
+        .footer-links-bottom {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 0.5rem;
+        }
+
+        .footer-links-bottom a {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.95rem;
+            transition: all 0.3s ease;
+        }
+
+        .footer-links-bottom a:hover {
+            color: white;
+            text-shadow: 0 0 10px rgba(255, 255, 255, 0.5);
+        }
+        
+        /* ===== BOTONES FLOTANTES ===== */
+        .whatsapp-float {
+            position: fixed;
+            width: 65px;
+            height: 65px;
+            bottom: 25px;
+            right: 25px;
+            background: linear-gradient(135deg, #25D366, #128C7E);
+            border-radius: 50%;
+            z-index: 1000;
+            transition: all 0.3s ease;
+            animation: pulse 2s infinite;
+            box-shadow: 0 8px 25px rgba(37, 211, 102, 0.4);
+        }
+        
+        .whatsapp-float:hover {
+            transform: scale(1.15);
+            box-shadow: 0 12px 35px rgba(37, 211, 102, 0.6);
+        }
+        
+        .whatsapp-float.hidden {
+            transform: translateY(100px);
+            opacity: 0;
+        }
+        
+        .whatsapp-float a {
+            width: 65px;
+            height: 65px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.8rem;
+        }
+        
+        .scroll-top {
+            position: fixed;
+            width: 55px;
+            height: 55px;
+            bottom: 25px;
+            left: 25px;
+            background: var(--gradient-primary);
+            border-radius: 50%;
+            z-index: 999;
+            display: none;
+            transition: all 0.3s ease;
+            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.4);
+        }
+        
+        .scroll-top:hover {
+            transform: translateY(-5px) scale(1.1);
+            background: var(--gradient-accent);
+            box-shadow: 0 10px 30px rgba(52, 152, 219, 0.6);
+        }
+        
+        .scroll-top a {
+            width: 55px;
+            height: 55px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            text-decoration: none;
+            font-size: 1.3rem;
+        }
+        
+        @@keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 15px rgba(37, 211, 102, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+            }
+        }
+        
+        /* ===== RESPONSIVE ===== */
+        @@media (max-width: 768px) {
+            .footer-section {
+                margin-bottom: 2rem;
+                padding: 1.5rem;
+            }
+            
+            .footer-content {
+                padding: 2rem 0;
+            }
+            
+            .social-icons {
+                justify-content: center;
+            }
+            
+            .footer-links-bottom {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+
+            .whatsapp-float {
+                width: 55px;
+                height: 55px;
+                bottom: 20px;
+                right: 20px;
+            }
+            
+            .whatsapp-float a {
+                width: 55px;
+                height: 55px;
+                font-size: 1.5rem;
+            }
+            
+            .scroll-top {
+                width: 45px;
+                height: 45px;
+                bottom: 20px;
+                left: 20px;
+            }
+            
+            .scroll-top a {
+                width: 45px;
+                height: 45px;
+                font-size: 1.1rem;
+            }
+
+            .company-name {
+                font-size: 1.5rem;
+            }
+
+            .company-logo {
+                font-size: 2.5rem;
+            }
+        }
+    </style>
+
+    @await RenderSectionAsync("Styles", required: false)
+</head>
+
+<body class="page-wrapper">
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top navbar-public">
+        <div class="container">
+            <!-- Logo y nombre -->
+            <a class="navbar-brand d-flex align-items-center" asp-area="" asp-controller="Home" asp-action="Index">
+                <i class="fas fa-building me-2" style="font-size: 2rem;"></i>
+                <span class="font-weight-bold">Inmobiliaria CISMA</span>
+            </a>
+
+            <!-- Botón toggle para móvil -->
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" 
+                aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+
+            <!-- Menú de navegación -->
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Index">
+                            <i class="fas fa-home"></i> Inicio
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Catalogo">
+                            <i class="fas fa-search"></i> Propiedades
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Servicios">
+                            <i class="fas fa-cogs"></i> Servicios
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="SobreNosotros">
+                            <i class="fas fa-users"></i> Nosotros
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" asp-controller="Home" asp-action="Contacto">
+                            <i class="fas fa-envelope"></i> Contacto
+                        </a>
+                    </li>
+                    
+                    <!-- Enlaces de autenticación -->
+                    @if (User?.Identity?.IsAuthenticated == true)
+                    {
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" 
+                                data-bs-toggle="dropdown" aria-expanded="false">
+                                <i class="fas fa-user-circle"></i> @User.FindFirst("FullName")?.Value
+                            </a>
+                            <div class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                                @{
+                                    var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower();
+                                    var dashboardAction = userRole switch
+                                    {
+                                        "administrador" => Url.Action("Index", "Admin"),
+                                        "empleado" => Url.Action("Index", "Empleado"),
+                                        "propietario" => Url.Action("Index", "Propietario"),
+                                        "inquilino" => Url.Action("Index", "Inquilino"),
+                                        _ => Url.Action("Index", "Home")
+                                    };
+                                }
+                                <a class="dropdown-item" href="@dashboardAction">
+                                    <i class="fas fa-tachometer-alt"></i> Panel de Control
+                                </a>
+                                <a class="dropdown-item" asp-controller="Usuario" asp-action="Perfil">
+                                    <i class="fas fa-user"></i> Mi Perfil
+                                </a>
+                                <a class="dropdown-item" asp-controller="Account" asp-action="ChangePassword">
+                                    <i class="fas fa-key"></i> Cambiar Contraseña
+                                </a>
+                                <div class="dropdown-divider"></div>
+                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                    <button type="submit" class="dropdown-item">
+                                        <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                                    </button>
+                                </form>
+                            </div>
+                        </li>
+                    }
+                    else
+                    {
+                        <li class="nav-item">
+                            <a class="btn btn-login ms-2" asp-controller="Account" asp-action="Login">
+                                <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Contenido principal -->
+    <main role="main" class="main-content-wrapper">
+        @RenderBody()
+    </main>
+
+    <!-- Footer Mejorado -->
+    <footer class="footer-public">
+        <div class="container footer-content">
+            <div class="row g-4">
+                <!-- Información de la empresa -->
+                <div class="col-lg-4 col-md-6">
+                    <div class="footer-section">
+                        <div class="company-info">
+                            <div class="company-logo">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <h5 class="company-name">Inmobiliaria CISMA</h5>
+                            <p class="company-description">
+                                Tu socio confiable en el mercado inmobiliario. Más de 15 años de experiencia 
+                                brindando soluciones integrales en Villa Mercedes, San Luis.
+                            </p>
+                            <div class="social-icons">
+                                <a href="#" title="Facebook" class="facebook">
+                                    <i class="fab fa-facebook-f"></i>
+                                </a>
+                                <a href="#" title="Instagram" class="instagram">
+                                    <i class="fab fa-instagram"></i>
+                                </a>
+                                <a href="https://wa.me/5492664123456" title="WhatsApp" class="whatsapp" target="_blank">
+                                    <i class="fab fa-whatsapp"></i>
+                                </a>
+                                <a href="#" title="LinkedIn" class="linkedin">
+                                    <i class="fab fa-linkedin-in"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enlaces rápidos -->
+                <div class="col-lg-2 col-md-6">
+                    <div class="footer-section">
+                        <h6>Enlaces Rápidos</h6>
+                        <ul class="footer-links">
+                            <li><a asp-controller="Home" asp-action="Index"><i class="fas fa-home"></i>Inicio</a></li>
+                            <li><a asp-controller="Home" asp-action="Catalogo"><i class="fas fa-building"></i>Propiedades</a></li>
+                            <li><a asp-controller="Home" asp-action="Servicios"><i class="fas fa-concierge-bell"></i>Servicios</a></li>
+                            <li><a asp-controller="Home" asp-action="SobreNosotros"><i class="fas fa-users"></i>Nosotros</a></li>
+                            <li><a asp-controller="Home" asp-action="Contacto"><i class="fas fa-envelope"></i>Contacto</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Servicios -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="footer-section">
+                        <h6>Nuestros Servicios</h6>
+                        <ul class="footer-links">
+                            <li><a href="#"><i class="fas fa-key"></i>Alquiler de Propiedades</a></li>
+                            <li><a href="#"><i class="fas fa-handshake"></i>Venta de Inmuebles</a></li>
+                            <li><a href="#"><i class="fas fa-tools"></i>Administración</a></li>
+                            <li><a href="#"><i class="fas fa-balance-scale"></i>Asesoramiento Legal</a></li>
+                            <li><a href="#"><i class="fas fa-calculator"></i>Tasaciones</a></li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Información de contacto -->
+                <div class="col-lg-3 col-md-6">
+                    <div class="footer-section">
+                        <h6>Contacto</h6>
+                        <div class="contact-info">
+                            <p>
+                                <i class="fas fa-map-marker-alt"></i>
+                                <span>
+                                    Av. Mitre 1234, Villa Mercedes<br>
+                                    San Luis, Argentina
+                                </span>
+                            </p>
+                            <p>
+                                <i class="fas fa-phone"></i>
+                                <a href="tel:+5492664123456">+54 9 2664 123456</a>
+                            </p>
+                            <p>
+                                <i class="fas fa-envelope"></i>
+                                <a href="mailto:info@inmobiliaria.com">info@inmobiliaria.com</a>
+                            </p>
+                            <p>
+                                <i class="fas fa-clock"></i>
+                                <span>
+                                    Lun - Vie: 9:00 - 18:00<br>
+                                    Sáb: 9:00 - 13:00
+                                </span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Copyright y enlaces legales -->
+            <div class="footer-bottom">
+                <div class="row align-items-center">
+                    <div class="col-md-12 text-center">
+                        <p class="mb-2">
+                            © @DateTime.Now.Year Inmobiliaria CISMA. Todos los derechos reservados.
+                        </p>
+                        <div class="footer-links-bottom">
+                            <a asp-controller="Home" asp-action="Privacy">Política de Privacidad</a>
+                            <a href="#">Términos y Condiciones</a>
+                            <a href="#">Aviso Legal</a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Botón de WhatsApp flotante -->
+    <div class="whatsapp-float">
+        <a href="https://wa.me/5492664123456?text=Hola,%20me%20interesa%20obtener%20información%20sobre%20sus%20servicios" 
+           target="_blank" title="Contactar por WhatsApp">
+            <i class="bi bi-whatsapp"></i>
+        </a>
+    </div>
+
+    <!-- Botón de scroll to top -->
+    <div class="scroll-top">
+        <a href="#" title="Volver arriba">
+            <i class="bi bi-arrow-up"></i>
+        </a>
+    </div>
+
+    <!-- Scripts -->
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts globales para páginas públicas -->
+    <script>
+        $(document).ready(function() {
+            // Navbar transparente/sólida al hacer scroll
+            $(window).scroll(function() {
+                if ($(this).scrollTop() > 50) {
+                    $('.navbar-public').addClass('scrolled');
+                } else {
+                    $('.navbar-public').removeClass('scrolled');
+                }
+            });
+
+            // Smooth scrolling para enlaces ancla
+            $('a[href^="#"]').on('click', function(event) {
+                var target = $(this.getAttribute('href'));
+                if (target.length) {
+                    event.preventDefault();
+                    $('html, body').animate({
+                        scrollTop: target.offset().top - 70
+                    }, 1000);
+                }
+            });
+
+            // Botón scroll to top
+            $(window).scroll(function() {
+                if ($(this).scrollTop() > 100) {
+                    $('.scroll-top').fadeIn();
+                } else {
+                    $('.scroll-top').fadeOut();
+                }
+            });
+
+            $('.scroll-top a').click(function(e) {
+                e.preventDefault();
+                $('html, body').animate({scrollTop: 0}, 800);
+            });
+
+            // Mostrar/ocultar WhatsApp según scroll
+            let lastScrollTop = 0;
+            $(window).scroll(function() {
+                let scrollTop = $(this).scrollTop();
+                if (scrollTop > lastScrollTop && scrollTop > 200) {
+                    $('.whatsapp-float').addClass('hidden');
+                } else {
+                    $('.whatsapp-float').removeClass('hidden');
+                }
+                lastScrollTop = scrollTop;
+            });
+        });
+    </script>
+    
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

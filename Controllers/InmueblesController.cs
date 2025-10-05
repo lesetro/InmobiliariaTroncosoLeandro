@@ -3,9 +3,11 @@ using Microsoft.AspNetCore.Mvc.Rendering;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
 using Inmobiliaria_troncoso_leandro.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
+    [Authorize(Policy = "AdminOEmpleado")]
     public class InmueblesController : Controller
     {
         private readonly IRepositorioInmueble _repositorioInmueble;

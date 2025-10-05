@@ -1,0 +1,157 @@
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
+
+@{
+    ViewData["Title"] = $"Detalles - {Model.Direccion}";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Detalles del Inmueble</h1>
+                <a asp-action="Inmuebles" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Inmuebles
+                </a>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="row">
+                <!-- Información Principal -->
+                <div class="col-lg-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-info-circle text-primary"></i> Información Principal
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Datos del Inmueble</h6>
+                                    <p><strong>Dirección:</strong> @Model.Direccion</p>
+                                    <p><strong>Uso:</strong> <span class="badge bg-info">@Model.Uso.ToUpper()</span></p>
+                                    <p><strong>Ambientes:</strong> @Model.Ambientes</p>
+                                    <p><strong>Precio:</strong> <span class="h5 text-success">$@Model.Precio.ToString("N0")</span></p>
+                                    <p><strong>Coordenadas:</strong> 
+                                        @if (!string.IsNullOrEmpty(Model.Coordenadas))
+                                        {
+                                            <span>@Model.Coordenadas</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">No especificadas</span>
+                                        }
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <h6 class="text-muted mb-3">Estado y Propietario</h6>
+                                    <p><strong>Estado:</strong> 
+                                        @{
+                                            var badgeClass = Model.Estado switch
+                                            {
+                                                "disponible" => "bg-success",
+                                                "alquilado" => "bg-warning",
+                                                "vendido" => "bg-danger",
+                                                _ => "bg-secondary"
+                                            };
+                                        }
+                                        <span class="badge @badgeClass">@Model.Estado.ToUpper()</span>
+                                    </p>
+                                    
+                                    @if (Model.Propietario?.Usuario != null)
+                                    {
+                                        <h6 class="text-muted mb-2">Propietario</h6>
+                                        <p><strong>Nombre:</strong> @Model.Propietario.Usuario.NombreCompleto</p>
+                                        <p><strong>Email:</strong> 
+                                            <a href="mailto:@Model.Propietario.Usuario.Email">@Model.Propietario.Usuario.Email</a>
+                                        </p>
+                                        @if (!string.IsNullOrEmpty(Model.Propietario.Usuario.Telefono))
+                                        {
+                                            <p><strong>Teléfono:</strong> 
+                                                <a href="tel:@Model.Propietario.Usuario.Telefono">@Model.Propietario.Usuario.Telefono</a>
+                                            </p>
+                                        }
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Acciones Rápidas -->
+                <div class="col-lg-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                <i class="fas fa-tools text-warning"></i> Acciones
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal" data-bs-target="#modalSubirFoto">
+                                    <i class="fas fa-camera"></i> Subir Foto
+                                </button>
+                                
+                                @if (Model.Estado == "disponible")
+                                {
+                                    <a asp-controller="Empleado" asp-action="CrearContrato" asp-route-inmuebleId="@Model.IdInmueble" class="btn btn-outline-success">
+                                        <i class="fas fa-file-contract"></i> Crear Contrato
+                                    </a>
+                                }
+
+                                <hr>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i>
+                                    Los empleados solo pueden ver y agregar fotos a los inmuebles.
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para subir foto -->
+<div class="modal fade" id="modalSubirFoto" tabindex="-1" aria-labelledby="modalSubirFotoLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="modalSubirFotoLabel">Subir Foto del Inmueble</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form asp-action="SubirFotoInmueble" method="post" enctype="multipart/form-data">
+                <input type="hidden" name="idInmueble" value="@Model.IdInmueble" />
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="archivo" class="form-label">Seleccionar Archivo</label>
+                        <input type="file" name="archivo" id="archivo" class="form-control" accept="image/*" required />
+                        <div class="form-text">Formatos permitidos: JPG, PNG, GIF. Máximo 5MB.</div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-upload"></i> Subir Foto
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>

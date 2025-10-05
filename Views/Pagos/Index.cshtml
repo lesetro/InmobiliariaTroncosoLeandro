@@ -1,0 +1,286 @@
+@{
+    ViewData["Title"] = "Gestion de Pagos";
+}
+
+<!-- Breadcrumb -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item active">Pagos</li>
+    </ol>
+</nav>
+
+<!-- Header con acciones -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-cash-coin me-2"></i>Gestion de Pagos</h2>
+    <div>
+        <a href="@Url.Action("Crear", "Pagos")" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Pago
+        </a>
+        <div class="btn-group ms-2">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-gear me-1"></i>Opciones
+            </button>
+            <ul class="dropdown-menu">
+                
+                <!--<li><a class="dropdown-item" href="@Url.Action("ExportarDatos", "Pagos")">
+                    <i class="bi bi-download me-2"></i>Exportar CSV
+                </a></li>
+                -->
+
+                <li><a class="dropdown-item" href="@Url.Action("Configuracion", "Pagos")">
+                    <i class="bi bi-sliders me-2"></i>Configuración
+                </a></li>
+                <!--
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="@Url.Action("Dashboard", "Pagos")">
+                    <i class="bi bi-graph-up me-2"></i>Vista Ejecutiva
+                </a></li>
+
+                -->
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas si hay errores -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Tarjetas de resumen principal -->
+<div class="row mb-4">
+    @if (ViewBag.ResumenGeneral != null)
+    {
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-cash-stack text-primary fs-2"></i>
+                    <h4 class="card-title text-primary mt-2">@GetPropertyValue(ViewBag.ResumenGeneral, "TotalPagos")</h4>
+                    <p class="card-text">Pagos del Mes</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-currency-dollar text-success fs-2"></i>
+                    <h4 class="card-title text-success mt-2">$@GetPropertyValue(ViewBag.ResumenGeneral, "IngresosTotal", "N0")</h4>
+                    <p class="card-text">Ingresos Totales</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-house-door text-info fs-2"></i>
+                    <h4 class="card-title text-info mt-2">@GetPropertyValue(ViewBag.ResumenGeneral, "PagosAlquiler")</h4>
+                    <p class="card-text">Pagos Alquiler</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-building text-warning fs-2"></i>
+                    <h4 class="card-title text-warning mt-2">@GetPropertyValue(ViewBag.ResumenGeneral, "PagosVenta")</h4>
+                    <p class="card-text">Pagos Venta</p>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Alertas importantes -->
+@if (ViewBag.TotalAlertas != null && ViewBag.TotalAlertas > 0)
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="alert alert-warning d-flex align-items-center" role="alert">
+                <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                <div class="flex-grow-1">
+                    <strong>Atención:</strong> Hay @ViewBag.TotalAlertas alerta(s) que requieren su atención.
+                    @if (ViewBag.AlertasMora != null && ViewBag.AlertasMora > 0)
+                    {
+                        <span class="ms-2"><i class="bi bi-clock-history text-danger"></i> @ViewBag.AlertasMora pagos con mora</span>
+                    }
+                    @if (ViewBag.AlertasContratos != null && ViewBag.AlertasContratos > 0)
+                    {
+                        <span class="ms-2"><i class="bi bi-calendar-x text-warning"></i> @ViewBag.AlertasContratos contratos próximos a vencer</span>
+                    }
+                </div>
+                <a href="@Url.Action("Alertas", "Pagos")" class="btn btn-sm btn-warning">
+                    <i class="bi bi-eye me-1"></i>Ver Alertas
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Accesos rápidos -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0"><i class="bi bi-lightning me-2"></i>Accesos Rápidos</h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-md-2">
+                        <a href="@Url.Action("Index", "Contratos")" class="btn btn-outline-primary btn-lg w-100 mb-2">
+                            <i class="bi bi-house-door d-block fs-2"></i>
+                            <span class="small">Alquileres</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="@Url.Action("Index", "Contratos")" class="btn btn-outline-success btn-lg w-100 mb-2">
+                            <i class="bi bi-currency-dollar d-block fs-2"></i>
+                            <span class="small">Ventas</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="@Url.Action("Dashboard", "Pagos")" class="btn btn-outline-info btn-lg w-100 mb-2">
+                            <i class="bi bi-graph-up d-block fs-2"></i>
+                            <span class="small">Reportes</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="@Url.Action("Create", "Alquileres")" class="btn btn-outline-primary btn-lg w-100 mb-2">
+                            <i class="bi bi-plus-circle d-block fs-2"></i>
+                            <span class="small">Pago Alquiler</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="@Url.Action("Create", "ContratoVenta")" class="btn btn-outline-success btn-lg w-100 mb-2">
+                            <i class="bi bi-plus-square d-block fs-2"></i>
+                            <span class="small">Pago Venta</span>
+                        </a>
+                    </div>
+                    <div class="col-md-2">
+                        <a href="@Url.Action("Alertas", "Pagos")" class="btn btn-outline-warning btn-lg w-100 mb-2">
+                            <i class="bi bi-bell d-block fs-2"></i>
+                            <span class="small">Alertas</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<!-- Pie de página con estadísticas adicionales -->
+<div class="row">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-footer text-center text-muted">
+                <small>
+                    <i class="bi bi-clock me-1"></i>Última actualización: @DateTime.Now.ToString("dd/MM/yyyy HH:mm")
+                    | <a href="@Url.Action("EstadisticasRapidas", "Pagos")" class="text-decoration-none">Actualizar datos</a>
+                </small>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar gráfico de ingresos
+            @if (ViewBag.IngresosMensuales != null)
+            {
+                <text>
+                const ctx = document.getElementById('graficoIngresos');
+                if (ctx) {
+                    const ingresosMensuales = @Html.Raw(Json.Serialize(ViewBag.IngresosMensuales));
+                    
+                    new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: ingresosMensuales.map(i => getPropertyValue(i, 'NombreMes') || 'Mes'),
+                            datasets: [{
+                                label: 'Ingresos',
+                                data: ingresosMensuales.map(i => getPropertyValue(i, 'TotalIngresos') || 0),
+                                borderColor: 'rgb(75, 192, 192)',
+                                backgroundColor: 'rgba(75, 192, 192, 0.2)',
+                                tension: 0.1
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    display: false
+                                }
+                            },
+                            scales: {
+                                y: {
+                                    beginAtZero: true,
+                                    ticks: {
+                                        callback: function(value) {
+                                            return '$' + value.toLocaleString();
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            // Función auxiliar para obtener propiedades
+            function getPropertyValue(obj, prop) {
+                return obj && obj[prop] !== undefined ? obj[prop] : null;
+            }
+
+            // Auto-refresh cada 5 minutos
+            setTimeout(function() {
+                location.reload();
+            }, 300000);
+        });
+    </script>
+}
+
+@functions {
+    public static object GetPropertyValue(object obj, string propertyName, string format = "")
+    {
+        if (obj == null) return "N/A";
+        
+        try 
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            if (property == null) return "N/A";
+            
+            var value = property.GetValue(obj);
+            if (value == null) return "N/A";
+            
+            if (!string.IsNullOrEmpty(format) && value is IFormattable formattable)
+            {
+                return formattable.ToString(format, null);
+            }
+            
+            return value.ToString() ?? "N/A";
+        }
+        catch 
+        {
+            return "N/A";
+        }
+    }
+}

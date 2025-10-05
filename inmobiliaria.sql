@@ -1,36 +1,113 @@
--- phpMyAdmin SQL Dump
--- version 5.2.1
--- https://www.phpmyadmin.net/
---
--- Servidor: 127.0.0.1
--- Tiempo de generación: 28-08-2025 a las 21:01:25
--- Versión del servidor: 10.4.32-MariaDB
--- Versión de PHP: 8.2.12
+-- ==============================================
+-- BASE DE DATOS INMOBILIARIA - ESTRUCTURA COMPLETA
+-- Todas las tablas con sus columnas y tipos de datos correctos
+-- Sin datos precargados
+-- ==============================================
 
-SET SQL_MODE = "NO_AUTO_VALUE_ON_ZERO";
-START TRANSACTION;
-SET time_zone = "+00:00";
+-- Crear base de datos
+CREATE DATABASE IF NOT EXISTS `inmobiliaria` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `inmobiliaria`;
 
+-- Deshabilitar verificaciones temporalmente
+SET FOREIGN_KEY_CHECKS = 0;
 
-/*!40101 SET @OLD_CHARACTER_SET_CLIENT=@@CHARACTER_SET_CLIENT */;
-/*!40101 SET @OLD_CHARACTER_SET_RESULTS=@@CHARACTER_SET_RESULTS */;
-/*!40101 SET @OLD_COLLATION_CONNECTION=@@COLLATION_CONNECTION */;
-/*!40101 SET NAMES utf8mb4 */;
+-- ==============================================
+-- 1. TABLA USUARIO - Tabla principal de usuarios
+-- ==============================================
+CREATE TABLE `usuario` (
+  `id_usuario` int(11) NOT NULL AUTO_INCREMENT,
+  `email` varchar(100) NOT NULL,
+  `password` varchar(255) NOT NULL,
+  `rol` varchar(20) NOT NULL DEFAULT 'empleado',
+  `nombre` varchar(100) NOT NULL,
+  `apellido` varchar(100) NOT NULL,
+  `telefono` varchar(20) NOT NULL,
+  `estado` varchar(20) NOT NULL DEFAULT 'activo',
+  `dni` varchar(20) NOT NULL,
+  `direccion` varchar(255) NOT NULL,
+  `avatar` varchar(500) DEFAULT NULL,
+  PRIMARY KEY (`id_usuario`),
+  UNIQUE KEY `email` (`email`),
+  KEY `idx_usuario_rol` (`rol`),
+  KEY `idx_usuario_estado` (`estado`),
+  KEY `idx_usuario_email` (`email`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Base de datos: `inmobiliaria`
---
+-- ==============================================
+-- 2. TABLA TIPO_INMUEBLE - Tipos de propiedades
+-- ==============================================
+CREATE TABLE `tipo_inmueble` (
+  `id_tipo_inmueble` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(50) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
+  `estado` tinyint(1) DEFAULT 1,
+  PRIMARY KEY (`id_tipo_inmueble`),
+  KEY `idx_tipo_inmueble_estado` (`estado`),
+  KEY `idx_tipo_inmueble_nombre` (`nombre`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
--- --------------------------------------------------------
+-- ==============================================
+-- 3. TABLA PROPIETARIO - Propietarios de inmuebles
+-- ==============================================
+CREATE TABLE `propietario` (
+  `id_propietario` int(11) NOT NULL AUTO_INCREMENT,
+  `fecha_alta` timestamp NOT NULL DEFAULT current_timestamp(),
+  `estado` tinyint(1) DEFAULT 1,
+  `id_usuario` int(11) NOT NULL,
+  PRIMARY KEY (`id_propietario`),
+  KEY `idx_propietario_usuario` (`id_usuario`),
+  KEY `idx_propietario_estado` (`estado`),
+  CONSTRAINT `fk_propietario_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Estructura de tabla para la tabla `contrato`
---
+-- ==============================================
+-- 4. TABLA INQUILINO - Inquilinos de propiedades
+-- ==============================================
+CREATE TABLE `inquilino` (
+  `id_inquilino` int(11) NOT NULL AUTO_INCREMENT,
+  `fecha_alta` timestamp NOT NULL DEFAULT current_timestamp(),
+  `estado` tinyint(1) DEFAULT 1,
+  `id_usuario` int(11) NOT NULL,
+  PRIMARY KEY (`id_inquilino`),
+  KEY `idx_inquilino_usuario` (`id_usuario`),
+  KEY `idx_inquilino_estado` (`estado`),
+  CONSTRAINT `fk_inquilino_usuario` FOREIGN KEY (`id_usuario`) REFERENCES `usuario` (`id_usuario`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- ==============================================
+-- 5. TABLA INMUEBLE - Propiedades inmobiliarias
+-- ==============================================
+CREATE TABLE `inmueble` (
+  `id_inmueble` int(11) NOT NULL AUTO_INCREMENT,
+  `id_propietario` int(11) NOT NULL,
+  `id_tipo_inmueble` int(11) NOT NULL,
+  `direccion` varchar(255) NOT NULL,
+  `uso` enum('residencial','comercial') NOT NULL,
+  `ambientes` int(11) NOT NULL,
+  `precio` decimal(12,2) NOT NULL,
+  `coordenadas` varchar(100) DEFAULT NULL,
+  `url_portada` varchar(500) DEFAULT NULL,
+  `estado` enum('disponible','no_disponible','alquilado','inactivo','Venta','Vendido','Reservado Alquiler','Reservado Venta') NOT NULL DEFAULT 'disponible',
+  `fecha_alta` timestamp NOT NULL DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_inmueble`),
+  KEY `idx_inmueble_propietario` (`id_propietario`),
+  KEY `idx_inmueble_tipo` (`id_tipo_inmueble`),
+  KEY `idx_inmueble_estado` (`estado`),
+  KEY `idx_inmueble_uso` (`uso`),
+  KEY `idx_inmueble_precio` (`precio`),
+  CONSTRAINT `fk_inmueble_propietario` FOREIGN KEY (`id_propietario`) REFERENCES `propietario` (`id_propietario`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_inmueble_tipo` FOREIGN KEY (`id_tipo_inmueble`) REFERENCES `tipo_inmueble` (`id_tipo_inmueble`) ON DELETE RESTRICT ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
+-- ==============================================
+-- 6. TABLA CONTRATO - Contratos de alquiler/venta
+-- ==============================================
 CREATE TABLE `contrato` (
-  `id_contrato` int(11) NOT NULL,
+  `id_contrato` int(11) NOT NULL AUTO_INCREMENT,
   `id_inmueble` int(11) NOT NULL,
   `id_inquilino` int(11) NOT NULL,
+  `id_propietario` int(11) NOT NULL DEFAULT 1,
   `fecha_inicio` date NOT NULL,
   `fecha_fin` date NOT NULL,
   `fecha_fin_anticipada` date DEFAULT NULL,
@@ -40,80 +117,27 @@ CREATE TABLE `contrato` (
   `id_usuario_creador` int(11) NOT NULL,
   `id_usuario_terminador` int(11) DEFAULT NULL,
   `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
-  `fecha_modificacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
-) ;
-
---
--- Volcado de datos para la tabla `contrato`
---
-
-INSERT INTO `contrato` (`id_contrato`, `id_inmueble`, `id_inquilino`, `fecha_inicio`, `fecha_fin`, `fecha_fin_anticipada`, `monto_mensual`, `estado`, `multa_aplicada`, `id_usuario_creador`, `id_usuario_terminador`, `fecha_creacion`, `fecha_modificacion`) VALUES
-(1, 1, 1, '2024-01-01', '2024-12-31', NULL, 50000.00, 'vigente', 0.00, 1, NULL, '2025-08-22 19:19:05', '2025-08-22 19:19:05'),
-(2, 2, 2, '2024-02-01', '2024-11-30', NULL, 80000.00, 'vigente', 0.00, 2, NULL, '2025-08-22 19:19:05', '2025-08-22 19:19:05');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `inmueble`
---
-
-CREATE TABLE `inmueble` (
-  `id_inmueble` int(11) NOT NULL,
-  `id_propietario` int(11) NOT NULL,
-  `id_tipo_inmueble` int(11) NOT NULL,
-  `direccion` varchar(255) NOT NULL,
-  `uso` enum('residencial','comercial') NOT NULL,
-  `ambientes` int(11) NOT NULL,
-  `precio` decimal(12,2) NOT NULL,
-  `coordenadas` varchar(100) DEFAULT NULL,
-  `estado` enum('disponible','no_disponible','alquilado') DEFAULT 'disponible',
-  `fecha_alta` timestamp NOT NULL DEFAULT current_timestamp()
+  `fecha_modificacion` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  PRIMARY KEY (`id_contrato`),
+  KEY `idx_contrato_inmueble` (`id_inmueble`),
+  KEY `idx_contrato_inquilino` (`id_inquilino`),
+  KEY `idx_contrato_propietario` (`id_propietario`),
+  KEY `idx_contrato_usuario_creador` (`id_usuario_creador`),
+  KEY `idx_contrato_usuario_terminador` (`id_usuario_terminador`),
+  KEY `idx_contrato_fechas` (`fecha_inicio`,`fecha_fin`),
+  KEY `idx_contrato_estado` (`estado`),
+  CONSTRAINT `fk_contrato_inmueble` FOREIGN KEY (`id_inmueble`) REFERENCES `inmueble` (`id_inmueble`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_contrato_inquilino` FOREIGN KEY (`id_inquilino`) REFERENCES `inquilino` (`id_inquilino`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_contrato_propietario` FOREIGN KEY (`id_propietario`) REFERENCES `propietario` (`id_propietario`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_contrato_usuario_creador` FOREIGN KEY (`id_usuario_creador`) REFERENCES `usuario` (`id_usuario`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_contrato_usuario_terminador` FOREIGN KEY (`id_usuario_terminador`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `inmueble`
---
-
-INSERT INTO `inmueble` (`id_inmueble`, `id_propietario`, `id_tipo_inmueble`, `direccion`, `uso`, `ambientes`, `precio`, `coordenadas`, `estado`, `fecha_alta`) VALUES
-(1, 1, 1, 'Av. Siempre Viva 742', 'residencial', 3, 50000.00, '-34.6037, -58.3816', 'disponible', '2025-08-22 19:19:05'),
-(2, 2, 3, 'Calle Comercial 123', 'comercial', 1, 80000.00, '-34.6083, -58.3712', 'disponible', '2025-08-22 19:19:05');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `inquilino`
---
-
-CREATE TABLE `inquilino` (
-  `id_inquilino` int(11) NOT NULL,
-  `dni` varchar(20) NOT NULL,
-  `apellido` varchar(100) NOT NULL,
-  `nombre` varchar(100) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `direccion` varchar(255) DEFAULT NULL,
-  `fecha_alta` timestamp NOT NULL DEFAULT current_timestamp(),
-  `estado` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `inquilino`
---
-
-INSERT INTO `inquilino` (`id_inquilino`, `dni`, `apellido`, `nombre`, `telefono`, `email`, `direccion`, `fecha_alta`, `estado`) VALUES
-(1, '40123456', 'Martínez', 'Luis', '777888999', 'luis@martinez.com', NULL, '2025-08-22 19:19:05', 1),
-(2, '40234567', 'Rodríguez', 'Sofía', '000111222', 'sofia@rodriguez.com', NULL, '2025-08-22 19:19:05', 1),
-(3, '34966673', 'Troncoso ', 'Carlos', '2657645466', 'leandrosebastiantroncoso@gmail.com', 'assasasas', '2025-08-24 03:25:09', 1),
-(4, '30123456', 'asdsadasd', 'asdsad', '2657645466', 'leandro@gmail.com', 'assasasas', '2025-08-24 03:27:09', 1);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `pago`
---
-
+-- ==============================================
+-- 7. TABLA PAGO - Pagos de alquileres
+-- ==============================================
 CREATE TABLE `pago` (
-  `id_pago` int(11) NOT NULL,
+  `id_pago` int(11) NOT NULL AUTO_INCREMENT,
   `id_contrato` int(11) NOT NULL,
   `numero_pago` int(11) NOT NULL,
   `fecha_pago` date NOT NULL,
@@ -123,233 +147,156 @@ CREATE TABLE `pago` (
   `id_usuario_creador` int(11) NOT NULL,
   `id_usuario_anulador` int(11) DEFAULT NULL,
   `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp(),
-  `fecha_anulacion` timestamp NULL DEFAULT NULL
+  `fecha_anulacion` timestamp NULL DEFAULT NULL,
+  PRIMARY KEY (`id_pago`),
+  KEY `idx_pago_contrato` (`id_contrato`),
+  KEY `idx_pago_fecha` (`fecha_pago`),
+  KEY `idx_pago_estado` (`estado`),
+  KEY `idx_pago_usuario_creador` (`id_usuario_creador`),
+  KEY `idx_pago_usuario_anulador` (`id_usuario_anulador`),
+  KEY `idx_pago_numero` (`numero_pago`),
+  CONSTRAINT `fk_pago_contrato` FOREIGN KEY (`id_contrato`) REFERENCES `contrato` (`id_contrato`) ON DELETE CASCADE ON UPDATE CASCADE,
+  CONSTRAINT `fk_pago_usuario_creador` FOREIGN KEY (`id_usuario_creador`) REFERENCES `usuario` (`id_usuario`) ON DELETE RESTRICT ON UPDATE CASCADE,
+  CONSTRAINT `fk_pago_usuario_anulador` FOREIGN KEY (`id_usuario_anulador`) REFERENCES `usuario` (`id_usuario`) ON DELETE SET NULL ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `pago`
---
-
-INSERT INTO `pago` (`id_pago`, `id_contrato`, `numero_pago`, `fecha_pago`, `concepto`, `monto`, `estado`, `id_usuario_creador`, `id_usuario_anulador`, `fecha_creacion`, `fecha_anulacion`) VALUES
-(1, 1, 1, '2024-01-05', 'Mes enero', 50000.00, 'activo', 1, NULL, '2025-08-22 19:19:05', NULL),
-(2, 1, 2, '2024-02-05', 'Mes febrero', 50000.00, 'activo', 1, NULL, '2025-08-22 19:19:05', NULL),
-(3, 2, 1, '2024-02-10', 'Mes febrero', 80000.00, 'activo', 2, NULL, '2025-08-22 19:19:05', NULL);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `propietario`
---
-
-CREATE TABLE `propietario` (
-  `id_propietario` int(11) NOT NULL,
-  `dni` varchar(20) NOT NULL,
-  `apellido` varchar(100) NOT NULL,
+-- ==============================================
+-- 8. TABLA INTERES_INMUEBLE - Personas interesadas
+-- ==============================================
+CREATE TABLE `interes_inmueble` (
+  `id_interes` int(11) NOT NULL AUTO_INCREMENT,
+  `id_inmueble` int(11) NOT NULL,
   `nombre` varchar(100) NOT NULL,
-  `telefono` varchar(20) DEFAULT NULL,
-  `email` varchar(100) DEFAULT NULL,
-  `direccion` varchar(255) DEFAULT NULL,
-  `fecha_alta` timestamp NOT NULL DEFAULT current_timestamp(),
-  `estado` tinyint(1) DEFAULT 1
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `propietario`
---
-
-INSERT INTO `propietario` (`id_propietario`, `dni`, `apellido`, `nombre`, `telefono`, `email`, `direccion`, `fecha_alta`, `estado`) VALUES
-(1, '30123456', 'García', 'Carlos', '111222333', 'carlos@garcia.com', NULL, '2025-08-22 19:19:05', 1),
-(2, '30234567', 'López', 'Ana', '444555666', 'ana@lopez.com', NULL, '2025-08-22 19:19:05', 1),
-(3, '34966673', 'Troncoso ', 'Leandro Sebastian', '2657645466', 'leandro@gmail.com', 'assasasas', '2025-08-24 03:25:32', 1),
-(4, '2123123123', 'asdasd', 'asdsad', '2657645466', 'leandro@gmail.com', 'asdasdsa', '2025-08-24 03:27:33', 0),
-(5, '12313213', 'asdasdas', 'Carlos', '2657645466', 'leandro@gmail.com', 'asdasd', '2025-08-24 03:31:09', 1);
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `tipo_inmueble`
---
-
-CREATE TABLE `tipo_inmueble` (
-  `id_tipo_inmueble` int(11) NOT NULL,
-  `nombre` varchar(50) NOT NULL,
-  `descripcion` varchar(255) DEFAULT NULL,
-  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp()
-) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
-
---
--- Volcado de datos para la tabla `tipo_inmueble`
---
-
-INSERT INTO `tipo_inmueble` (`id_tipo_inmueble`, `nombre`, `descripcion`, `fecha_creacion`) VALUES
-(1, 'Departamento', 'Unidad residencial en edificio', '2025-08-22 19:19:05'),
-(2, 'Casa', 'Vivienda unifamiliar', '2025-08-22 19:19:05'),
-(3, 'Local', 'Espacio comercial', '2025-08-22 19:19:05'),
-(4, 'Depósito', 'Almacén o bodega', '2025-08-22 19:19:05'),
-(5, 'Oficina', 'Espacio de trabajo comercial', '2025-08-22 19:19:05');
-
--- --------------------------------------------------------
-
---
--- Estructura de tabla para la tabla `usuario`
---
-
-CREATE TABLE `usuario` (
-  `id_usuario` int(11) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `password` varchar(255) NOT NULL,
-  `rol` enum('administrador','empleado') NOT NULL DEFAULT 'empleado',
-  `nombre` varchar(100) NOT NULL,
-  `apellido` varchar(100) NOT NULL,
   `telefono` varchar(20) DEFAULT NULL,
-  `avatar` varchar(255) DEFAULT NULL,
-  `estado` enum('activo','inactivo') DEFAULT 'activo',
-  `fecha_creacion` timestamp NOT NULL DEFAULT current_timestamp()
+  `fecha` datetime DEFAULT current_timestamp(),
+  `contactado` tinyint(1) DEFAULT 0,
+  `fecha_contacto` datetime DEFAULT NULL,
+  `observaciones` text DEFAULT NULL,
+  PRIMARY KEY (`id_interes`),
+  KEY `idx_interes_inmueble` (`id_inmueble`),
+  KEY `idx_interes_fecha` (`fecha`),
+  KEY `idx_interes_contactado` (`contactado`),
+  KEY `idx_interes_email` (`email`),
+  CONSTRAINT `fk_interes_inmueble` FOREIGN KEY (`id_inmueble`) REFERENCES `inmueble` (`id_inmueble`) ON DELETE CASCADE ON UPDATE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Volcado de datos para la tabla `usuario`
---
+-- ==============================================
+-- 9. TABLA IMAGEN_INMUEBLE - Imágenes de propiedades
+-- ==============================================
+CREATE TABLE `imagen_inmueble` (
+  `id_imagen` int(11) NOT NULL AUTO_INCREMENT,
+  `id_inmueble` int(11) NOT NULL,
+  `url` varchar(255) NOT NULL,
+  `descripcion` varchar(255) DEFAULT NULL,
+  `orden` int(11) DEFAULT 0,
+  `fecha_creacion` datetime DEFAULT current_timestamp(),
+  PRIMARY KEY (`id_imagen`),
+  KEY `idx_imagen_inmueble` (`id_inmueble`),
+  KEY `idx_imagen_orden` (`orden`),
+  CONSTRAINT `fk_imagen_inmueble` FOREIGN KEY (`id_inmueble`) REFERENCES `inmueble` (`id_inmueble`) ON DELETE CASCADE ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
-INSERT INTO `usuario` (`id_usuario`, `email`, `password`, `rol`, `nombre`, `apellido`, `telefono`, `avatar`, `estado`, `fecha_creacion`) VALUES
-(1, 'admin@inmobiliaria.com', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'administrador', 'Juan', 'Pérez', '123456789', NULL, 'activo', '2025-08-22 19:19:05'),
-(2, 'empleado1@inmobiliaria.com', 'ccc13e8ab0819e3ab61719de4071ecae6c1d3cd35dc48b91cad3481f20922f9f', 'empleado', 'María', 'Gómez', '987654321', NULL, 'activo', '2025-08-22 19:19:05');
+-- ==============================================
+-- 10. TABLA CONTACTO - Formularios de contacto
+-- ==============================================
+CREATE TABLE `contacto` (
+  `id_contacto` int(11) NOT NULL AUTO_INCREMENT,
+  `nombre` varchar(100) NOT NULL,
+  `apellido` varchar(100) NOT NULL,
+  `email` varchar(150) NOT NULL,
+  `telefono` varchar(20) DEFAULT NULL,
+  `asunto` varchar(200) DEFAULT NULL,
+  `mensaje` text NOT NULL,
+  `fecha_contacto` datetime DEFAULT current_timestamp(),
+  `estado` enum('pendiente','respondido','cerrado') DEFAULT 'pendiente',
+  `id_inmueble` int(11) DEFAULT NULL,
+  `ip_origen` varchar(45) DEFAULT NULL,
+  `user_agent` text DEFAULT NULL,
+  PRIMARY KEY (`id_contacto`),
+  KEY `idx_contacto_fecha` (`fecha_contacto`),
+  KEY `idx_contacto_estado` (`estado`),
+  KEY `idx_contacto_email` (`email`),
+  KEY `idx_contacto_inmueble` (`id_inmueble`),
+  CONSTRAINT `fk_contacto_inmueble` FOREIGN KEY (`id_inmueble`) REFERENCES `inmueble` (`id_inmueble`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Índices para tablas volcadas
---
+-- ==============================================
+-- REACTIVAR FOREIGN KEYS
+-- ==============================================
+SET FOREIGN_KEY_CHECKS = 1;
 
---
--- Indices de la tabla `contrato`
---
-ALTER TABLE `contrato`
-  ADD PRIMARY KEY (`id_contrato`),
-  ADD KEY `id_usuario_creador` (`id_usuario_creador`),
-  ADD KEY `id_usuario_terminador` (`id_usuario_terminador`),
-  ADD KEY `idx_contrato_inmueble` (`id_inmueble`),
-  ADD KEY `idx_contrato_inquilino` (`id_inquilino`),
-  ADD KEY `idx_contrato_fechas` (`fecha_inicio`,`fecha_fin`);
+-- ==============================================
+-- INSERTAR TIPOS DE INMUEBLE BÁSICOS
+-- ==============================================
+INSERT INTO `tipo_inmueble` (`id_tipo_inmueble`, `nombre`, `descripcion`, `fecha_creacion`, `estado`) VALUES
+(1, 'Departamento', 'Unidad residencial en edificio', current_timestamp(), 1),
+(2, 'Casa', 'Vivienda unifamiliar', current_timestamp(), 1),
+(3, 'Local', 'Espacio comercial', current_timestamp(), 1),
+(4, 'Depósito', 'Almacén o bodega', current_timestamp(), 1),
+(5, 'Oficina', 'Espacio de trabajo comercial', current_timestamp(), 1),
+(6, 'Local Comercial', 'Espacio destinado a actividad comercial', current_timestamp(), 1),
+(7, 'Galpón', 'Espacio amplio para depósito o industria', current_timestamp(), 1),
+(8, 'Terreno', 'Lote baldío para construcción', current_timestamp(), 1),
+(9, 'PH (Propiedad Horizontal)', 'Casa en propiedad horizontal', current_timestamp(), 1),
+(10, 'Cochera', 'Espacio para estacionamiento de vehículos', current_timestamp(), 1),
+(11, 'Quinta', 'Propiedad rural con casa y terreno amplio', current_timestamp(), 1),
+(12, 'Consultorio', 'Espacio para atención médica o profesional', current_timestamp(), 1),
+(13, 'Loft', 'Espacio amplio sin divisiones internas', current_timestamp(), 1),
+(14, 'Studio', 'Ambiente único que combina dormitorio y living', current_timestamp(), 1),
+(15, 'Cabaña', 'Vivienda rústica, generalmente en zona rural', current_timestamp(), 1);
 
---
--- Indices de la tabla `inmueble`
---
-ALTER TABLE `inmueble`
-  ADD PRIMARY KEY (`id_inmueble`),
-  ADD KEY `idx_inmueble_propietario` (`id_propietario`),
-  ADD KEY `idx_inmueble_tipo` (`id_tipo_inmueble`);
+-- ==============================================
+-- CONFIGURAR AUTO_INCREMENT
+-- ==============================================
+ALTER TABLE `usuario` AUTO_INCREMENT = 1;
+ALTER TABLE `tipo_inmueble` AUTO_INCREMENT = 16;
+ALTER TABLE `propietario` AUTO_INCREMENT = 1;
+ALTER TABLE `inquilino` AUTO_INCREMENT = 1;
+ALTER TABLE `inmueble` AUTO_INCREMENT = 1;
+ALTER TABLE `contrato` AUTO_INCREMENT = 1;
+ALTER TABLE `pago` AUTO_INCREMENT = 1;
+ALTER TABLE `interes_inmueble` AUTO_INCREMENT = 1;
+ALTER TABLE `imagen_inmueble` AUTO_INCREMENT = 1;
+ALTER TABLE `contacto` AUTO_INCREMENT = 1;
 
---
--- Indices de la tabla `inquilino`
---
-ALTER TABLE `inquilino`
-  ADD PRIMARY KEY (`id_inquilino`),
-  ADD UNIQUE KEY `dni` (`dni`);
+-- ==============================================
+-- VERIFICAR ESTRUCTURA CREADA
+-- ==============================================
+SELECT 'TABLAS CREADAS:' as verificacion;
+SHOW TABLES;
 
---
--- Indices de la tabla `pago`
---
-ALTER TABLE `pago`
-  ADD PRIMARY KEY (`id_pago`),
-  ADD KEY `id_usuario_creador` (`id_usuario_creador`),
-  ADD KEY `id_usuario_anulador` (`id_usuario_anulador`),
-  ADD KEY `idx_pago_contrato` (`id_contrato`),
-  ADD KEY `idx_pago_fecha` (`fecha_pago`);
+SELECT 'TOTAL DE TABLAS:' as verificacion;
+SELECT COUNT(*) as total_tablas FROM information_schema.tables 
+WHERE table_schema = 'inmobiliaria';
 
---
--- Indices de la tabla `propietario`
---
-ALTER TABLE `propietario`
-  ADD PRIMARY KEY (`id_propietario`),
-  ADD UNIQUE KEY `dni` (`dni`);
+-- ==============================================
+-- VERIFICAR FOREIGN KEYS
+-- ==============================================
+SELECT 'FOREIGN KEYS CONFIGURADAS:' as verificacion;
+SELECT 
+    TABLE_NAME,
+    COLUMN_NAME,
+    CONSTRAINT_NAME,
+    REFERENCED_TABLE_NAME,
+    REFERENCED_COLUMN_NAME
+FROM information_schema.KEY_COLUMN_USAGE 
+WHERE TABLE_SCHEMA = 'inmobiliaria' 
+AND REFERENCED_TABLE_NAME IS NOT NULL
+ORDER BY TABLE_NAME, COLUMN_NAME;
 
---
--- Indices de la tabla `tipo_inmueble`
---
-ALTER TABLE `tipo_inmueble`
-  ADD PRIMARY KEY (`id_tipo_inmueble`);
-
---
--- Indices de la tabla `usuario`
---
-ALTER TABLE `usuario`
-  ADD PRIMARY KEY (`id_usuario`),
-  ADD UNIQUE KEY `email` (`email`);
-
---
--- AUTO_INCREMENT de las tablas volcadas
---
-
---
--- AUTO_INCREMENT de la tabla `contrato`
---
-ALTER TABLE `contrato`
-  MODIFY `id_contrato` int(11) NOT NULL AUTO_INCREMENT;
-
---
--- AUTO_INCREMENT de la tabla `inmueble`
---
-ALTER TABLE `inmueble`
-  MODIFY `id_inmueble` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- AUTO_INCREMENT de la tabla `inquilino`
---
-ALTER TABLE `inquilino`
-  MODIFY `id_inquilino` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
-
---
--- AUTO_INCREMENT de la tabla `pago`
---
-ALTER TABLE `pago`
-  MODIFY `id_pago` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
-
---
--- AUTO_INCREMENT de la tabla `propietario`
---
-ALTER TABLE `propietario`
-  MODIFY `id_propietario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT de la tabla `tipo_inmueble`
---
-ALTER TABLE `tipo_inmueble`
-  MODIFY `id_tipo_inmueble` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
-
---
--- AUTO_INCREMENT de la tabla `usuario`
---
-ALTER TABLE `usuario`
-  MODIFY `id_usuario` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
-
---
--- Restricciones para tablas volcadas
---
-
---
--- Filtros para la tabla `contrato`
---
-ALTER TABLE `contrato`
-  ADD CONSTRAINT `contrato_ibfk_1` FOREIGN KEY (`id_inmueble`) REFERENCES `inmueble` (`id_inmueble`),
-  ADD CONSTRAINT `contrato_ibfk_2` FOREIGN KEY (`id_inquilino`) REFERENCES `inquilino` (`id_inquilino`),
-  ADD CONSTRAINT `contrato_ibfk_3` FOREIGN KEY (`id_usuario_creador`) REFERENCES `usuario` (`id_usuario`),
-  ADD CONSTRAINT `contrato_ibfk_4` FOREIGN KEY (`id_usuario_terminador`) REFERENCES `usuario` (`id_usuario`);
-
---
--- Filtros para la tabla `inmueble`
---
-ALTER TABLE `inmueble`
-  ADD CONSTRAINT `inmueble_ibfk_1` FOREIGN KEY (`id_propietario`) REFERENCES `propietario` (`id_propietario`),
-  ADD CONSTRAINT `inmueble_ibfk_2` FOREIGN KEY (`id_tipo_inmueble`) REFERENCES `tipo_inmueble` (`id_tipo_inmueble`);
-
---
--- Filtros para la tabla `pago`
---
-ALTER TABLE `pago`
-  ADD CONSTRAINT `pago_ibfk_1` FOREIGN KEY (`id_contrato`) REFERENCES `contrato` (`id_contrato`),
-  ADD CONSTRAINT `pago_ibfk_2` FOREIGN KEY (`id_usuario_creador`) REFERENCES `usuario` (`id_usuario`),
-  ADD CONSTRAINT `pago_ibfk_3` FOREIGN KEY (`id_usuario_anulador`) REFERENCES `usuario` (`id_usuario`);
-COMMIT;
-
-/*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
-/*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
-/*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+-- ==============================================
+-- SCRIPT COMPLETADO
+-- ==============================================
+-- Se crearon 10 tablas:
+-- 1. usuario (tabla principal)
+-- 2. tipo_inmueble (con 15 tipos precargados)
+-- 3. propietario (relacionada con usuario)
+-- 4. inquilino (relacionada con usuario)
+-- 5. inmueble (relacionada con propietario y tipo_inmueble)
+-- 6. contrato (relacionada con inmueble, inquilino, propietario, usuarios)
+-- 7. pago (relacionada con contrato y usuarios)
+-- 8. interes_inmueble (relacionada con inmueble)
+-- 9. imagen_inmueble (relacionada con inmueble)
+-- 10. contacto (opcional: relacionada con inmueble)
+-- ==============================================

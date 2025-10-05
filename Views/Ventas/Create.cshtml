@@ -1,0 +1,642 @@
+@model Inmobiliaria_troncoso_leandro.Models.Pago
+@{
+    ViewData["Title"] = "Crear Pago de Venta";
+    var tipoSeleccionado = ViewBag.Tipo?.ToString();
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Ventas")">Ventas</a></li>
+        <li class="breadcrumb-item active">Crear Nuevo</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-plus-circle me-2"></i>Crear Pago de Venta</h2>
+        @if (!string.IsNullOrEmpty(tipoSeleccionado))
+        {
+            <p class="text-muted mb-0">Tipo: <span class="badge bg-info">@tipoSeleccionado.ToUpper()</span></p>
+        }
+    </div>
+    <a href="@Url.Action("Index", "Ventas")" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Cancelar
+    </a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" id="createVentaForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+        <!-- Columna principal del formulario -->
+        <div class="col-md-8">
+            <!-- Selección de tipo de pago -->
+            @if (string.IsNullOrEmpty(tipoSeleccionado))
+            {
+                <div class="card mb-4 border-info">
+                    <div class="card-header bg-info text-white">
+                        <h5 class="card-title mb-0">
+                            <i class="bi bi-list-check me-2"></i>Seleccionar Tipo de Pago
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3">
+                            <div class="col-md-3">
+                                <div class="card tipo-card border-warning" data-tipo="seña">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-piggy-bank text-warning fs-2"></i>
+                                        <h6 class="mt-2">Seña</h6>
+                                        <small class="text-muted">10-20% del valor</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card tipo-card border-info" data-tipo="anticipo">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-cash text-info fs-2"></i>
+                                        <h6 class="mt-2">Anticipo</h6>
+                                        <small class="text-muted">Pago parcial</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card tipo-card border-success" data-tipo="total">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-currency-exchange text-success fs-2"></i>
+                                        <h6 class="mt-2">Pago Total</h6>
+                                        <small class="text-muted">100% del valor</small>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="card tipo-card border-secondary" data-tipo="personalizado">
+                                    <div class="card-body text-center">
+                                        <i class="bi bi-gear text-secondary fs-2"></i>
+                                        <h6 class="mt-2">Personalizado</h6>
+                                        <small class="text-muted">Monto libre</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Formulario principal -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-form-check me-2"></i>Datos del Pago
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Selección de Inmueble -->
+                    <div class="mb-3">
+                        <label for="inmuebleSearch" class="form-label">
+                            <i class="bi bi-search me-1"></i>Buscar Inmueble <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="inmuebleSearch" class="form-control"
+                                placeholder="Buscar por dirección, tipo..." autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary" id="limpiarInmueble">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                        <div id="inmuebleResults" class="list-group position-absolute w-100"
+                            style="z-index: 1000; display: none;"></div>
+
+                        <!-- Input hidden para el ID del inmueble -->
+                        <input asp-for="IdInmueble" type="hidden" id="IdInmueble" />
+                        <span asp-validation-for="IdInmueble" class="text-danger"></span>
+
+                        <!-- Información del inmueble seleccionado -->
+                        <div id="inmuebleSeleccionado" class="mt-2" style="display: none;">
+                            <div class="alert alert-success">
+                                <i class="bi bi-house-check me-2"></i>
+                                <strong>Inmueble seleccionado:</strong>
+                                <div id="inmuebleInfo"></div>
+                                <button type="button" class="btn btn-sm btn-outline-success mt-2"
+                                    onclick="cambiarInmueble()">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Cambiar inmueble
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Fecha de Pago -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FechaPago" class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>Fecha de Pago <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="FechaPago" type="date" class="form-control" id="FechaPago" />
+                                <span asp-validation-for="FechaPago" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Estado" class="form-label">
+                                    <i class="bi bi-check-circle me-1"></i>Estado <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="Estado" class="form-select">
+                                    <option value="pagado">Pagado</option>
+                                    <option value="pendiente">Pendiente</option>
+                                </select>
+                                <span asp-validation-for="Estado" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concepto -->
+                    <div class="mb-3">
+                        <label asp-for="Concepto" class="form-label">
+                            <i class="bi bi-chat-text me-1"></i>Concepto <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Concepto" class="form-control" id="Concepto"
+                            placeholder="Ej: Seña reserva inmueble" />
+                        <span asp-validation-for="Concepto" class="text-danger"></span>
+                    </div>
+
+                    <!-- Monto -->
+                    <div class="mb-3">
+                        <label asp-for="MontoBase" class="form-label">
+                            <i class="bi bi-currency-dollar me-1"></i>Monto <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input asp-for="MontoBase" type="number" step="0.01" class="form-control" id="MontoBase"
+                                placeholder="0.00" />
+                        </div>
+                        <div id="montoSugerencia" class="form-text"></div>
+                        <span asp-validation-for="MontoBase" class="text-danger"></span>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label asp-for="Observaciones" class="form-label">
+                            <i class="bi bi-chat-dots me-1"></i>Observaciones
+                        </label>
+                        <textarea asp-for="Observaciones" class="form-control" rows="3"
+                            placeholder="Notas adicionales sobre el pago..."></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                    </div>
+
+                    <!-- Comprobante -->
+                    <div class="mb-3">
+                        <label for="comprobante" class="form-label">
+                            <i class="bi bi-file-earmark me-1"></i>Comprobante de Pago
+                        </label>
+                        <input type="file" class="form-control" id="comprobante" name="ComprobanteArchivo"
+                            accept=".pdf,.jpg,.jpeg,.png" />
+                        <div class="form-text">Formatos permitidos: PDF, JPG, PNG. Máximo 5MB.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar con información adicional -->
+        <div class="col-md-4">
+            <!-- Calculadora de porcentajes -->
+            <div class="card mb-3 border-success">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-calculator me-2"></i>Calculadora de Pagos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="precioInmueble" class="form-label small">Precio del inmueble:</label>
+                        <div class="input-group input-group-sm">
+                            <span class="input-group-text">$</span>
+                            <input type="number" id="precioInmueble" class="form-control" placeholder="0" />
+                        </div>
+                    </div>
+
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-warning btn-sm w-100 mb-2"
+                                onclick="calcularPorcentaje(10)">
+                                Seña 10%
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm w-100 mb-2"
+                                onclick="calcularPorcentaje(30)">
+                                Anticipo 30%
+                            </button>
+                        </div>
+                        <div class="col-6">
+                            <button type="button" class="btn btn-outline-warning btn-sm w-100 mb-2"
+                                onclick="calcularPorcentaje(20)">
+                                Seña 20%
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm w-100 mb-2"
+                                onclick="calcularPorcentaje(100)">
+                                Total 100%
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="text-center mt-3">
+                        <div class="bg-light rounded p-2">
+                            <strong>Monto calculado:</strong><br>
+                            <span id="montoCalculado" class="text-success fs-5">$0</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del proceso -->
+            <div class="card mb-3">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Proceso de Venta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="small">
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-1-circle text-warning me-2"></i>
+                            <span>Seña (10-20%)</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-2-circle text-info me-2"></i>
+                            <span>Anticipo (20-50%)</span>
+                        </div>
+                        <div class="d-flex align-items-center mb-2">
+                            <i class="bi bi-3-circle text-success me-2"></i>
+                            <span>Pago final</span>
+                        </div>
+                        <div class="d-flex align-items-center">
+                            <i class="bi bi-4-circle text-primary me-2"></i>
+                            <span>Escrituración</span>
+                        </div>
+                    </div>
+
+                    <div class="mt-3 p-2 bg-light rounded">
+                        <small class="text-muted">
+                            <i class="bi bi-lightbulb me-1"></i>
+                            <strong>Tip:</strong> La seña reserva el inmueble y el anticipo inicia el proceso de venta.
+                        </small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del sistema -->
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>Funcionalidades
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled small mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Cambio automático del estado del inmueble
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Seguimiento por inmueble
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Historial completo de pagos
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Comprobantes digitales
+                        </li>
+                        <li>
+                            <i class="bi bi-shield-check text-primary me-2"></i>
+                            Registro seguro y auditable
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="submit" class="btn btn-success btn-lg me-3">
+                        <i class="bi bi-floppy me-2"></i>Registrar Pago de Venta
+                    </button>
+                    <a href="@Url.Action("Index", "Ventas")" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inputs hidden -->
+    <input asp-for="TipoPago" type="hidden" value="venta" />
+    <input asp-for="NumeroPago" type="hidden" value="1" />
+    <input asp-for="MontoTotal" type="hidden" id="MontoTotalHidden" />
+    <input asp-for="RecargoMora" type="hidden" value="0" />
+    <input asp-for="DiasMora" type="hidden" value="0" />
+    <input type="hidden" id="TipoSeleccionado" value="@tipoSeleccionado" />
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            configurarAutocompletadoInmuebles();
+            configurarTiposDepago();
+            configurarCalculadoras();
+            precargarTipo();
+        });
+
+        function precargarTipo() {
+            const tipoSeleccionado = document.getElementById('TipoSeleccionado').value;
+            if (tipoSeleccionado) {
+                actualizarFormularioPorTipo(tipoSeleccionado);
+            }
+        }
+
+        function configurarTiposDepago() {
+            const tipoCards = document.querySelectorAll('.tipo-card');
+            tipoCards.forEach(card => {
+                card.addEventListener('click', function () {
+                    const tipo = this.getAttribute('data-tipo');
+                    seleccionarTipo(tipo);
+                });
+
+                card.addEventListener('mouseenter', function () {
+                    if (!this.classList.contains('seleccionada')) {
+                        this.classList.add('shadow');
+                    }
+                    this.style.cursor = 'pointer';
+                });
+
+                card.addEventListener('mouseleave', function () {
+                    if (!this.classList.contains('seleccionada')) {
+                        this.classList.remove('shadow');
+                    }
+                });
+            });
+        }
+
+        function seleccionarTipo(tipo) {
+            // Remover selección anterior
+            document.querySelectorAll('.tipo-card').forEach(card => {
+                card.classList.remove('seleccionada');
+            });
+
+            // Seleccionar nuevo tipo
+            const selectedCard = document.querySelector(`[data-tipo="${tipo}"]`);
+            if (selectedCard) {
+                selectedCard.classList.add('seleccionada');
+            }
+
+            actualizarFormularioPorTipo(tipo);
+        }
+
+        function actualizarFormularioPorTipo(tipo) {
+            const conceptoInput = document.getElementById('Concepto');
+            const montoSugerenciaDiv = document.getElementById('montoSugerencia');
+
+            switch (tipo) {
+                case 'seña':
+                    conceptoInput.value = 'Seña de reserva';
+                    montoSugerenciaDiv.innerHTML = '<i class="bi bi-info-circle me-1"></i>Típicamente 10-20% del valor del inmueble';
+                    break;
+                case 'anticipo':
+                    conceptoInput.value = 'Anticipo de compra';
+                    montoSugerenciaDiv.innerHTML = '<i class="bi bi-info-circle me-1"></i>Típicamente 20-50% del valor del inmueble';
+                    break;
+                case 'total':
+                    conceptoInput.value = 'Pago total de compra';
+                    montoSugerenciaDiv.innerHTML = '<i class="bi bi-info-circle me-1"></i>100% del valor del inmueble';
+                    break;
+                default:
+                    conceptoInput.value = 'Pago de venta';
+                    montoSugerenciaDiv.innerHTML = '<i class="bi bi-info-circle me-1"></i>Ingrese el monto correspondiente';
+            }
+        }
+
+        function configurarAutocompletadoInmuebles() {
+            const searchInput = document.getElementById('inmuebleSearch');
+            const resultsDiv = document.getElementById('inmuebleResults');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+
+                if (query.length < 2) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    buscarInmuebles(query);
+                }, 300);
+            });
+
+            document.getElementById('limpiarInmueble').addEventListener('click', function () {
+                limpiarSeleccionInmueble();
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#inmuebleSearch') && !e.target.closest('#inmuebleResults')) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+        }
+
+        function buscarInmuebles(query) {
+            const resultsDiv = document.getElementById('inmuebleResults');
+
+            resultsDiv.innerHTML = '<div class="list-group-item"><i class="bi bi-hourglass-split me-2"></i>Buscando...</div>';
+            resultsDiv.style.display = 'block';
+
+            fetch(`@Url.Action("BuscarInmueblesDisponibles", "Pagos")?query=${encodeURIComponent(query)}`)
+                .then(response => response.json())
+                .then(data => {
+                    mostrarResultadosInmuebles(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultsDiv.innerHTML = '<div class="list-group-item text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al buscar inmuebles</div>';
+                });
+        }
+
+        function mostrarResultadosInmuebles(inmuebles) {
+            const resultsDiv = document.getElementById('inmuebleResults');
+
+            if (!inmuebles || inmuebles.length === 0) {
+                resultsDiv.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-inbox me-2"></i>No se encontraron inmuebles disponibles</div>';
+                return;
+            }
+
+            let html = '';
+            inmuebles.forEach(inmueble => {
+                html += `
+                            <div class="list-group-item list-group-item-action" onclick="seleccionarInmueble(${inmueble.id}, '${inmueble.texto}', '${inmueble.email}')">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">${inmueble.texto}</h6>
+                                        <p class="mb-1 text-muted small">${inmueble.email}</p>
+                                        <small class="text-success">${inmueble.tipo}</small>
+                                    </div>
+                                    <small class="text-primary">ID: ${inmueble.id}</small>
+                                </div>
+                            </div>
+                        `;
+            });
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        function seleccionarInmueble(id, texto, precio) {
+            document.getElementById('IdInmueble').value = id;
+            document.getElementById('inmuebleSearch').value = texto;
+
+            document.getElementById('inmuebleInfo').innerHTML = `
+            <strong>${texto}</strong><br>
+            <small class="text-success">Precio: ${precio}</small><br>
+            <small class="text-primary">Inmueble ID: ${id}</small>
+        `;
+
+            document.getElementById('inmuebleSeleccionado').style.display = 'block';
+            document.getElementById('inmuebleResults').style.display = 'none';
+
+            // ✅ CORREGIDO para formato argentino: 5.000.000,00
+            if (precio && precio !== 'N/A') {
+                // 1. Eliminar símbolo $ y espacios
+                let precioLimpio = precio.replace(/[\$\s]/g, '');
+
+                // 2. Eliminar los PUNTOS (separadores de miles en formato argentino)
+                precioLimpio = precioLimpio.replace(/\./g, '');
+
+                // 3. Reemplazar la COMA por PUNTO (para que JavaScript lo entienda como decimal)
+                precioLimpio = precioLimpio.replace(/,/g, '.');
+
+                // 4. Convertir a número
+                const precioNumerico = parseFloat(precioLimpio);
+
+                console.log('Precio original:', precio);
+                console.log('Precio limpio:', precioLimpio);
+                console.log('Precio numérico:', precioNumerico);
+
+                if (!isNaN(precioNumerico)) {
+                    document.getElementById('precioInmueble').value = precioNumerico;
+                }
+            }
+        }
+
+        function limpiarSeleccionInmueble() {
+            document.getElementById('IdInmueble').value = '';
+            document.getElementById('inmuebleSearch').value = '';
+            document.getElementById('inmuebleSeleccionado').style.display = 'none';
+            document.getElementById('inmuebleResults').style.display = 'none';
+            document.getElementById('precioInmueble').value = '';
+        }
+
+        function cambiarInmueble() {
+            limpiarSeleccionInmueble();
+            document.getElementById('inmuebleSearch').focus();
+        }
+
+        function configurarCalculadoras() {
+            document.getElementById('MontoBase').addEventListener('input', function () {
+                const monto = parseFloat(this.value) || 0;
+                document.getElementById('MontoTotalHidden').value = monto;
+            });
+        }
+
+        function calcularPorcentaje(porcentaje) {
+            const precio = parseFloat(document.getElementById('precioInmueble').value) || 0;
+            if (precio === 0) {
+                alert('Primero ingrese el precio del inmueble');
+                document.getElementById('precioInmueble').focus();
+                return;
+            }
+
+            const monto = precio * (porcentaje / 100);
+            document.getElementById('MontoBase').value = monto.toFixed(2);
+            document.getElementById('MontoTotalHidden').value = monto.toFixed(2);
+            document.getElementById('montoCalculado').textContent = monto.toLocaleString('es-AR', {
+                style: 'currency',
+                currency: 'ARS'
+            });
+        }
+
+        document.getElementById('createVentaForm').addEventListener('submit', function (e) {
+            const inmuebleId = document.getElementById('IdInmueble').value;
+            const montoBase = document.getElementById('MontoBase').value;
+
+            if (!inmuebleId) {
+                e.preventDefault();
+                alert('Debe seleccionar un inmueble válido');
+                document.getElementById('inmuebleSearch').focus();
+                return;
+            }
+
+            if (!montoBase || parseFloat(montoBase) <= 0) {
+                e.preventDefault();
+                alert('Debe ingresar un monto válido mayor a cero');
+                document.getElementById('MontoBase').focus();
+                return;
+            }
+
+            const submitBtn = this.querySelector('button[type="submit"]');
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+            submitBtn.disabled = true;
+        });
+    </script>
+}
+
+<style>
+    .tipo-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        height: 120px;
+        display: flex;
+        align-items: center;
+    }
+
+    .tipo-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+
+    .tipo-card.seleccionada {
+        border-width: 3px !important;
+        background-color: rgba(13, 110, 253, 0.15) !important;
+        box-shadow: 0 0 20px rgba(13, 110, 253, 0.5) !important;
+        transform: scale(1.02);
+    }
+
+    #inmuebleResults {
+        max-height: 300px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+    }
+
+    #inmuebleResults .list-group-item:hover {
+        background-color: #f8f9fa;
+        cursor: pointer;
+    }
+</style>

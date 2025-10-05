@@ -1,0 +1,342 @@
+@{
+    ViewData["Title"] = "Estadísticas de Usuarios";
+    var estadisticasPorRol = ViewBag.EstadisticasPorRol as Dictionary<string, int> ?? new Dictionary<string, int>();
+    var usuariosRecientes = ViewBag.UsuariosRecientes as IEnumerable<Usuario> ?? new List<Usuario>();
+    var totalUsuarios = ViewBag.TotalUsuarios as int? ?? 0;
+    var usuariosActivos = ViewBag.UsuariosActivos as int? ?? 0;
+}
+
+<div class="container-fluid py-4">
+    <!-- Título de la página -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="display-6 fw-bold text-primary">
+                <i class="fas fa-chart-bar me-2"></i>
+                Estadísticas de Usuarios
+            </h1>
+            <p class="text-muted">Panel de control y métricas del sistema</p>
+        </div>
+    </div>
+
+    <!-- Tarjetas de resumen -->
+    <div class="row g-4 mb-4">
+        <!-- Total de usuarios -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-users fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Total Usuarios</h6>
+                            <h3 class="mb-0 fw-bold">@totalUsuarios</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Administradores -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-danger bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-user-shield fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Administradores</h6>
+                            <h3 class="mb-0 fw-bold">@(estadisticasPorRol.ContainsKey("administrador") ? estadisticasPorRol["administrador"] : 0)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Empleados -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-user-tie fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Empleados</h6>
+                            <h3 class="mb-0 fw-bold">@(estadisticasPorRol.ContainsKey("empleado") ? estadisticasPorRol["empleado"] : 0)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Propietarios -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-warning bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-home fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Propietarios</h6>
+                            <h3 class="mb-0 fw-bold">@(estadisticasPorRol.ContainsKey("propietario") ? estadisticasPorRol["propietario"] : 0)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Segunda fila de tarjetas -->
+    <div class="row g-4 mb-4">
+        <!-- Inquilinos -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-info bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-key fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Inquilinos</h6>
+                            <h3 class="mb-0 fw-bold">@(estadisticasPorRol.ContainsKey("inquilino") ? estadisticasPorRol["inquilino"] : 0)</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuarios activos (dummy) -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-success bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-check-circle fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Usuarios Activos</h6>
+                            <h3 class="mb-0 fw-bold">@usuariosActivos</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Promedio por rol (dummy) -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-secondary bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-chart-line fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Promedio por Rol</h6>
+                            <h3 class="mb-0 fw-bold">@(totalUsuarios > 0 ? (totalUsuarios / 4).ToString("N0") : "0")</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estado del sistema -->
+        <div class="col-xl-3 col-md-6">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <div class="bg-primary bg-gradient text-white rounded-circle p-3">
+                                <i class="fas fa-server fa-lg"></i>
+                            </div>
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="text-muted mb-1">Estado Sistema</h6>
+                            <h3 class="mb-0 fw-bold text-success">Activo</h3>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráfico de distribución por roles -->
+    <div class="row g-4 mb-4">
+        <div class="col-lg-8">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-chart-pie me-2 text-primary"></i>
+                        Distribución por Roles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Barras de progreso por rol -->
+                    @foreach (var kvp in estadisticasPorRol)
+                    {
+                        var porcentaje = totalUsuarios > 0 ? (kvp.Value * 100.0 / totalUsuarios) : 0;
+                        var colorClase = kvp.Key switch
+                        {
+                            "administrador" => "bg-danger",
+                            "empleado" => "bg-success", 
+                            "propietario" => "bg-warning",
+                            "inquilino" => "bg-info",
+                            _ => "bg-secondary"
+                        };
+                        
+                        <div class="mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2">
+                                <span class="fw-semibold text-capitalize">@kvp.Key</span>
+                                <span class="text-muted">@kvp.Value usuarios (@porcentaje.ToString("F1")%)</span>
+                            </div>
+                            <div class="progress" style="height: 8px;">
+                                <div class="progress-bar @colorClase" role="progressbar" 
+                                     style="width: @porcentaje.ToString("F1")%" 
+                                     aria-valuenow="@porcentaje" aria-valuemin="0" aria-valuemax="100">
+                                </div>
+                            </div>
+                        </div>
+                    }
+                    
+                    @if (!estadisticasPorRol.Any())
+                    {
+                        <div class="text-center py-5 text-muted">
+                            <i class="fas fa-chart-pie fa-3x mb-3"></i>
+                            <p>No hay datos de usuarios disponibles</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Usuarios recientes -->
+        <div class="col-lg-4">
+            <div class="card border-0 shadow-sm h-100">
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-clock me-2 text-primary"></i>
+                        Usuarios Recientes
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (usuariosRecientes.Any())
+                    {
+                        @foreach (var usuario in usuariosRecientes)
+                        {
+                            var rolBadge = usuario.Rol switch
+                            {
+                                "administrador" => "badge bg-danger",
+                                "empleado" => "badge bg-success",
+                                "propietario" => "badge bg-warning text-dark",
+                                "inquilino" => "badge bg-info",
+                                _ => "badge bg-secondary"
+                            };
+
+                            <div class="d-flex align-items-center mb-3">
+                                <div class="flex-shrink-0">
+                                    <div class="bg-light rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                        <i class="fas fa-user text-muted"></i>
+                                    </div>
+                                </div>
+                                <div class="flex-grow-1 ms-3">
+                                    <h6 class="mb-1">@usuario.Nombre @usuario.Apellido</h6>
+                                    <small class="text-muted">@usuario.Email</small>
+                                    <div class="mt-1">
+                                        <span class="@rolBadge">@usuario.Rol</span>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4 text-muted">
+                            <i class="fas fa-users fa-2x mb-3"></i>
+                            <p>No hay usuarios recientes</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones rápidas -->
+    <div class="row g-4">
+        <div class="col-12">
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-white border-bottom-0 py-3">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2 text-primary"></i>
+                        Acciones Rápidas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <a href="@Url.Action("Index", "Usuario")" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-list me-2"></i>Ver Todos los Usuarios
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("Create", "Usuario")" class="btn btn-outline-success w-100">
+                                <i class="fas fa-user-plus me-2"></i>Crear Usuario
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <a href="@Url.Action("Index", "Home")" class="btn btn-outline-info w-100">
+                                <i class="fas fa-home me-2"></i>Ir al Dashboard
+                            </a>
+                        </div>
+                        <div class="col-md-3">
+                            <button class="btn btn-outline-secondary w-100" onclick="location.reload()">
+                                <i class="fas fa-refresh me-2"></i>Actualizar Datos
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Incluir Font Awesome si no está incluido -->
+@section Scripts {
+    <script>
+        // Efecto de animación para los números
+        document.addEventListener('DOMContentLoaded', function() {
+            const numbers = document.querySelectorAll('h3.fw-bold');
+            numbers.forEach(function(number) {
+                const finalNumber = parseInt(number.textContent);
+                if (!isNaN(finalNumber) && finalNumber > 0) {
+                    let currentNumber = 0;
+                    const increment = Math.ceil(finalNumber / 30);
+                    const timer = setInterval(function() {
+                        currentNumber += increment;
+                        if (currentNumber >= finalNumber) {
+                            number.textContent = finalNumber;
+                            clearInterval(timer);
+                        } else {
+                            number.textContent = currentNumber;
+                        }
+                    }, 50);
+                }
+            });
+        });
+    </script>
+}

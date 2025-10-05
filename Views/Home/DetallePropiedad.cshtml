@@ -1,0 +1,612 @@
+@model dynamic
+
+@{
+    ViewData["Title"] = Model.Titulo;
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
+}
+
+<!-- Breadcrumb -->
+<div class="breadcrumb-section py-3 bg-light">
+    <div class="container">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb mb-0">
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
+                <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Catalogo">Propiedades</a></li>
+                <li class="breadcrumb-item active" aria-current="page">@Model.Titulo</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <!-- Información principal de la propiedad -->
+        <div class="col-lg-8">
+            <!-- Galería de imágenes -->
+            <div class="property-gallery mb-4">
+                <div class="main-image">
+                    <img src="@Model.Imagen" alt="@Model.Titulo" class="img-fluid rounded" id="mainImage">
+                    <div class="image-badges">
+                        <span class="badge badge-success badge-lg">@Model.Estado</span>
+                        <span class="badge badge-primary badge-lg">@Model.Tipo</span>
+                    </div>
+                </div>
+
+                <!-- Thumbnails (simuladas) -->
+                <div class="thumbnail-gallery mt-3">
+                    <div class="row">
+                        <div class="col-3">
+                            <img src="@Model.Imagen" alt="Vista 1" class="img-fluid rounded thumbnail active"
+                                onclick="changeMainImage('@Model.Imagen')">
+                        </div>
+                        <div class="col-3">
+                            <img src="https://via.placeholder.com/300x200/28a745/ffffff?text=Vista+2" alt="Vista 2"
+                                class="img-fluid rounded thumbnail"
+                                onclick="changeMainImage('https://via.placeholder.com/300x200/28a745/ffffff?text=Vista+2')">
+                        </div>
+                        <div class="col-3">
+                            <img src="https://via.placeholder.com/300x200/ffc107/000000?text=Vista+3" alt="Vista 3"
+                                class="img-fluid rounded thumbnail"
+                                onclick="changeMainImage('https://via.placeholder.com/300x200/ffc107/000000?text=Vista+3')">
+                        </div>
+                        <div class="col-3">
+                            <img src="https://via.placeholder.com/300x200/dc3545/ffffff?text=Vista+4" alt="Vista 4"
+                                class="img-fluid rounded thumbnail"
+                                onclick="changeMainImage('https://via.placeholder.com/300x200/dc3545/ffffff?text=Vista+4')">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información básica -->
+            <div class="property-info mb-4">
+                <div class="d-flex justify-content-between align-items-start mb-3">
+                    <div>
+                        <h1 class="property-title">@Model.Titulo</h1>
+                        <p class="property-location text-muted">
+                            <i class="fas fa-map-marker-alt"></i> @Model.Direccion
+                        </p>
+                    </div>
+                    <div class="text-right">
+                        <h2 class="property-price text-primary">$@Model.Precio.ToString("N0")</h2>
+                        <p class="text-muted mb-0">Precio de alquiler mensual</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Características principales -->
+            <div class="property-features mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-info-circle text-primary"></i> Características Principales
+                        </h5>
+                        <div class="row">
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="feature-item text-center">
+                                    <i class="fas fa-bed fa-2x text-primary mb-2"></i>
+                                    <h6>@Model.Ambientes</h6>
+                                    <small class="text-muted">Ambientes</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="feature-item text-center">
+                                    <i class="fas fa-bath fa-2x text-success mb-2"></i>
+                                    <h6>@Model.Baños</h6>
+                                    <small class="text-muted">Baños</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="feature-item text-center">
+                                    <i class="fas fa-ruler-combined fa-2x text-info mb-2"></i>
+                                    <h6>@Model.Superficie</h6>
+                                    <small class="text-muted">m² totales</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 col-6 mb-3">
+                                <div class="feature-item text-center">
+                                    <i class="fas fa-home fa-2x text-warning mb-2"></i>
+                                    <h6>@Model.Tipo</h6>
+                                    <small class="text-muted">Tipo</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Descripción -->
+            <div class="property-description mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-align-left text-primary"></i> Descripción
+                        </h5>
+                        <p class="card-text">@Model.Descripcion</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Características adicionales -->
+            <div class="additional-features mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-star text-primary"></i> Características Adicionales
+                        </h5>
+                        <div class="row">
+                            @foreach (var caracteristica in Model.Caracteristicas)
+                            {
+                                <div class="col-md-6 mb-2">
+                                    <div class="feature-check">
+                                        <i class="fas fa-check-circle text-success"></i>
+                                        @caracteristica
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Mapa (simulado) -->
+            <div class="property-map mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-map text-primary"></i> Ubicación
+                        </h5>
+                        <div class="map-placeholder bg-light rounded d-flex align-items-center justify-content-center"
+                            style="height: 300px;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                                <h6>@Model.Direccion</h6>
+                                <p>Villa Mercedes, San Luis</p>
+                                <small>Mapa interactivo disponible próximamente</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Formulario de contacto -->
+            <div class="contact-form-sticky">
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-primary text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-heart"></i> ¿Te interesa esta propiedad?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <form asp-action="ExpresarInteres" method="post">
+                            <input type="hidden" name="propiedadId" value="@Model.IdInmueble" />
+
+                            <div class="mb-3">
+                                <label>Nombre completo *</label>
+                                <input type="text" name="nombre" maxlength="100" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Email *</label>
+                                <input type="email" name="email" maxlength="100" required />
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Teléfono</label>
+                                <input type="tel" name="telefono" maxlength="20" />
+                            </div>
+
+                            <div class="mb-3">
+                                <label>Mensaje</label>
+                                <textarea name="mensaje" maxlength="500" rows="4"></textarea>
+                            </div>
+
+                            <button type="submit">Expresar Interés</button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Información de contacto directo -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-success text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-phone"></i> Contacto Directo
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="contact-options">
+                            <a href="tel:+5492664123456" class="btn btn-outline-success btn-block mb-2">
+                                <i class="fas fa-phone"></i> +54 9 2664 123456
+                            </a>
+                            <a href="https://wa.me/5492664123456?text=Hola,%20me%20interesa%20la%20propiedad:%20@Model.Titulo"
+                                target="_blank" class="btn btn-outline-success btn-block mb-2">
+                                <i class="fab fa-whatsapp"></i> WhatsApp
+                            </a>
+                            <a href="mailto:info@inmobiliaria.com?subject=Consulta%20por%20@Model.Titulo"
+                                class="btn btn-outline-primary btn-block">
+                                <i class="fas fa-envelope"></i> Email
+                            </a>
+                        </div>
+
+                        <hr>
+
+                        <div class="office-hours">
+                            <h6 class="font-weight-bold">Horarios de Atención:</h6>
+                            <p class="small text-muted mb-1">
+                                <i class="fas fa-clock"></i> Lunes a Viernes: 9:00 - 18:00
+                            </p>
+                            <p class="small text-muted mb-0">
+                                <i class="fas fa-clock"></i> Sábados: 9:00 - 13:00
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Calculadora de financiamiento -->
+                <div class="card shadow mb-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-calculator"></i> Calculadora Rápida
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="calculator">
+                            <div class="form-group">
+                                <label class="small font-weight-bold">Precio de Alquiler:</label>
+                                <input type="text" class="form-control" value="$@Model.Precio.ToString("N0")" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold">Depósito (1 mes):</label>
+                                <input type="text" class="form-control" value="$@Model.Precio.ToString("N0")" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label class="small font-weight-bold">Expensas estimadas:</label>
+                                <input type="text" class="form-control" value="$@((Model.Precio * 0.15).ToString("N0"))"
+                                    readonly>
+                            </div>
+                            <hr>
+                            <div class="total-cost">
+                                <strong>Costo inicial estimado: $@((Model.Precio * 2.15).ToString("N0"))</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propiedades relacionadas -->
+    @if (ViewBag.PropiedadesRelacionadas != null && ((IEnumerable<dynamic>)ViewBag.PropiedadesRelacionadas).Any())
+    {
+        <div class="related-properties mt-5">
+            <h3 class="mb-4">Propiedades Similares</h3>
+            <div class="row">
+                @foreach (var propiedad in ViewBag.PropiedadesRelacionadas)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="property-card h-100">
+                            <div class="property-image">
+                                <img src="@propiedad.Imagen" alt="@propiedad.Titulo" class="img-fluid">
+                                <div class="property-badges">
+                                    <span class="badge badge-success">@propiedad.Estado</span>
+                                    <span class="badge badge-primary">@propiedad.Tipo</span>
+                                </div>
+                            </div>
+                            <div class="property-content">
+                                <div class="property-price">
+                                    <h5 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h5>
+                                </div>
+                                <h6 class="property-title">@propiedad.Titulo</h6>
+                                <p class="property-location">
+                                    <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
+                                </p>
+                                <div class="property-features">
+                                    <span class="feature">
+                                        <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
+                                    </span>
+                                    <span class="feature">
+                                        <i class="fas fa-bath"></i> @propiedad.Baños baños
+                                    </span>
+                                    <span class="feature">
+                                        <i class="fas fa-ruler-combined"></i> @propiedad.Superficie m²
+                                    </span>
+                                </div>
+                                <div class="property-actions mt-3">
+                                    <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id"
+                                        class="btn btn-outline-primary btn-block">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function () {
+            // Sticky sidebar
+            if ($(window).width() > 992) {
+                $('.contact-form-sticky').sticky({
+                    topSpacing: 100,
+                    bottomSpacing: 50
+                });
+            }
+
+            // Validación del formulario
+            $('#interestForm').submit(function (e) {
+                const nombre = $('input[name="nombre"]').val().trim();
+                const email = $('input[name="email"]').val().trim();
+
+                if (!nombre || !email) {
+                    e.preventDefault();
+                    showAlert('danger', 'Por favor completa los campos obligatorios.');
+                    return false;
+                }
+
+                if (!isValidEmail(email)) {
+                    e.preventDefault();
+                    showAlert('danger', 'Por favor ingresa un email válido.');
+                    return false;
+                }
+            });
+
+            // Efectos hover para thumbnails
+            $('.thumbnail').hover(function () {
+                $(this).css('opacity', '0.8');
+            }, function () {
+                if (!$(this).hasClass('active')) {
+                    $(this).css('opacity', '1');
+                }
+            });
+
+            // Scroll suave a la galería desde thumbnails
+            $('.thumbnail').click(function () {
+                $('html, body').animate({
+                    scrollTop: $('#mainImage').offset().top - 100
+                }, 500);
+            });
+        });
+
+        function changeMainImage(src) {
+            $('#mainImage').fadeOut(200, function () {
+                $(this).attr('src', src).fadeIn(200);
+            });
+
+            $('.thumbnail').removeClass('active').css('opacity', '1');
+            $(`img[src="${src}"]`).addClass('active').css('opacity', '0.8');
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s]+[^\s]+\.[^\s]+$/;
+            return emailRegex.test(email);
+        }
+
+        function showAlert(type, message) {
+            const alertHtml = `
+                    <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                         style="top: 20px; right: 20px; z-index: 9999; max-width: 300px;" role="alert">
+                        ${message}
+                        <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                `;
+
+            $('body').append(alertHtml);
+
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+    </script>
+}
+
+<style>
+    .property-gallery .main-image {
+        position: relative;
+        overflow: hidden;
+        border-radius: 15px;
+    }
+
+    .property-gallery .main-image img {
+        width: 100%;
+        height: auto;
+        transition: transform 0.3s ease;
+    }
+
+    .property-gallery .main-image:hover img {
+        transform: scale(1.05);
+    }
+
+    .property-gallery .image-badges {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        display: flex;
+        gap: 10px;
+    }
+
+    .property-gallery .image-badges .badge {
+        font-size: 0.9rem;
+        padding: 0.5em 0.75em;
+        border-radius: 5px;
+    }
+
+    .thumbnail-gallery .thumbnail {
+        cursor: pointer;
+        border: 2px solid transparent;
+        transition: border-color 0.3s ease, opacity 0.3s ease;
+    }
+
+    .thumbnail-gallery .thumbnail.active {
+        border-color: #007bff;
+        opacity: 0.8;
+    }
+
+    .thumbnail-gallery .thumbnail:hover {
+        opacity: 0.8;
+    }
+
+    .property-info .property-title {
+        font-size: 1.75rem;
+        font-weight: bold;
+    }
+
+    .property-info .property-price {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+
+    .property-features .feature-item i {
+        margin-bottom: 10px;
+    }
+
+    .property-description .card-text {
+        font-size: 1rem;
+        line-height: 1.6;
+    }
+
+    .additional-features .feature-check {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        font-size: 0.95rem;
+    }
+
+    .property-map .map-placeholder {
+        border: 2px dashed #ced4da;
+    }
+
+    .property-card {
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        transition: box-shadow 0.3s ease;
+    }
+
+    .property-card:hover {
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
+
+    .property-card .property-image {
+        position: relative;
+        overflow: hidden;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .property-card .property-image img {
+        width: 100%;
+        height: 200px;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+
+    .property-card .property-image:hover img {
+        transform: scale(1.05);
+    }
+
+    .property-card .property-badges {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        gap: 5px;
+    }
+
+    .property-card .property-badges .badge {
+        font-size: 0.75rem;
+        padding: 0.4em 0.6em;
+        border-radius: 5px;
+    }
+
+    .property-card .property-content {
+        padding: 15px;
+    }
+
+    .property-card .property-title {
+        font-size: 1.1rem;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+
+    .property-card .property-location {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+
+    .property-card .property-features {
+        display: flex;
+        gap: 15px;
+        font-size: 0.85rem;
+        margin-top: 10px;
+    }
+
+    .property-card .property-features .feature i {
+        margin-right: 5px;
+    }
+
+    .property-card .property-actions .btn {
+        font-size: 0.9rem;
+    }
+
+    .contact-form-sticky {
+        position: relative;
+    }
+
+    .contact-form-sticky .card {
+        border-radius: 10px;
+    }
+
+    .contact-form-sticky .card-header {
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+
+    .contact-form-sticky .btn {
+        font-size: 1rem;
+        font-weight: bold;
+    }
+
+    .calculator .form-control {
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        font-weight: bold;
+    }
+
+    .calculator .total-cost {
+        font-size: 1.1rem;
+        text-align: center;
+        margin-top: 10px;
+    }
+
+    /* Animaciones */
+    .property-item {
+        opacity: 0;
+        transform: translateY(30px);
+        animation: fadeInUp 0.5s forwards;
+    }
+
+    .property-item:nth-child(1) {
+        animation-delay: 0.1s;
+    }
+
+    .property-item:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .property-item:nth-child(3) {
+        animation-delay: 0.3s;
+    }
+
+    .property-item:nth-child(4) {
+        animation-delay: 0.4s;
+    }
+</style>

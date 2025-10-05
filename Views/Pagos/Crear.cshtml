@@ -1,0 +1,301 @@
+@{
+    ViewData["Title"] = "Crear Nuevo Pago";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item active">Crear Nuevo</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-plus-circle me-2"></i>Crear Nuevo Pago</h2>
+    <a href="@Url.Action("Index", "Pagos")" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Cancelar
+    </a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row justify-content-center">
+    <div class="col-lg-10">
+        <div class="card">
+            <div class="card-header text-center bg-light">
+                <h4 class="card-title mb-0">
+                    <i class="bi bi-credit-card me-2"></i>Seleccione el Tipo de Pago
+                </h4>
+                <p class="text-muted mb-0">Elija el tipo de pago que desea registrar</p>
+            </div>
+            <div class="card-body p-4">
+                <form asp-action="Crear" method="post" id="formTipoPago">
+                    @Html.AntiForgeryToken()
+                    
+                    <div class="row g-4">
+                        <!-- Opción: Pago de Alquiler -->
+                        <div class="col-md-6">
+                            <div class="card h-100 tipo-pago-card border-2" data-tipo="alquiler">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-house-door text-primary" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <h4 class="card-title text-primary">Pago de Alquiler</h4>
+                                    <p class="card-text text-muted mb-4">
+                                        Registrar pagos mensuales de alquiler vinculados a contratos vigentes.
+                                    </p>
+                                    <ul class="list-unstyled text-start mb-4">
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Vinculado a contrato</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Cálculo automático de mora</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Pagos recurrentes mensuales</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Gestión de vencimientos</li>
+                                    </ul>
+                                    <button type="button" class="btn btn-primary btn-lg w-100 seleccionar-tipo" data-tipo="alquiler">
+                                        <i class="bi bi-arrow-right me-2"></i>Crear Pago Alquiler
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opción: Pago de Venta -->
+                        <div class="col-md-6">
+                            <div class="card h-100 tipo-pago-card border-2" data-tipo="venta">
+                                <div class="card-body text-center p-4">
+                                    <div class="mb-3">
+                                        <i class="bi bi-currency-dollar text-success" style="font-size: 4rem;"></i>
+                                    </div>
+                                    <h4 class="card-title text-success">Pago de Venta</h4>
+                                    <p class="card-text text-muted mb-4">
+                                        Registrar pagos relacionados con la venta de inmuebles.
+                                    </p>
+                                    <ul class="list-unstyled text-start mb-4">
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Seña de reserva</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Anticipo de compra</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Pago final</li>
+                                        <li><i class="bi bi-check-circle text-success me-2"></i>Cambio estado inmueble</li>
+                                    </ul>
+                                    <button type="button" class="btn btn-success btn-lg w-100 seleccionar-tipo" data-tipo="venta">
+                                        <i class="bi bi-arrow-right me-2"></i>Crear Pago Venta
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Opciones adicionales -->
+                        <div class="col-12">
+                            <div class="row g-3">
+                                <div class="col-md-4">
+                                    <div class="card tipo-pago-card border-2 h-100" data-tipo="seña">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-piggy-bank text-warning fs-2"></i>
+                                            <h6 class="card-title text-warning mt-2">Seña</h6>
+                                            <p class="card-text small text-muted">Registro de señas para reservar inmuebles</p>
+                                            <button type="button" class="btn btn-warning btn-sm w-100 seleccionar-tipo" data-tipo="seña">
+                                                Crear Seña
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card tipo-pago-card border-2 h-100" data-tipo="reserva">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-bookmark text-info fs-2"></i>
+                                            <h6 class="card-title text-info mt-2">Reserva</h6>
+                                            <p class="card-text small text-muted">Pago de reserva temporal de inmueble</p>
+                                            <button type="button" class="btn btn-info btn-sm w-100 seleccionar-tipo" data-tipo="reserva">
+                                                Crear Reserva
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-4">
+                                    <div class="card border-2 h-100" style="border-color: #e9ecef !important;">
+                                        <div class="card-body text-center">
+                                            <i class="bi bi-question-circle text-muted fs-2"></i>
+                                            <h6 class="card-title text-muted mt-2">¿Dudas?</h6>
+                                            <p class="card-text small text-muted">¿No está seguro qué tipo elegir?</p>
+                                            <button type="button" class="btn btn-outline-secondary btn-sm w-100" data-bs-toggle="modal" data-bs-target="#ayudaModal">
+                                                Ver Ayuda
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Input hidden para enviar el tipo seleccionado -->
+                    <input type="hidden" name="tipoPago" id="tipoPagoSeleccionado" value="">
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Ayuda -->
+<div class="modal fade" id="ayudaModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-info-circle me-2"></i>Guía de Tipos de Pago
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0"><i class="bi bi-house-door me-2"></i>Pagos de Alquiler</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="small mb-2"><strong>Use cuando:</strong></p>
+                                <ul class="small mb-3">
+                                    <li>El inquilino paga la cuota mensual</li>
+                                    <li>Hay un contrato de alquiler vigente</li>
+                                    <li>Necesita gestionar vencimientos y mora</li>
+                                </ul>
+                                <p class="small mb-0"><strong>Características:</strong> Cálculo automático de mora, vinculación con contratos, alertas de vencimiento.</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0"><i class="bi bi-currency-dollar me-2"></i>Pagos de Venta</h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="small mb-2"><strong>Use cuando:</strong></p>
+                                <ul class="small mb-3">
+                                    <li>El cliente compra un inmueble</li>
+                                    <li>Se recibe una seña o anticipo</li>
+                                    <li>Se completa la venta final</li>
+                                </ul>
+                                <p class="small mb-0"><strong>Características:</strong> Cambio automático del estado del inmueble, sin cálculo de mora, pagos únicos.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6 class="text-warning"><i class="bi bi-piggy-bank me-2"></i>Señas</h6>
+                        <p class="small">Pagos parciales para reservar un inmueble con intención de compra. Generalmente del 10-20% del valor total.</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6 class="text-info"><i class="bi bi-bookmark me-2"></i>Reservas</h6>
+                        <p class="small">Pagos temporales para apartar un inmueble por un tiempo determinado, reembolsables en algunos casos.</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Agregar eventos a todas las tarjetas y botones de selección
+            const tipoCards = document.querySelectorAll('.tipo-pago-card');
+            const botonesSeleccion = document.querySelectorAll('.seleccionar-tipo');
+            
+            // Hacer las tarjetas clickeables
+            tipoCards.forEach(card => {
+                card.addEventListener('click', function() {
+                    const tipo = this.getAttribute('data-tipo');
+                    if (tipo && tipo !== 'undefined') {
+                        seleccionarTipo(tipo);
+                    }
+                });
+                
+                // Efectos hover
+                card.addEventListener('mouseenter', function() {
+                    this.classList.add('shadow-lg');
+                    this.style.transform = 'translateY(-5px)';
+                    this.style.transition = 'all 0.3s ease';
+                });
+                
+                card.addEventListener('mouseleave', function() {
+                    this.classList.remove('shadow-lg');
+                    this.style.transform = 'translateY(0)';
+                });
+            });
+            
+            // Eventos para botones de selección
+            botonesSeleccion.forEach(boton => {
+                boton.addEventListener('click', function(e) {
+                    e.stopPropagation();
+                    const tipo = this.getAttribute('data-tipo');
+                    seleccionarTipo(tipo);
+                });
+            });
+            
+            function seleccionarTipo(tipo) {
+                // Mostrar confirmación visual
+                const tipoTexto = {
+                    'alquiler': 'Pago de Alquiler',
+                    'venta': 'Pago de Venta', 
+                    'seña': 'Seña de Reserva',
+                    'reserva': 'Pago de Reserva'
+                };
+                
+                if (confirm(`¿Confirma que desea crear un ${tipoTexto[tipo]}?`)) {
+                    // Establecer el valor y enviar
+                    document.getElementById('tipoPagoSeleccionado').value = tipo;
+                    
+                    // Mostrar indicador de carga
+                    const button = document.querySelector(`[data-tipo="${tipo}"] .seleccionar-tipo`);
+                    if (button) {
+                        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Redirigiendo...';
+                        button.disabled = true;
+                    }
+                    
+                    // Enviar formulario
+                    document.getElementById('formTipoPago').submit();
+                }
+            }
+        });
+    </script>
+}
+
+<style>
+    .tipo-pago-card {
+        cursor: pointer;
+        transition: all 0.3s ease;
+        border-color: #e9ecef;
+    }
+    
+    .tipo-pago-card:hover {
+        border-color: #007bff;
+        box-shadow: 0 4px 8px rgba(0, 123, 255, 0.1);
+    }
+    
+    .tipo-pago-card[data-tipo="alquiler"]:hover {
+        border-color: #007bff;
+    }
+    
+    .tipo-pago-card[data-tipo="venta"]:hover {
+        border-color: #28a745;
+    }
+    
+    .tipo-pago-card[data-tipo="seña"]:hover {
+        border-color: #ffc107;
+    }
+    
+    .tipo-pago-card[data-tipo="reserva"]:hover {
+        border-color: #17a2b8;
+    }
+</style>

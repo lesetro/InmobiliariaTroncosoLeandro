@@ -1,0 +1,102 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Crear Propietario";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Crear Nuevo Propietario</h1>
+                <a asp-action="Usuarios" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Usuarios
+                </a>
+            </div>
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-plus text-primary"></i> Información del Propietario
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="CrearPropietario" method="post">
+                        <div class="row">
+                            <!-- Información Personal -->
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3">Información Personal</h6>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Nombre" class="form-label">Nombre *</label>
+                                    <input asp-for="Nombre" class="form-control" placeholder="Ingrese el nombre" required />
+                                    <span asp-validation-for="Nombre" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Apellido" class="form-label">Apellido *</label>
+                                    <input asp-for="Apellido" class="form-control" placeholder="Ingrese el apellido" required />
+                                    <span asp-validation-for="Apellido" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Dni" class="form-label">DNI *</label>
+                                    <input asp-for="Dni" class="form-control" placeholder="Ingrese el DNI" required />
+                                    <span asp-validation-for="Dni" class="text-danger"></span>
+                                </div>
+                            </div>
+
+                            <!-- Información de Contacto -->
+                            <div class="col-md-6">
+                                <h6 class="text-muted mb-3">Información de Contacto</h6>
+                                
+                                <div class="mb-3">
+                                    <label asp-for="Email" class="form-label">Email *</label>
+                                    <input asp-for="Email" type="email" class="form-control" placeholder="correo@ejemplo.com" required />
+                                    <span asp-validation-for="Email" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Telefono" class="form-label">Teléfono</label>
+                                    <input asp-for="Telefono" class="form-control" placeholder="Ingrese el teléfono" />
+                                    <span asp-validation-for="Telefono" class="text-danger"></span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label asp-for="Direccion" class="form-label">Dirección</label>
+                                    <textarea asp-for="Direccion" class="form-control" rows="3" placeholder="Ingrese la dirección completa"></textarea>
+                                    <span asp-validation-for="Direccion" class="text-danger"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-12">
+                                <div class="d-flex justify-content-end">
+                                    <a asp-action="Usuarios" class="btn btn-secondary me-2">Cancelar</a>
+                                    <button type="submit" class="btn btn-primary">
+                                        <i class="fas fa-save"></i> Crear Propietario
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

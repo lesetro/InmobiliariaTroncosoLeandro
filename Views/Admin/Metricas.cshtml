@@ -1,0 +1,413 @@
+@{
+    ViewData["Title"] = "Métricas del Sistema";
+    var añoActual = ViewBag.AñoActual ?? DateTime.Now.Year;
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-graph-up me-2"></i>Métricas del Sistema @añoActual
+        </h1>
+        <div>
+            <button class="btn btn-primary btn-sm me-2" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+            <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Métricas Principales -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Intereses Este Mes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">42</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-envelope-heart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Contratos Este Mes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">8</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-file-earmark-text fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Ingresos Este Mes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">$125,000</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Tasa Conversión</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">19%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-percent fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Intereses por Mes -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-bar-chart me-2"></i>Intereses por Mes (@añoActual)
+                    </h6>
+                    <div class="dropdown no-arrow">
+                        <a class="dropdown-toggle" href="#" role="button" id="dropdownMenuLink" data-bs-toggle="dropdown">
+                            <i class="bi bi-three-dots-vertical text-gray-400"></i>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-right shadow">
+                            <a class="dropdown-item" href="#">Exportar datos</a>
+                            <a class="dropdown-item" href="#">Ver detalles</a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="interesesChart" style="height: 300px;"></canvas>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Total Año
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">245</div>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Promedio Mensual
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">20.4</div>
+                        </div>
+                        <div class="col">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Mejor Mes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Marzo</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Distribución de Contratos -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-pie-chart me-2"></i>Contratos por Tipo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie pt-4">
+                        <canvas id="contratosChart" style="height: 200px;"></canvas>
+                    </div>
+                    <hr>
+                    <div class="mt-4 text-center small">
+                        <span class="mr-2">
+                            <i class="bi bi-circle-fill text-primary"></i> Alquiler
+                        </span>
+                        <span class="mr-2">
+                            <i class="bi bi-circle-fill text-success"></i> Venta
+                        </span>
+                        <span class="mr-2">
+                            <i class="bi bi-circle-fill text-info"></i> Temporal
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingresos Mensuales -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-graph-up-arrow me-2"></i>Ingresos Mensuales (@añoActual)
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="ingresosChart" style="height: 300px;"></canvas>
+                    </div>
+                    <hr>
+                    <div class="row text-center">
+                        <div class="col-md-3">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Año
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">$1,250,000</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Promedio Mensual
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">$104,166</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Mejor Mes
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">Diciembre</div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Crecimiento
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">+15%</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas Comparativas -->
+    <div class="row">
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-arrow-up-right me-2"></i>Tendencias
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h4 class="small font-weight-bold">Intereses vs Contratos <span class="float-right">75%</span></h4>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-info" style="width: 75%"></div>
+                    </div>
+
+                    <h4 class="small font-weight-bold">Tasa de Conversión <span class="float-right">19%</span></h4>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-warning" style="width: 19%"></div>
+                    </div>
+
+                    <h4 class="small font-weight-bold">Retención Clientes <span class="float-right">85%</span></h4>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-success" style="width: 85%"></div>
+                    </div>
+
+                    <h4 class="small font-weight-bold">Satisfacción <span class="float-right">92%</span></h4>
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-primary" style="width: 92%"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-calendar-event me-2"></i>Actividades Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-primary">
+                                <i class="bi bi-envelope text-white"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="font-weight-bold">Nueva consulta</div>
+                                <div class="text-gray-500">Departamento en Centro</div>
+                            </div>
+                        </div>
+                        <div class="text-gray-500 text-xs">Hace 4h</div>
+                    </div>
+                    <hr>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-warning">
+                                <i class="bi bi-exclamation-triangle text-white"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="font-weight-bold">Pago vencido</div>
+                                <div class="text-gray-500">Contrato #045</div>
+                            </div>
+                        </div>
+                        <div class="text-gray-500 text-xs">Hace 1d</div>
+                    </div>
+                    <hr>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-info">
+                                <i class="bi bi-person-plus text-white"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="font-weight-bold">Nuevo usuario</div>
+                                <div class="text-gray-500">Propietario registrado</div>
+                            </div>
+                        </div>
+                        <div class="text-gray-500 text-xs">Hace 2d</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary {
+    border-left: 0.25rem solid #4e73df !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.icon-circle {
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+</style>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Gráfico de Intereses por Mes
+        const ctx1 = document.getElementById('interesesChart').getContext('2d');
+        new Chart(ctx1, {
+            type: 'line',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Intereses',
+                    data: [12, 19, 35, 25, 22, 18, 28, 31, 24, 20, 26, 42],
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Gráfico de Contratos por Tipo
+        const ctx2 = document.getElementById('contratosChart').getContext('2d');
+        new Chart(ctx2, {
+            type: 'doughnut',
+            data: {
+                labels: ['Alquiler', 'Venta', 'Temporal'],
+                datasets: [{
+                    data: [65, 25, 10],
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc']
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+
+        // Gráfico de Ingresos Mensuales
+        const ctx3 = document.getElementById('ingresosChart').getContext('2d');
+        new Chart(ctx3, {
+            type: 'bar',
+            data: {
+                labels: ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'],
+                datasets: [{
+                    label: 'Ingresos ($)',
+                    data: [85000, 95000, 120000, 110000, 98000, 105000, 115000, 125000, 108000, 118000, 130000, 125000],
+                    backgroundColor: '#1cc88a',
+                    borderColor: '#17a673',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        ticks: {
+                            callback: function(value) {
+                                return 'text-xs">Hace 2h</div>
+                    </div>
+                    <hr>
+                    <div class="d-flex align-items-center justify-content-between">
+                        <div class="d-flex align-items-center">
+                            <div class="icon-circle bg-success">
+                                <i class="bi bi-file-earmark-check text-white"></i>
+                            </div>
+                            <div class="ms-3">
+                                <div class="font-weight-bold">Contrato firmado</div>
+                                <div class="text-gray-500">Casa en Barrio Norte</div>
+                            </div>
+                        </div>
+                        <div class="text-gray-500  + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
+            }
+        });
+        
+</script>
+    }

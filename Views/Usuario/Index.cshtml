@@ -1,0 +1,472 @@
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.Usuario>
+
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+    
+    // ✅ Convertir ViewBag a variables tipadas para evitar errores con Math
+    var paginaActual = (int)ViewBag.PaginaActual;
+    var totalPaginas = (int)ViewBag.TotalPaginas;
+    var totalRegistros = (int)ViewBag.TotalRegistros;
+    var buscarActual = ViewBag.BuscarActual?.ToString() ?? "";
+    var rolActual = ViewBag.RolActual?.ToString() ?? "";
+    var estadoFiltro = ViewBag.EstadoFiltro?.ToString() ?? "activos";
+    var itemsPorPagina = 10;
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-people"></i> Gestión de Usuarios
+        </h1>
+        @if (User.IsInRole("administrador"))
+        {
+            <a asp-action="Create" class="btn btn-primary shadow-sm">
+                <i class="bi bi-plus"></i> Nuevo Usuario
+            </a>
+        }
+    </div>
+
+    <!-- Tarjetas de estadísticas -->
+    <div class="row mb-4">
+        @if (ViewBag.Estadisticas != null)
+        {
+            var estadisticas = ViewBag.Estadisticas as Dictionary<string, int>;
+            
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-danger shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">Administradores</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@(estadisticas.GetValueOrDefault("administrador", 0))</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-shield-fill-check fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-warning shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Empleados</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@(estadisticas.GetValueOrDefault("empleado", 0))</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-person-badge fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-primary shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Propietarios</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@(estadisticas.GetValueOrDefault("propietario", 0))</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-house fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-xl-3 col-md-6 mb-4">
+                <div class="card border-left-success shadow h-100 py-2">
+                    <div class="card-body">
+                        <div class="row no-gutters align-items-center">
+                            <div class="col mr-2">
+                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Inquilinos</div>
+                                <div class="h5 mb-0 font-weight-bold text-gray-800">@(estadisticas.GetValueOrDefault("inquilino", 0))</div>
+                            </div>
+                            <div class="col-auto">
+                                <i class="bi bi-key fa-2x text-gray-300"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Filtros y Búsqueda</h6>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="Index">
+                <div class="row g-3">
+                    <div class="col-md-5">
+                        <label for="buscar" class="form-label">Buscar:</label>
+                        <input type="text" class="form-control" id="buscar" name="buscar" 
+                               value="@buscarActual" placeholder="Nombre, apellido, email o DNI...">
+                    </div>
+                    <div class="col-md-3">
+                        <label for="rol" class="form-label">Filtrar por rol:</label>
+                        <select class="form-control" id="rol" name="rol">
+                            <option value="" selected="@(string.IsNullOrEmpty(rolActual))">Todos los roles</option>
+                            <option value="administrador" selected="@(rolActual == "administrador")">Administrador</option>
+                            <option value="empleado" selected="@(rolActual == "empleado")">Empleado</option>
+                            <option value="propietario" selected="@(rolActual == "propietario")">Propietario</option>
+                            <option value="inquilino" selected="@(rolActual == "inquilino")">Inquilino</option>
+                        </select>
+                    </div>
+                    <div class="col-md-4">
+                        <label class="form-label">&nbsp;</label><br>
+                        <button type="submit" class="btn btn-primary me-2">
+                            <i class="bi bi-search"></i> Buscar
+                        </button>
+                        <a asp-action="Index" class="btn btn-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                        </a>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Filtros de estado -->
+    <div class="d-flex justify-content-between align-items-center mb-3">
+        <div class="btn-group" role="group" aria-label="Filtros de estado">
+            <a asp-action="Index" 
+               asp-route-estadoFiltro="activos" 
+               asp-route-buscar="@buscarActual"
+               asp-route-rol="@rolActual"
+               class="btn btn-outline-success @(estadoFiltro == "activos" ? "active" : "")">
+                <i class="bi bi-check-circle"></i> Activos
+            </a>
+            <a asp-action="Index" 
+               asp-route-estadoFiltro="inactivos" 
+               asp-route-buscar="@buscarActual"
+               asp-route-rol="@rolActual"
+               class="btn btn-outline-danger @(estadoFiltro == "inactivos" ? "active" : "")">
+                <i class="bi bi-x-circle"></i> Inactivos
+            </a>
+            <a asp-action="Index" 
+               asp-route-estadoFiltro="todos" 
+               asp-route-buscar="@buscarActual"
+               asp-route-rol="@rolActual"
+               class="btn btn-outline-primary @(estadoFiltro == "todos" ? "active" : "")">
+                <i class="bi bi-list"></i> Todos
+            </a>
+        </div>
+        <div class="text-muted small">
+            Total: @totalRegistros usuarios
+        </div>
+    </div>
+
+    <!-- Tabla de usuarios -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold text-primary">
+                Lista de Usuarios
+            </h6>
+            <div class="text-muted small">
+                Página @paginaActual de @totalPaginas
+            </div>
+        </div>
+        <div class="card-body">
+            @if (!Model.Any())
+            {
+                <div class="text-center py-5">
+                    <i class="bi bi-people fa-3x text-gray-300 mb-3"></i>
+                    <h5 class="text-gray-500">No se encontraron usuarios</h5>
+                    <p class="text-gray-400">
+                        @if (!string.IsNullOrEmpty(buscarActual))
+                        {
+                            <span>No se encontraron usuarios con los criterios de búsqueda.</span>
+                        }
+                        else
+                        {
+                            <span>Intenta ajustar los filtros de búsqueda</span>
+                        }
+                    </p>
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-bordered table-hover" width="100%" cellspacing="0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th style="width: 8%;">Avatar</th>
+                                <th style="width: 20%;">Nombre Completo</th>
+                                <th style="width: 18%;">Email</th>
+                                <th style="width: 12%;">DNI</th>
+                                <th style="width: 12%;">Rol</th>
+                                <th style="width: 10%;">Estado</th>
+                                <th style="width: 20%;">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var usuario in Model)
+                            {
+                                <tr class="@(usuario.Estado == "inactivo" ? "table-secondary" : "")">
+                                   <td class="text-center">
+                            @if (!string.IsNullOrEmpty(usuario.Avatar))
+                            {
+                                <img src="@usuario.Avatar" alt="Avatar usuario" class="rounded-circle" width="50" height="50">
+                            }
+                            else
+                            {
+                                var colores = new[] { "#E63946", "#F77F00", "#06AED5", "#9D4EDD", "#2A9D8F", "#E76F51", "#3A86FF", "#FF006E" };
+                                var colorIndex = Math.Abs(usuario.IdUsuario.GetHashCode()) % colores.Length;
+                                var colorFondo = colores[colorIndex];
+        
+                            <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                style="width: 50px; height: 50px; background-color: @colorFondo;">
+                                <span class="text-white font-weight-bold">
+                                @(usuario.Nombre?.Substring(0, 1))@(usuario.Apellido?.Substring(0, 1))
+                                </span>
+                            </div>
+                            }
+                        </td>
+                                    <td>
+                                        <div class="font-weight-bold">@usuario.NombreCompleto</div>
+                                        <div class="small text-muted">@usuario.Telefono</div>
+                                    </td>
+                                    <td>@usuario.Email</td>
+                                    <td>@usuario.Dni</td>
+                                    <td>
+                                        @switch (usuario.Rol?.ToLower())
+                                        {
+                                            case "administrador":
+                                                <span class="badge bg-danger text-white">ADMINISTRADOR</span>
+                                                break;
+                                            case "empleado":
+                                                <span class="badge bg-warning text-dark">EMPLEADO</span>
+                                                break;
+                                            case "propietario":
+                                                <span class="badge bg-primary text-white">PROPIETARIO</span>
+                                                break;
+                                            case "inquilino":
+                                                <span class="badge bg-success text-white">INQUILINO</span>
+                                                break;
+                                            default:
+                                                <span class="badge bg-secondary text-white">@usuario.Rol?.ToUpper()</span>
+                                                break;
+                                        }
+                                    </td>
+                                    <td>
+                                        @if (usuario.Estado == "activo")
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="bi bi-check-circle"></i> ACTIVO
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="bi bi-x-circle"></i> INACTIVO
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@usuario.IdUsuario" 
+                                               class="btn btn-info btn-sm" title="Ver detalles">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            
+                                            @if (User.IsInRole("administrador") || 
+                                                 (User.IsInRole("empleado") && (usuario.Rol == "propietario" || usuario.Rol == "inquilino")))
+                                            {
+                                                <a asp-action="Edit" asp-route-id="@usuario.IdUsuario" 
+                                                   class="btn btn-warning btn-sm" title="Editar">
+                                                    <i class="bi bi-pencil"></i>
+                                                </a>
+                                            }
+                                            
+                                            @if (User.IsInRole("administrador"))
+                                            {
+                                                @* Botón de Toggle Estado *@
+                                                <form asp-action="ToggleEstado" asp-route-id="@usuario.IdUsuario" 
+                                                      method="post" style="display:inline;">
+                                                    @if (usuario.Estado == "activo")
+                                                    {
+                                                        <button type="submit" class="btn btn-secondary btn-sm" 
+                                                                title="Desactivar"
+                                                                onclick="return confirm('¿Desactivar este usuario?');">
+                                                            <i class="bi bi-pause-circle"></i>
+                                                        </button>
+                                                    }
+                                                    else
+                                                    {
+                                                        <button type="submit" class="btn btn-success btn-sm" 
+                                                                title="Activar"
+                                                                onclick="return confirm('¿Activar este usuario?');">
+                                                            <i class="bi bi-play-circle"></i>
+                                                        </button>
+                                                    }
+                                                </form>
+                                                
+                                                <button type="button" class="btn btn-info btn-sm" 
+                                                        onclick="resetearPassword(@usuario.IdUsuario)"
+                                                        title="Resetear contraseña">
+                                                    <i class="bi bi-key"></i>
+                                                </button>
+                                            }
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Paginación -->
+                @if (totalPaginas > 1)
+                {
+                    <nav aria-label="Navegación de páginas" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            <!-- Anterior -->
+                            @if (paginaActual > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       asp-action="Index" 
+                                       asp-route-pagina="@(paginaActual - 1)" 
+                                       asp-route-buscar="@buscarActual" 
+                                       asp-route-rol="@rolActual"
+                                       asp-route-estadoFiltro="@estadoFiltro">
+                                        Anterior
+                                    </a>
+                                </li>
+                            }
+
+                            <!-- Páginas numéricas -->
+                            @{
+                                int inicioRango = Math.Max(1, paginaActual - 2);
+                                int finRango = Math.Min(totalPaginas, paginaActual + 2);
+                            }
+
+                            @if (inicioRango > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       asp-action="Index" 
+                                       asp-route-pagina="1"
+                                       asp-route-buscar="@buscarActual" 
+                                       asp-route-rol="@rolActual"
+                                       asp-route-estadoFiltro="@estadoFiltro">1</a>
+                                </li>
+                                @if (inicioRango > 2)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                            }
+
+                            @for (int i = inicioRango; i <= finRango; i++)
+                            {
+                                <li class="page-item @(i == paginaActual ? "active" : "")">
+                                    <a class="page-link" 
+                                       asp-action="Index" 
+                                       asp-route-pagina="@i"
+                                       asp-route-buscar="@buscarActual" 
+                                       asp-route-rol="@rolActual"
+                                       asp-route-estadoFiltro="@estadoFiltro">@i</a>
+                                </li>
+                            }
+
+                            @if (finRango < totalPaginas)
+                            {
+                                @if (finRango < totalPaginas - 1)
+                                {
+                                    <li class="page-item disabled">
+                                        <span class="page-link">...</span>
+                                    </li>
+                                }
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       asp-action="Index" 
+                                       asp-route-pagina="@totalPaginas"
+                                       asp-route-buscar="@buscarActual" 
+                                       asp-route-rol="@rolActual"
+                                       asp-route-estadoFiltro="@estadoFiltro">@totalPaginas</a>
+                                </li>
+                            }
+
+                            <!-- Siguiente -->
+                            @if (paginaActual < totalPaginas)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       asp-action="Index" 
+                                       asp-route-pagina="@(paginaActual + 1)" 
+                                       asp-route-buscar="@buscarActual" 
+                                       asp-route-rol="@rolActual"
+                                       asp-route-estadoFiltro="@estadoFiltro">
+                                        Siguiente
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+
+                    <!-- Info de paginación -->
+                    <div class="text-center text-muted mt-3">
+                        <small>
+                            Mostrando @((paginaActual - 1) * itemsPorPagina + 1) - 
+                            @(Math.Min(paginaActual * itemsPorPagina, totalRegistros)) 
+                            de @totalRegistros usuarios
+                        </small>
+                    </div>
+                }
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Form oculto para resetear password -->
+<form id="resetPasswordForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="resetUsuarioId" name="id" />
+</form>
+
+@section Scripts {
+    <script>
+        function resetearPassword(usuarioId) {
+            if (confirm('¿Está seguro que desea resetear la contraseña de este usuario? Se establecerá como "PasswordTemporal123"')) {
+                $('#resetUsuarioId').val(usuarioId);
+                $('#resetPasswordForm').attr('action', '@Url.Action("ResetearPassword", "Usuario")').submit();
+            }
+        }
+
+        // Auto-focus en el campo de búsqueda
+        document.addEventListener('DOMContentLoaded', function() {
+            const buscarInput = document.getElementById('buscar');
+            if (buscarInput && !buscarInput.value) {
+                buscarInput.focus();
+            }
+        });
+    </script>
+}
+
+<style>
+    .border-left-primary {
+        border-left: 0.25rem solid #4e73df !important;
+    }
+    .border-left-success {
+        border-left: 0.25rem solid #1cc88a !important;
+    }
+    .border-left-warning {
+        border-left: 0.25rem solid #f6c23e !important;
+    }
+    .border-left-danger {
+        border-left: 0.25rem solid #e74a3b !important;
+    }
+</style>

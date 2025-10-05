@@ -1,0 +1,458 @@
+@{
+    ViewData["Title"] = "Iniciar Sesión";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+<div class="container">
+    <!-- Outer Row -->
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12 col-md-9">
+            <div class="card o-hidden border-0 shadow-lg my-5">
+                <div class="card-body p-0">
+                    <!-- Nested Row within Card Body -->
+                    <div class="row">
+                        <!-- Imagen lateral -->
+                        <div class="col-lg-6 d-none d-lg-block">
+                            <div class="login-image-container">
+                                <div class="login-overlay">
+                                    <div class="text-center text-white p-5">
+                                        <h2 class="mb-4">
+                                            <i class="fas fa-building fa-3x mb-3"></i><br>
+                                            Inmobiliaria Troncoso
+                                        </h2>
+                                        <p class="lead mb-4">Sistema de Gestión Inmobiliaria</p>
+                                        <div class="feature-list text-left">
+                                            <div class="feature-item mb-3">
+                                                <i class="fas fa-home fa-fw mr-2"></i>
+                                                Gestión de Propiedades
+                                            </div>
+                                            <div class="feature-item mb-3">
+                                                <i class="fas fa-users fa-fw mr-2"></i>
+                                                Administración de Usuarios
+                                            </div>
+                                            <div class="feature-item mb-3">
+                                                <i class="fas fa-file-contract fa-fw mr-2"></i>
+                                                Control de Contratos
+                                            </div>
+                                            <div class="feature-item mb-3">
+                                                <i class="fas fa-dollar-sign fa-fw mr-2"></i>
+                                                Seguimiento de Pagos
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Formulario de login -->
+                        <div class="col-lg-6">
+                            <div class="p-5">
+                                <div class="text-center">
+                                    <h1 class="h4 text-gray-900 mb-4">Bienvenido </h1>
+                                </div>
+                                
+                                <!-- Mostrar errores -->
+                                @if (!ViewData.ModelState.IsValid)
+                                {
+                                    <div class="alert alert-danger" role="alert">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                        {
+                                            <div>@error.ErrorMessage</div>
+                                        }
+                                    </div>
+                                }
+
+                                <!-- Mostrar mensajes de TempData -->
+                                @if (TempData["Error"] != null)
+                                {
+                                    <div class="alert alert-danger" role="alert">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                        @TempData["Error"]
+                                    </div>
+                                }
+
+                                @if (TempData["Success"] != null)
+                                {
+                                    <div class="alert alert-success" role="alert">
+                                        <i class="fas fa-check-circle"></i>
+                                        @TempData["Success"]
+                                    </div>
+                                }
+
+                                @if (TempData["Info"] != null)
+                                {
+                                    <div class="alert alert-info" role="alert">
+                                        <i class="fas fa-info-circle"></i>
+                                        @TempData["Info"]
+                                    </div>
+                                }
+
+                                <form method="post" asp-action="Login" id="loginForm">
+                                    <input type="hidden" name="returnUrl" value="@ViewBag.ReturnUrl "" />
+                                    
+                                    <div class="form-group">
+                                        <label for="email" class="form-label font-weight-bold">Email</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <div class="input-group-text">
+                                                    <i class="fas fa-envelope text-gray-500"></i>
+                                                </div>
+                                            </div>
+                                            <input type="email" 
+                                                   class="form-control form-control-user" 
+                                                   id="email" 
+                                                   name="email"
+                                                   placeholder="Ingrese su email..."
+                                                   required
+                                                   autocomplete="email">
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="form-group">
+                                        <label for="password" class="form-label font-weight-bold">Contraseña</label>
+                                        <div class="input-group">
+                                            <div class="input-group-prepend">
+                                                <div class="input-group-text">
+                                                    <i class="fas fa-lock text-gray-500"></i>
+                                                </div>
+                                            </div>
+                                            <input type="password" 
+                                                   class="form-control form-control-user" 
+                                                   id="password" 
+                                                   name="password"
+                                                   placeholder="Contraseña"
+                                                   required
+                                                   autocomplete="current-password">
+                                            <div class="input-group-append">
+                                                <button type="button" class="btn btn-outline-secondary" id="togglePassword">
+                                                    <i class="fas fa-eye" id="toggleIcon"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="d-flex flex-column align-items-center">
+                                        <div class="form-group">
+                                            <div class="custom-control custom-checkbox small">
+                                                <input type="checkbox" class="custom-control-input" id="rememberMe" name="rememberMe">
+                                                <label class="custom-control-label" for="rememberMe">Recordarme</label>
+                                            </div>
+                                        </div>
+    
+                                        <button type="submit" class="btn btn-primary btn-user btn-block" id="loginButton">
+                                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                        </button>
+                                    </div>
+                                    <hr>
+                                    
+                                    <!-- Usuarios de prueba -->
+                                    <div class="text-center">
+                                       <button type="button" class="btn btn-link btn-sm" data-toggle="modal" data-target="#testUsersModal">
+                                            <i class="fas fa-info-circle"></i> Usuarios de Pruebas
+                                    </button>
+                                    </div>
+                                </form>
+                                
+                                <hr>
+                                
+                                <div class="text-center">
+                                    <a class="small" href="#" data-toggle="modal" data-target="#forgotPasswordModal">
+                                        ¿Olvidaste tu contraseña?
+                                    </a>
+                                </div>
+                                
+                                <div class="text-center">
+                                    <a class="small" asp-action="Index" asp-controller="Home">
+                                        <i class="fas fa-arrow-left"></i> Volver al sitio público
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de usuarios de prueba -->
+<div class="modal fade" id="testUsersModal" tabindex="-1" role="dialog" aria-labelledby="testUsersModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="testUsersModalLabel">
+                    <button type="button" class="btn btn-link btn-sm" id="testUsersModalBtn">
+                        <i class="fas fa-info-circle"></i> Usuarios de Pruebas
+                    </button>
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <p class="text-muted mb-4">Puedes usar estos usuarios para probar diferentes roles del sistema:</p>
+                
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-danger">
+                            <div class="card-header bg-danger text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-crown"></i> Administrador
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Email:</strong> admin@inmobiliaria.com</p>
+                                <p class="mb-2"><strong>Contraseña:</strong> PasswordTemporal123</p>
+                                <p class="small text-muted">Acceso completo al sistema</p>
+                                <button type="button" class="btn btn-danger btn-sm btn-block" onclick="fillCredentials('admin@inmobiliaria.com', 'PasswordTemporal123')">
+                                    <i class="fas fa-clipboard"></i> Usar Credenciales
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-warning">
+                            <div class="card-header bg-warning text-dark">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-user-tie"></i> Empleado
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Email:</strong> empleado@inmobiliaria.com</p>
+                                <p class="mb-2"><strong>Contraseña:</strong> PasswordTemporal123</p>
+                                <p class="small text-muted">Gestión limitada de usuarios</p>
+                                <button type="button" class="btn btn-warning btn-sm btn-block" onclick="fillCredentials('empleado@inmobiliaria.com', 'PasswordTemporal123')">
+                                    <i class="fas fa-clipboard"></i> Usar Credenciales
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-primary">
+                            <div class="card-header bg-primary text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-home"></i> Propietario
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Email:</strong> propietario@inmobiliaria.com</p>
+                                <p class="mb-2"><strong>Contraseña:</strong> PasswordTemporal123</p>
+                                <p class="small text-muted">Gestión de propiedades</p>
+                                <button type="button" class="btn btn-primary btn-sm btn-block" onclick="fillCredentials('propietario@inmobiliaria.com', 'PasswordTemporal123')">
+                                    <i class="fas fa-clipboard"></i> Usar Credenciales
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6 mb-3">
+                        <div class="card border-success">
+                            <div class="card-header bg-success text-white">
+                                <h6 class="mb-0">
+                                    <i class="fas fa-key"></i> Inquilino
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="mb-2"><strong>Email:</strong> inquilino@inmobiliaria.com</p>
+                                <p class="mb-2"><strong>Contraseña:</strong> PasswordTemporal123</p>
+                                <p class="small text-muted">Información de alquiler</p>
+                                <button type="button" class="btn btn-success btn-sm btn-block" onclick="fillCredentials('inquilino@inmobiliaria.com', 'PasswordTemporal123')">
+                                    <i class="fas fa-clipboard"></i> Usar Credenciales
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de contraseña olvidada -->
+<div class="modal fade" id="forgotPasswordModal" tabindex="-1" role="dialog" aria-labelledby="forgotPasswordModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="forgotPasswordModalLabel">
+                    <i class="fas fa-key"></i> ¿Olvidaste tu contraseña?
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="text-center">
+                    <i class="fas fa-envelope fa-3x text-primary mb-3"></i>
+                    <h5>Contacta al Administrador</h5>
+                    <p class="text-muted">
+                        Por motivos de seguridad, la recuperación de contraseñas debe ser gestionada por el administrador del sistema.
+                    </p>
+                    <p>
+                        <strong>Contacto:</strong><br>
+                        <a href="mailto:admin@inmobiliaria.com">admin@inmobiliaria.com</a><br>
+                        <a href="tel:+5493000000000">+54 9 3000 000 000</a>
+                    </p>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <a href="mailto:admin@inmobiliaria.com?subject=Recuperación de Contraseña" class="btn btn-primary">
+                    <i class="fas fa-envelope"></i> Enviar Email
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Mostrar/ocultar contraseña
+            $('#togglePassword').click(function() {
+                const passwordInput = $('#password');
+                const toggleIcon = $('#toggleIcon');
+                
+                if (passwordInput.attr('type') === 'password') {
+                    passwordInput.attr('type', 'text');
+                    toggleIcon.removeClass('fa-eye').addClass('fa-eye-slash');
+                } else {
+                    passwordInput.attr('type', 'password');
+                    toggleIcon.removeClass('fa-eye-slash').addClass('fa-eye');
+                }
+            });
+
+            // Validación del formulario
+            $('#loginForm').submit(function(e) {
+                const email = $('#email').val();
+                const password = $('#password').val();
+                
+                if (!email || !password) {
+                    e.preventDefault();
+                    showAlert('danger', 'Por favor complete todos los campos requeridos.');
+                    return false;
+                }
+                
+                
+                
+                // Mostrar loading
+                $('#loginButton').html('<i class="fas fa-spinner fa-spin"></i> Iniciando sesión...').prop('disabled', true);
+            });
+
+            // Animaciones de entrada
+            $('.card').addClass('animated fadeInUp');
+            
+            // Focus automático en el campo email
+            $('#email').focus();
+        });
+
+        function fillCredentials(email, password) {
+            $('#email').val(email);
+            $('#password').val(password);
+            $('#testUsersModal').modal('hide');
+            $('#password').focus();
+        }
+
+      
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            
+            $('.alert').remove();
+            $('#loginForm').prepend(alertHtml);
+        }
+        // Agregar al final del $(document).ready
+        $('#testUsersModalBtn').click(function() {
+        $('#testUsersModal').modal('show');
+        });
+    </script>
+}
+
+<style>
+    .login-image-container {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        height: 100%;
+        position: relative;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .login-overlay {
+        background: rgba(0, 0, 0, 0.3);
+        width: 100%;
+        height: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .feature-list {
+        max-width: 250px;
+        margin: 0 auto;
+    }
+    
+    .feature-item {
+        font-size: 0.9rem;
+        opacity: 0.9;
+    }
+    
+    .btn-user {
+        border-radius: 10rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
+        font-weight: bold;
+        letter-spacing: 0.1rem;
+    }
+    
+    .form-control-user {
+        border-radius: 10rem;
+        padding: 1.5rem 1rem;
+    }
+    
+    .input-group-text {
+        border-radius: 10rem 0 0 10rem;
+        background-color: #f8f9fc;
+        border-color: #d1d3e2;
+    }
+    
+    .animated {
+        animation-duration: 0.8s;
+        animation-fill-mode: both;
+    }
+    
+    .fadeInUp {
+        animation-name: fadeInUp;
+    }
+    
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translate3d(0, 40px, 0);
+        }
+        to {
+            opacity: 1;
+            transform: translate3d(0, 0, 0);
+        }
+    }
+    
+    .card {
+        transition: all 0.3s ease;
+    }
+    
+    .modal .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+</style>

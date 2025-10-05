@@ -31,6 +31,7 @@
                         </ul>
                     </div>
                 }
+                
 
                 <form asp-action="Create" method="post">
 
@@ -163,6 +164,12 @@
                             <li><strong>Estado inicial:</strong> El contrato se creará con estado "Vigente"</li>
                             <li><strong>Autocompletado:</strong> Escriba al menos 3 caracteres para buscar</li>
                         </ul>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Nota:</strong> En caso de que el inquilino no entregue el inmueble en condiciones apropiadas, se aplicará una multa a considerar por la inmobiliaria para reparar daños, restaurar, o cubrir faltantes.
+                            <strong>La multa se aplicará al finalizar el contrato</strong>
+                        </div>
                     </div>
 
                     <hr class="my-4">

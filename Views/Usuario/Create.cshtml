@@ -1,0 +1,611 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Crear Usuario";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-plus"></i> Crear Nuevo Usuario
+        </h1>
+        <a asp-action="Index" class="btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Lista
+        </a>
+    </div>
+
+    <!-- Formulario de creación -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información del Usuario</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" enctype="multipart/form-data">
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+    
+                        <div class="row">
+                            <!-- Información Personal -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-user"></i> Datos Personales
+                                </h6>
+            
+                                <div class="form-group">
+                                    <label asp-for="Nombre" class="control-label font-weight-bold">Nombre *</label>
+                                    <input asp-for="Nombre" class="form-control" placeholder="Ingrese el nombre" required />
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Apellido" class="control-label font-weight-bold">Apellido *</label>
+                                    <input asp-for="Apellido" class="form-control" placeholder="Ingrese el apellido" required />
+                                    <span asp-validation-for="Apellido" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Dni" class="control-label font-weight-bold">DNI *</label>
+                                    <input asp-for="Dni" class="form-control" placeholder="Ingrese el DNI" required />
+                                    <span asp-validation-for="Dni" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Telefono" class="control-label font-weight-bold">Teléfono</label>
+                                    <input asp-for="Telefono" class="form-control" placeholder="Ingrese el teléfono" />
+                                    <span asp-validation-for="Telefono" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Información de Contacto y Acceso -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-envelope"></i> Contacto y Acceso
+                                </h6>
+            
+                                <div class="form-group">
+                                    <label asp-for="Email" class="control-label font-weight-bold">Email *</label>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="usuario@ejemplo.com" required />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Rol" class="control-label font-weight-bold">Rol del Usuario *</label>
+                                    <select asp-for="Rol" class="form-control" id="rolSelect" required>
+                                        <option value="">Seleccione un rol</option>
+                                        @if (ViewBag.Roles != null)
+                                        {
+                                            foreach (string rol in ViewBag.Roles)
+                                            {
+                                                <option value="@rol">@rol.ToUpper()</option>
+                                            }
+                                        }
+                                    </select>
+                                    <span asp-validation-for="Rol" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Direccion" class="control-label font-weight-bold">Dirección</label>
+                                    <textarea asp-for="Direccion" class="form-control" rows="3" placeholder="Ingrese la dirección completa"></textarea>
+                                    <span asp-validation-for="Direccion" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- SECCIÓN DE AVATAR -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-image"></i> Configuración de Avatar
+                                </h6>
+                            </div>
+
+                            <!-- Opción 1: URL de Avatar -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label asp-for="Avatar" class="control-label font-weight-bold">
+                                        <i class="fas fa-link"></i> URL de Avatar (Opcional)
+                                    </label>
+                                    <input asp-for="Avatar" class="form-control" id="avatarUrl" placeholder="https://ejemplo.com/avatar.jpg" />
+                                    <small class="form-text text-muted">
+                                        Ingrese una URL de imagen externa
+                                    </small>
+                                </div>
+                            </div>
+
+                            <!-- Opción 2: Subir Archivo -->
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label class="control-label font-weight-bold">
+                                        <i class="fas fa-upload"></i> Subir Avatar (Opcional)
+                                    </label>
+                                    <div class="custom-file">
+                                        <input type="file" class="custom-file-input" id="archivoAvatar" name="archivoAvatar" accept="image/*">
+                                        <label class="custom-file-label" for="archivoAvatar">Seleccionar imagen...</label>
+                                    </div>
+                                    <small class="form-text text-muted">
+                                        Formatos: JPG, PNG, GIF (Max. 5MB)
+                                    </small>
+                                </div>
+                            </div>
+
+                            <div class="col-12">
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Prioridad de Avatar:</strong>
+                                    <ol class="mb-0 mt-2">
+                                        <li>Si sube un archivo, se usará ese archivo</li>
+                                        <li>Si ingresa una URL (sin subir archivo), se usará esa URL</li>
+                                        <li>Si no hace ninguna de las anteriores, se generará automáticamente con las iniciales</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr class="my-4">
+
+                        <!-- Información de contraseña -->
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Contraseña inicial:</strong> Se asignará automáticamente la contraseña temporal "PasswordTemporal123". El usuario debe cambiarla en su primer ingreso.
+                        </div>
+
+                        <!-- Botones de acción -->
+                        <div class="form-group text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Crear Usuario
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de ayuda -->
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-question-circle"></i> Ayuda
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <h6 class="font-weight-bold">Roles del Sistema:</h6>
+                    <ul class="list-unstyled">
+                        <li class="mb-2">
+                            <span class="badge badge-danger">ADMINISTRADOR</span><br>
+                            <small class="text-muted">Acceso completo al sistema</small>
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge badge-warning">EMPLEADO</span><br>
+                            <small class="text-muted">Gestión limitada de propietarios e inquilinos</small>
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge badge-primary">PROPIETARIO</span><br>
+                            <small class="text-muted">Gestión de sus propiedades</small>
+                        </li>
+                        <li class="mb-2">
+                            <span class="badge badge-success">INQUILINO</span><br>
+                            <small class="text-muted">Acceso a su información de alquiler</small>
+                        </li>
+                    </ul>
+                    
+                    <hr>
+                    
+                    <h6 class="font-weight-bold">Campos Obligatorios:</h6>
+                    <ul class="small text-muted">
+                        <li>Nombre y Apellido</li>
+                        <li>DNI único</li>
+                        <li>Email único</li>
+                        <li>Rol del usuario</li>
+                    </ul>
+                    
+                    <div class="alert alert-warning mt-3">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>Importante:</strong> El DNI y email deben ser únicos en el sistema.
+                    </div>
+                </div>
+            </div>
+
+            <!-- Preview del Avatar -->
+            <div class="card shadow mb-4" id="avatarPreview" style="display: none;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-user-circle"></i> Vista Previa
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <img id="previewAvatar" src="" alt="Vista previa" class="rounded-circle mb-3" 
+                         style="width: 80px; height: 80px; object-fit: cover;">
+                    <h6 id="previewNombre" class="mb-1"></h6>
+                    <p id="previewRol" class="text-muted small"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    <script>
+        $(document).ready(function() {
+            // Variables para debounce
+            let dniTimeout;
+            let emailTimeout;
+            let telefonoTimeout;
+
+           
+            // ACTUALIZAR VISTA PREVIA
+            // ==========================================
+            $('#Nombre, #Apellido, #rolSelect').on('input change', function() {
+                // Si no hay archivo ni URL, mostrar avatar con iniciales
+                if (!$('#archivoAvatar')[0].files.length && !$('#avatarUrl').val().trim()) {
+                    updatePreview();
+                }
+            });
+
+            // Cuando se ingresa una URL de avatar
+            $('#avatarUrl').on('input', function() {
+                var url = $(this).val().trim();
+                if (url !== '') {
+                    // Limpiar el archivo si existe
+                    $('#archivoAvatar').val('');
+                    $('.custom-file-label').html('Seleccionar imagen...');
+                    
+                    // Mostrar preview de la URL
+                    $('#previewAvatar').attr('src', url).on('error', function() {
+                        // Si la URL no carga, volver al avatar con iniciales
+                        updatePreview();
+                    });
+                    
+                    const nombre = $('#Nombre').val().trim();
+                    const apellido = $('#Apellido').val().trim();
+                    const rol = $('#rolSelect').val();
+                    
+                    if (nombre && apellido && rol) {
+                        $('#previewNombre').text(`${nombre} ${apellido}`);
+                        $('#previewRol').text(capitalizeFirst(rol));
+                        $('#avatarPreview').fadeIn();
+                    }
+                } else {
+                    // Si borra la URL y no hay archivo, volver a iniciales
+                    updatePreview();
+                }
+            });
+
+            // Cuando se sube un archivo
+            $('#archivoAvatar').on('change', function() {
+                if (this.files && this.files.length > 0) {
+                    var fileName = this.files[0].name;
+                    $(this).siblings('.custom-file-label').addClass("selected").html(fileName);
+                    
+                    // Limpiar la URL si existe
+                    $('#avatarUrl').val('');
+                    
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#previewAvatar').attr('src', e.target.result);
+                        
+                        const nombre = $('#Nombre').val().trim();
+                        const apellido = $('#Apellido').val().trim();
+                        const rol = $('#rolSelect').val();
+                        
+                        if (nombre && apellido && rol) {
+                            $('#previewNombre').text(`${nombre} ${apellido}`);
+                            $('#previewRol').text(capitalizeFirst(rol));
+                            $('#avatarPreview').fadeIn();
+                        }
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                } else {
+                    // Si cancela la selección o borra el archivo
+                    $(this).siblings('.custom-file-label').removeClass("selected").html('Seleccionar imagen...');
+                    // Volver a mostrar avatar con iniciales si no hay URL
+                    if (!$('#avatarUrl').val().trim()) {
+                        updatePreview();
+                    }
+                }
+            });
+
+            function updatePreview() {
+                const nombre = $('#Nombre').val().trim();
+                const apellido = $('#Apellido').val().trim();
+                const rol = $('#rolSelect').val();
+
+                if (nombre && apellido && rol) {
+                    const iniciales = obtenerIniciales(nombre, apellido);
+                    
+                    const colores = {
+                        'administrador': { bg: 'dc3545', text: 'ffffff' },
+                        'empleado': { bg: 'ffc107', text: '000000' },
+                        'propietario': { bg: '007bff', text: 'ffffff' },
+                        'inquilino': { bg: '28a745', text: 'ffffff' }
+                    };
+                    
+                    const color = colores[rol.toLowerCase()] || { bg: '6c757d', text: 'ffffff' };
+                    const avatarUrl = `https://via.placeholder.com/150/${color.bg}/${color.text}?text=${encodeURIComponent(iniciales)}`;
+                    
+                    $('#previewAvatar').attr('src', avatarUrl).on('error', function() {
+                        $(this).attr('src', 'data:image/svg+xml;base64,' + btoa(`
+                            <svg xmlns="http://www.w3.org/2000/svg" width="150" height="150" viewBox="0 0 150 150">
+                                <rect width="150" height="150" fill="#${color.bg}"/>
+                                <text x="75" y="85" font-family="Arial" font-size="60" fill="#${color.text}" text-anchor="middle">${iniciales}</text>
+                            </svg>
+                        `));
+                    });
+                    
+                    $('#previewNombre').text(`${nombre} ${apellido}`);
+                    $('#previewRol').text(capitalizeFirst(rol));
+                    $('#avatarPreview').fadeIn();
+                } else {
+                    $('#avatarPreview').fadeOut();
+                }
+            }
+
+            function obtenerIniciales(nombre, apellido) {
+                const inicialNombre = nombre.charAt(0).toUpperCase();
+                const inicialApellido = apellido.charAt(0).toUpperCase();
+                return inicialNombre + inicialApellido;
+            }
+
+            function capitalizeFirst(str) {
+                return str.charAt(0).toUpperCase() + str.slice(1).toLowerCase();
+            }
+
+            
+            // VALIDACIÓN DNI CON AJAX
+            // ==========================================
+            $('#Dni').on('input', function() {
+                const dni = $(this).val().trim();
+                const $input = $(this);
+                let $feedback = $input.siblings('.invalid-feedback');
+                
+                if ($feedback.length === 0) {
+                    $input.after('<div class="invalid-feedback"></div>');
+                    $feedback = $input.siblings('.invalid-feedback');
+                }
+                
+                clearTimeout(dniTimeout);
+                
+                if (dni.length === 0) {
+                    $input.removeClass('is-valid is-invalid');
+                    $feedback.text('');
+                    return;
+                }
+                
+                if (!/^\d{7,8}$/.test(dni)) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $feedback.text('El DNI debe contener entre 7 y 8 números');
+                    return;
+                }
+                
+                dniTimeout = setTimeout(function() {
+                    verificarDniExistente(dni);
+                }, 500);
+            });
+            
+            function verificarDniExistente(dni) {
+                const $input = $('#Dni');
+                let $feedback = $input.siblings('.invalid-feedback');
+                
+                $input.prop('disabled', true);
+                
+                $.ajax({
+                    url: '/Usuario/VerificarDni',
+                    method: 'GET',
+                    data: { dni: dni },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('DNI - Respuesta:', response);
+                        
+                        if (response.existe) {
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                            $feedback.text(response.mensaje || 'Este DNI ya está registrado');
+                        } else {
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                            $feedback.text('');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error verificando DNI:', error);
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                        $feedback.text('');
+                    },
+                    complete: function() {
+                        $input.prop('disabled', false);
+                    }
+                });
+            }
+            
+           
+            // VALIDACIÓN EMAIL CON AJAX
+            // ==========================================
+            $('#Email').on('input', function() {
+                const email = $(this).val().trim();
+                const $input = $(this);
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                let $feedback = $input.siblings('.invalid-feedback');
+                
+                if ($feedback.length === 0) {
+                    $input.after('<div class="invalid-feedback"></div>');
+                    $feedback = $input.siblings('.invalid-feedback');
+                }
+                
+                clearTimeout(emailTimeout);
+                
+                if (email.length === 0) {
+                    $input.removeClass('is-valid is-invalid');
+                    $feedback.text('');
+                    return;
+                }
+                
+                if (!emailRegex.test(email)) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $feedback.text('Por favor ingrese un email válido');
+                    return;
+                }
+                
+                emailTimeout = setTimeout(function() {
+                    verificarEmailExistente(email);
+                }, 500);
+            });
+            
+            function verificarEmailExistente(email) {
+                const $input = $('#Email');
+                let $feedback = $input.siblings('.invalid-feedback');
+                
+                $.ajax({
+                    url: '/Usuario/VerificarEmail',
+                    method: 'GET',
+                    data: { email: email },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Email - Respuesta:', response);
+                        
+                        if (response.existe) {
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                            $feedback.text(response.mensaje || 'Este email ya está registrado');
+                        } else {
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                            $feedback.text('');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error verificando email:', error);
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                        $feedback.text('');
+                    }
+                });
+            }
+            
+            
+            // VALIDACIÓN TELÉFONO CON AJAX
+            // ==========================================
+            $('#Telefono').on('input', function() {
+                const telefono = $(this).val().trim();
+                const $input = $(this);
+                const telefonoRegex = /^[\+]?[0-9]{8,15}$/;
+                let $feedback = $input.siblings('.invalid-feedback');
+                
+                if ($feedback.length === 0) {
+                    $input.after('<div class="invalid-feedback"></div>');
+                    $feedback = $input.siblings('.invalid-feedback');
+                }
+                
+                clearTimeout(telefonoTimeout);
+                
+                if (telefono.length === 0) {
+                    $input.removeClass('is-valid is-invalid');
+                    $feedback.text('');
+                    return;
+                }
+                
+                if (!telefonoRegex.test(telefono)) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $feedback.text('Ingrese un teléfono válido (8-15 dígitos)');
+                    return;
+                }
+                
+                telefonoTimeout = setTimeout(function() {
+                    verificarTelefonoExistente(telefono);
+                }, 500);
+            });
+            
+            function verificarTelefonoExistente(telefono) {
+                const $input = $('#Telefono');
+                let $feedback = $input.siblings('.invalid-feedback');
+                
+                $.ajax({
+                    url: '/Usuario/VerificarTelefono',
+                    method: 'GET',
+                    data: { telefono: telefono },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Teléfono - Respuesta:', response);
+                        
+                        if (response.existe) {
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                            $feedback.text(response.mensaje || 'Este teléfono ya está registrado');
+                        } else {
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                            $feedback.text('');
+                        }
+                    },
+                    error: function() {
+                        console.error('Error verificando teléfono');
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                        $feedback.text('');
+                    }
+                });
+            }
+
+           
+            // VALIDACIÓN DEL FORMULARIO ANTES DE ENVIAR
+            // ==========================================
+            $('form').on('submit', function(e) {
+                let isValid = true;
+                let camposInvalidos = [];
+                
+                console.log('🔍 Validando formulario antes de enviar...');
+                
+                // Verificar campos con clase is-invalid (validaciones AJAX)
+                if ($('#Dni').hasClass('is-invalid')) {
+                    isValid = false;
+                    camposInvalidos.push('DNI');
+                    console.log(' DNI inválido');
+                }
+                
+                if ($('#Email').hasClass('is-invalid')) {
+                    isValid = false;
+                    camposInvalidos.push('Email');
+                    console.log(' Email inválido');
+                }
+                
+                if ($('#Telefono').hasClass('is-invalid')) {
+                    isValid = false;
+                    camposInvalidos.push('Teléfono');
+                    console.log(' Teléfono inválido');
+                }
+                
+                // Verificar campos requeridos
+                $(this).find('input[required], select[required]').each(function() {
+                    const valor = $(this).val();
+                    const nombre = $(this).attr('name') || $(this).attr('id');
+                    
+                    if (!valor || !valor.trim()) {
+                        isValid = false;
+                        $(this).addClass('is-invalid');
+                        camposInvalidos.push(nombre);
+                        console.log(' Campo vacío:', nombre);
+                    }
+                });
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    console.log(' Formulario NO válido. Campos con error:', camposInvalidos);
+                    
+                    alert('Por favor corrija los siguientes campos: ' + camposInvalidos.join(', '));
+                    
+                    // Scroll al primer campo inválido
+                    $('html, body').animate({
+                        scrollTop: $('.is-invalid').first().offset().top - 100
+                    }, 500);
+                    
+                    return false;
+                }
+                
+                console.log(' Formulario válido, enviando...');
+            });
+
+           
+            updatePreview();
+        });
+    </script>
+}

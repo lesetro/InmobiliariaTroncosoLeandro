@@ -1,0 +1,276 @@
+@{
+    ViewData["Title"] = "Alertas del Sistema";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>
+            <i class="bi bi-exclamation-triangle text-warning me-2"></i>
+            Alertas del Sistema
+        </h2>
+        <p class="text-muted mb-0">
+            Pagos con mora y contratos próximos a vencer
+        </p>
+    </div>
+    <div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+        </a>
+        <button class="btn btn-outline-primary ms-2" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+    </div>
+</div>
+
+<!-- Resumen de Alertas -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <i class="bi bi-clock-history text-danger fs-1"></i>
+                <h4 class="text-danger mt-2">
+                    @GetSafeCount(ViewBag.PagosConMora)
+                </h4>
+                <p class="text-muted small mb-0">Pagos con Mora</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <i class="bi bi-calendar-x text-warning fs-1"></i>
+                <h4 class="text-warning mt-2">
+                    @GetSafeCount(ViewBag.ContratosVenciendo)
+                </h4>
+                <p class="text-muted small mb-0">Contratos Venciendo</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if ((ViewBag.TotalAlertas ?? 0) == 0)
+{
+    <!-- Sin Alertas -->
+    <div class="card border-success">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-check-circle text-success" style="font-size: 4rem;"></i>
+            <h4 class="text-success mt-3">¡Todo está al día!</h4>
+            <p class="text-muted">No hay alertas pendientes en el sistema</p>
+            <a href="@Url.Action("Index")" class="btn btn-success mt-3">
+                <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+            </a>
+        </div>
+    </div>
+}
+else
+{
+    <div class="row">
+        <!-- Pagos con Mora -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history me-2"></i>
+                        Pagos con Mora
+                        @if (GetSafeCount(ViewBag.PagosConMora) > 0)
+                        {
+                            <span class="badge bg-light text-danger ms-2">
+                                @GetSafeCount(ViewBag.PagosConMora)
+                            </span>
+                        }
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.PagosConMora != null && GetSafeCount(ViewBag.PagosConMora) > 0)
+                    {
+                        @foreach (var pago in (IEnumerable<object>)ViewBag.PagosConMora)
+                        {
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-building me-1"></i>
+                                            @GetPropertyValue(pago, "Direccion")
+                                        </h6>
+                                        <p class="text-muted small mb-1">
+                                            <i class="bi bi-person me-1"></i>
+                                            @GetPropertyValue(pago, "NombreInquilino")
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            Vencido: @GetPropertyValue(pago, "FechaVencimiento")
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-danger">
+                                            @GetPropertyValue(pago, "MontoVencido")
+                                        </div>
+                                        <small class="text-muted">
+                                            @GetPropertyValue(pago, "DiasVencido") días
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="@Url.Action("Index", "Alquileres")" 
+                                       class="btn btn-outline-danger btn-sm">
+                                        <i class="bi bi-eye me-1"></i>Ver Pago
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success fs-1"></i>
+                            <p class="text-muted mt-2">No hay pagos con mora</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Contratos Venciendo -->
+        <div class="col-md-6 mb-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-calendar-x me-2"></i>
+                        Contratos Venciendo
+                        @if (GetSafeCount(ViewBag.ContratosVenciendo) > 0)
+                        {
+                            <span class="badge bg-dark text-warning ms-2">
+                                @GetSafeCount(ViewBag.ContratosVenciendo)
+                            </span>
+                        }
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.ContratosVenciendo != null && GetSafeCount(ViewBag.ContratosVenciendo) > 0)
+                    {
+                        @foreach (var contrato in (IEnumerable<object>)ViewBag.ContratosVenciendo)
+                        {
+                            <div class="border-bottom pb-3 mb-3">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="mb-1">
+                                            <i class="bi bi-building me-1"></i>
+                                            @GetPropertyValue(contrato, "Direccion")
+                                        </h6>
+                                        <p class="text-muted small mb-1">
+                                            <i class="bi bi-person me-1"></i>
+                                            @GetPropertyValue(contrato, "NombreInquilino")
+                                        </p>
+                                        <p class="text-muted small mb-0">
+                                            <i class="bi bi-calendar me-1"></i>
+                                            Vence: @GetPropertyValue(contrato, "FechaVencimiento")
+                                        </p>
+                                    </div>
+                                    <div class="text-end">
+                                        <div class="fw-bold text-warning">
+                                            @GetPropertyValue(contrato, "MontoMensual")
+                                        </div>
+                                        <small class="text-muted">
+                                            @GetPropertyValue(contrato, "DiasRestantes") días restantes
+                                        </small>
+                                    </div>
+                                </div>
+                                <div class="mt-2">
+                                    <a href="@Url.Action("Index", "Contratos")" 
+                                       class="btn btn-outline-warning btn-sm">
+                                        <i class="bi bi-eye me-1"></i>Ver Contrato
+                                    </a>
+                                </div>
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="bi bi-check-circle text-success fs-1"></i>
+                            <p class="text-muted mt-2">No hay contratos próximos a vencer</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="card border-info">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-lightning me-2"></i>Acciones Rápidas
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <a href="@Url.Action("Index", "Alquileres")" class="btn btn-outline-primary w-100">
+                        <i class="bi bi-credit-card me-1"></i>
+                        Gestionar Pagos
+                    </a>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <a href="@Url.Action("Index", "Contratos")" class="btn btn-outline-info w-100">
+                        <i class="bi bi-file-text me-1"></i>
+                        Gestionar Contratos
+                    </a>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <a href="@Url.Action("Index", "Inmuebles")" class="btn btn-outline-success w-100">
+                        <i class="bi bi-building me-1"></i>
+                        Ver Inmuebles
+                    </a>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary w-100">
+                        <i class="bi bi-graph-up me-1"></i>
+                        Ver Dashboard
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Error Messages -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@functions {
+    private object GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return "N/A";
+        
+        try
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            return property?.GetValue(obj) ?? "N/A";
+        }
+        catch
+        {
+            return "N/A";
+        }
+    }
+
+    private int GetSafeCount(object collection)
+    {
+        if (collection == null) return 0;
+        
+        return collection switch
+        {
+            ICollection<object> list => list.Count,
+            IEnumerable<object> enumerable => enumerable.Count(),
+            System.Collections.ICollection nonGeneric => nonGeneric.Count,
+            _ => 0
+        };
+    }
+}

@@ -1,0 +1,174 @@
+@model IList<Inmobiliaria_troncoso_leandro.Models.Inmueble>
+
+@{
+    ViewData["Title"] = "Gestión de Inmuebles";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Gestión de Inmuebles</h1>
+                <a asp-action="CrearInmueble" class="btn btn-warning">
+                    <i class="fas fa-plus"></i> Crear Inmueble
+                </a>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Filtros de búsqueda -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" asp-action="Inmuebles">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Buscar</label>
+                                <input type="text" name="buscar" value="@ViewBag.Buscar" class="form-control" placeholder="Dirección..." />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Estado</label>
+                                <select name="estado" class="form-select">
+                                    <option value="">Todos los estados</option>
+                                    <option value="disponible" selected="@(ViewBag.EstadoSeleccionado == "disponible")">Disponible</option>
+                                    <option value="alquilado" selected="@(ViewBag.EstadoSeleccionado == "alquilado")">Alquilado</option>
+                                    <option value="vendido" selected="@(ViewBag.EstadoSeleccionado == "vendido")">Vendido</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <a asp-action="Inmuebles" class="btn btn-outline-secondary">Limpiar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla de inmuebles -->
+            <div class="card">
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Dirección</th>
+                                        <th>Uso</th>
+                                        <th>Ambientes</th>
+                                        <th>Precio</th>
+                                        <th>Propietario</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var inmueble in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@inmueble.Direccion</strong>
+                                            </td>
+                                            <td>@inmueble.Uso</td>
+                                            <td>@inmueble.Ambientes</td>
+                                            <td>$@inmueble.Precio.ToString("N0")</td>
+                                            <td>
+                                                @if (inmueble.Propietario?.Usuario != null)
+                                                {
+                                                    <span>@inmueble.Propietario.Usuario.NombreCompleto</span>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Sin propietario</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @{
+                                                    var badgeClass = inmueble.Estado switch
+                                                    {
+                                                        "disponible" => "bg-success",
+                                                        "alquilado" => "bg-warning",
+                                                        "vendido" => "bg-danger",
+                                                        _ => "bg-secondary"
+                                                    };
+                                                }
+                                                <span class="badge @badgeClass">@inmueble.Estado.ToUpper()</span>
+                                            </td>
+                                            <td>
+                                                <a asp-action="DetallesInmueble" asp-route-id="@inmueble.IdInmueble" class="btn btn-sm btn-outline-primary" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        @if (ViewBag.TotalPaginas > 1)
+                        {
+                            <nav aria-label="Navegación de páginas">
+                                <ul class="pagination justify-content-center">
+                                    @if (ViewBag.PaginaActual > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="Inmuebles" asp-route-pagina="@(ViewBag.PaginaActual - 1)" asp-route-buscar="@ViewBag.Buscar" asp-route-estado="@ViewBag.EstadoSeleccionado">
+                                                Anterior
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @for (int i = Math.Max(1, ViewBag.PaginaActual - 2); i <= Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2); i++)
+                                    {
+                                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                                            <a class="page-link" asp-action="Inmuebles" asp-route-pagina="@i" asp-route-buscar="@ViewBag.Buscar" asp-route-estado="@ViewBag.EstadoSeleccionado">
+                                                @i
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="Inmuebles" asp-route-pagina="@(ViewBag.PaginaActual + 1)" asp-route-buscar="@ViewBag.Buscar" asp-route-estado="@ViewBag.EstadoSeleccionado">
+                                                Siguiente
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+
+                            <div class="text-center text-muted">
+                                Mostrando página @ViewBag.PaginaActual de @ViewBag.TotalPaginas (@ViewBag.TotalRegistros inmuebles en total)
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-home fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No se encontraron inmuebles</h5>
+                            <p class="text-muted">Intenta cambiar los filtros de búsqueda o crea un nuevo inmueble.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,503 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Mi Perfil";
+    // El layout se asigna dinámicamente según el rol del usuario
+    switch (User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower())
+    {
+        case "administrador":
+            Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+            break;
+        case "empleado":
+            Layout = "~/Views/Shared/_LayoutEmpleado.cshtml";
+            break;
+        case "propietario":
+            Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+            break;
+        case "inquilino":
+            Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+            break;
+        default:
+            Layout = "~/Views/Shared/_Layout.cshtml";
+            break;
+    }
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-circle"></i> Mi Perfil
+        </h1>
+    </div>
+
+    <div class="row">
+        <!-- Información principal del perfil -->
+        <div class="col-lg-8">
+            <!-- Tarjeta principal del perfil -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información Personal</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-4">
+                        <div class="col-auto">
+                            @if (!string.IsNullOrEmpty(Model.Avatar))
+                            {
+                                <img src="@Model.Avatar" alt="Mi Avatar" class="rounded-circle" width="120" height="120">
+                            }
+                            else
+                            {
+                                <div class="bg-gradient-primary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 120px; height: 120px;">
+                                    <span class="text-white font-weight-bold h2 mb-0">
+                                        @(Model.Nombre.Substring(0, 1))@(Model.Apellido.Substring(0, 1))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                        <div class="col">
+                            <h2 class="mb-2">@Model.NombreCompleto</h2>
+                            <p class="mb-2">
+                                @switch (Model.Rol.ToLower())
+                                {
+                                    case "administrador":
+                                        <span class="badge badge-danger badge-lg">
+                                            <i class="fas fa-crown"></i> @Model.Rol.ToUpper()
+                                        </span>
+                                        break;
+                                    case "empleado":
+                                        <span class="badge badge-warning badge-lg">
+                                            <i class="fas fa-user-tie"></i> @Model.Rol.ToUpper()
+                                        </span>
+                                        break;
+                                    case "propietario":
+                                        <span class="badge badge-primary badge-lg">
+                                            <i class="fas fa-home"></i> @Model.Rol.ToUpper()
+                                        </span>
+                                        break;
+                                    case "inquilino":
+                                        <span class="badge badge-success badge-lg">
+                                            <i class="fas fa-key"></i> @Model.Rol.ToUpper()
+                                        </span>
+                                        break;
+                                    default:
+                                        <span class="badge badge-secondary badge-lg">@Model.Rol.ToUpper()</span>
+                                        break;
+                                }
+                            </p>
+                            <p class="mb-0 text-muted h6">
+                                <i class="fas fa-envelope"></i> @Model.Email
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-user"></i> Datos Personales
+                            </h6>
+                            
+                            <div class="info-item mb-3">
+                                <label class="font-weight-bold text-dark">Nombre Completo</label>
+                                <p class="mb-0 text-muted">@Model.NombreCompleto</p>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="font-weight-bold text-dark">DNI</label>
+                                <p class="mb-0 text-muted">@Model.Dni</p>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="font-weight-bold text-dark">Teléfono</label>
+                                <p class="mb-0 text-muted">
+                                    @if (!string.IsNullOrEmpty(Model.Telefono) && Model.Telefono != "Sin especificar")
+                                    {
+                                        <a href="tel:@Model.Telefono" class="text-decoration-none">@Model.Telefono</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary">Sin especificar</span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-envelope"></i> Información de Contacto
+                            </h6>
+                            
+                            <div class="info-item mb-3">
+                                <label class="font-weight-bold text-dark">Email</label>
+                                <p class="mb-0 text-muted">@Model.Email</p>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="font-weight-bold text-dark">Dirección</label>
+                                <p class="mb-0 text-muted">
+                                    @if (!string.IsNullOrEmpty(Model.Direccion) && Model.Direccion != "Sin dirección especificada")
+                                    {
+                                        @Model.Direccion
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary">Sin dirección especificada</span>
+                                    }
+                                </p>
+                            </div>
+                            
+                            <div class="info-item mb-3">
+                                <label class="font-weight-bold text-dark">Estado de la Cuenta</label>
+                                <p class="mb-0">
+                                    @if (Model.Estado == "activo")
+                                    {
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> ACTIVA
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">
+                                            <i class="fas fa-ban"></i> INACTIVA
+                                        </span>
+                                    }
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones del perfil -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-cogs"></i> Acciones de Mi Cuenta
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-warning h-100">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                                Actualizar Información
+                                            </div>
+                                            <div class="small text-gray-600">
+                                                Edita tus datos personales y de contacto
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            
+                                            <a asp-controller="Usuario" asp-action="Edit" class="btn btn-primary shadow-sm">
+                                                <i class="fas fa-edit"></i> Editar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6 mb-3">
+                            <div class="card border-left-info h-100">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Cambiar Contraseña
+                                            </div>
+                                            <div class="small text-gray-600">
+                                                Actualiza tu contraseña de acceso
+                                            </div>
+                                        </div>
+                                        <div class="col-auto">
+                                            <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-info btn-sm">
+                                                <i class="fas fa-key"></i> Cambiar
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar de información -->
+        <div class="col-lg-4">
+            <!-- Información de la sesión -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">
+                        <i class="fas fa-info-circle"></i> Información de la Sesión
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>ID de Usuario:</strong><br>
+                        <span class="text-muted">#@Model.IdUsuario</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Rol en el Sistema:</strong><br>
+                        @switch (Model.Rol.ToLower())
+                        {
+                            case "administrador":
+                                <span class="badge badge-danger">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Acceso completo al sistema</small>
+                                break;
+                            case "empleado":
+                                <span class="badge badge-warning">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Gestión limitada de usuarios</small>
+                                break;
+                            case "propietario":
+                                <span class="badge badge-primary">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Gestión de sus propiedades</small>
+                                break;
+                            case "inquilino":
+                                <span class="badge badge-success">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Acceso a información de alquiler</small>
+                                break;
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Última Actividad:</strong><br>
+                        <span class="text-muted">Ahora</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Avatar y personalización -->
+             <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-user-circle"></i> Avatar
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div id="previewContainer">
+                        @if (!string.IsNullOrEmpty(Model.Avatar))
+                        {
+                            <img id="previewAvatar" src="@Model.Avatar" alt="Vista previa" class="rounded-circle mb-3" width="120" height="120">
+                        }
+                        else
+                        {
+                            var colores = new[] { "#E63946", "#F77F00", "#06AED5", "#9D4EDD", "#2A9D8F", "#E76F51", "#3A86FF", "#FF006E" };
+                            var colorIndex = Math.Abs(Model.IdUsuario.GetHashCode()) % colores.Length;
+                            var colorFondo = colores[colorIndex];
+                            
+                            <div id="avatarInicial" class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" 
+                                 style="width: 120px; height: 120px; background-color: @colorFondo;">
+                                <span class="text-white font-weight-bold h3 mb-0">
+                                    @(Model.Nombre.Substring(0, 1))@(Model.Apellido.Substring(0, 1))
+                                </span>
+                            </div>
+                            <img id="previewAvatar" src="#" alt="Vista previa" class="rounded-circle mb-3" width="120" height="120" style="display: none;">
+                        }
+                    </div>
+                    <h6 id="previewNombre" class="mb-1">@Model.NombreCompleto</h6>
+                    <p id="previewRol" class="text-muted small">@Model.Rol.ToUpper()</p>
+                </div>
+            </div>
+            <!-- Información específica del rol -->
+            @if (Model.Rol.ToLower() == "propietario")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-home"></i> Mi Dashboard
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <p class="mb-3">Accede a la gestión de tus propiedades</p>
+                            <a asp-controller="Propietario" asp-action="Index" class="btn btn-primary">
+                                <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.Rol.ToLower() == "inquilino")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-success">
+                            <i class="fas fa-key"></i> Mi Dashboard
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <p class="mb-3">Revisa tu información de alquiler</p>
+                            <a asp-controller="Inquilino" asp-action="Index" class="btn btn-success">
+                                <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.Rol.ToLower() == "empleado")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-user-tie"></i> Mi Dashboard
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <p class="mb-3">Accede a tus herramientas de trabajo</p>
+                            <a asp-controller="Empleado" asp-action="Index" class="btn btn-warning">
+                                <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+            else if (Model.Rol.ToLower() == "administrador")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-danger">
+                            <i class="fas fa-crown"></i> Panel de Administración
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center">
+                            <p class="mb-3">Accede al panel de administración</p>
+                            <a asp-controller="Admin" asp-action="Index" class="btn btn-danger">
+                                <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Soporte y ayuda -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">
+                        <i class="fas fa-question-circle"></i> Ayuda y Soporte
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <p class="small text-muted mb-3">
+                            ¿Necesitas ayuda con tu cuenta o tienes alguna pregunta?
+                        </p>
+                        <div class="d-grid gap-2">
+                            <a href="mailto:soporte@inmobiliaria.com" class="btn btn-outline-secondary btn-sm">
+                                <i class="fas fa-envelope"></i> Contactar Soporte
+                            </a>
+                            <button type="button" class="btn btn-outline-info btn-sm" data-toggle="modal" data-target="#helpModal">
+                                <i class="fas fa-question"></i> Preguntas Frecuentes
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de ayuda -->
+<div class="modal fade" id="helpModal" tabindex="-1" role="dialog" aria-labelledby="helpModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="helpModalLabel">
+                    <i class="fas fa-question-circle"></i> Preguntas Frecuentes
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <div class="accordion" id="faqAccordion">
+                    <div class="card">
+                        <div class="card-header" id="headingOne">
+                            <h2 class="mb-0">
+                                <button class="btn btn-link" type="button" data-toggle="collapse" data-target="#collapseOne">
+                                    ¿Cómo cambio mi contraseña?
+                                </button>
+                            </h2>
+                        </div>
+                        <div id="collapseOne" class="collapse show" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                Puedes cambiar tu contraseña haciendo clic en el botón "Cambiar Contraseña" en esta página o yendo a la sección de cuenta en el menú principal.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header" id="headingTwo">
+                            <h2 class="mb-0">
+                                <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseTwo">
+                                    ¿Cómo actualizo mi información personal?
+                                </button>
+                            </h2>
+                        </div>
+                        <div id="collapseTwo" class="collapse" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                Haz clic en "Editar Perfil" para actualizar tu información personal como teléfono, dirección y avatar.
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="card">
+                        <div class="card-header" id="headingThree">
+                            <h2 class="mb-0">
+                                <button class="btn btn-link collapsed" type="button" data-toggle="collapse" data-target="#collapseThree">
+                                    ¿Qué significa mi rol en el sistema?
+                                </button>
+                            </h2>
+                        </div>
+                        <div id="collapseThree" class="collapse" data-parent="#faqAccordion">
+                            <div class="card-body">
+                                Tu rol determina qué funciones puedes usar en el sistema. Los administradores tienen acceso completo, los empleados gestionan usuarios, los propietarios manejan propiedades, y los inquilinos ven su información de alquiler.
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cerrar</button>
+                <a href="mailto:soporte@inmobiliaria.com" class="btn btn-primary">Contactar Soporte</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Agregar efectos hover a las tarjetas de acción
+            $('.card').hover(function() {
+                $(this).addClass('shadow-lg');
+            }, function() {
+                $(this).removeClass('shadow-lg');
+            });
+        });
+    </script>
+}
+
+<style>
+    .info-item {
+        border-bottom: 1px solid #e3e6f0;
+        padding-bottom: 0.5rem;
+    }
+    
+    .info-item:last-child {
+        border-bottom: none;
+        padding-bottom: 0;
+    }
+    
+    .card {
+        transition: all 0.3s ease;
+    }
+</style>

@@ -1,0 +1,539 @@
+@using System.Linq;
+@{
+    var alertasMora = ViewBag.AlertasMora as IEnumerable<object> ?? new List<object>();
+    var alertasContratos = ViewBag.AlertasContratos as IEnumerable<object> ?? new List<object>();
+}
+@{
+    ViewData["Title"] = "Alertas y Notificaciones";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item active">Alertas</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>
+        <i class="bi bi-bell me-2"></i>Alertas y Notificaciones
+        @if (ViewBag.TotalAlertas != null && ViewBag.TotalAlertas > 0)
+        {
+            <span class="badge bg-warning ms-2">@ViewBag.TotalAlertas</span>
+        }
+    </h2>
+    <div>
+        <button onclick="actualizarAlertas()" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+        <a href="@Url.Action("Index", "Pagos")" class="btn btn-secondary ms-2">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Resumen de alertas -->
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card border-danger">
+            <div class="card-body text-center">
+                <i class="bi bi-clock-history text-danger fs-2"></i>
+            <h4 class="card-title text-danger mt-2">
+            @{
+            int count = 0;
+            if (ViewBag.PagosConMora != null)
+            {
+                foreach (var item in (System.Collections.IEnumerable)ViewBag.PagosConMora)
+                    {
+                        count++;
+                    }
+                }
+            }
+            @count
+            </h4>
+    <p class="card-text">Pagos con Mora</p>
+</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+    <i class="bi bi-calendar-x text-warning fs-2"></i>
+    <h4 class="card-title text-warning mt-2">
+        @{
+            int countar = 0;
+            if (ViewBag.ContratosVenciendo != null)
+            {
+                foreach (var item in (System.Collections.IEnumerable)ViewBag.ContratosVenciendo)
+                {
+                    countar++;
+                }
+            }
+        }
+        @count
+    </h4>
+    <p class="card-text">Contratos por Vencer</p>
+</div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <i class="bi bi-info-circle text-info fs-2"></i>
+                <h4 class="card-title text-info mt-2">
+                    @if (ViewBag.TotalAlertas != null)
+                    {
+                        @ViewBag.TotalAlertas
+                    }
+                    else
+                    {
+                        <text>0</text>
+                    }
+                </h4>
+                <p class="card-text">Total Alertas</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Alertas de Pagos con Mora -->
+@if (ViewBag.PagosConMora != null && ((IEnumerable<object>)ViewBag.PagosConMora).Any())
+{
+    <div class="card border-danger mb-4">
+        <div class="card-header bg-danger text-white d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-exclamation-triangle me-2"></i>Pagos con Mora - Acción Requerida
+            </h5>
+            <a href="@Url.Action("PagosConMora", "Pagos")" class="btn btn-light btn-sm">
+                Ver Todos
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="bi bi-house-door me-1"></i>Inmueble</th>
+                            <th><i class="bi bi-person me-1"></i>Inquilino</th>
+                            <th><i class="bi bi-calendar me-1"></i>Vencimiento</th>
+                            <th><i class="bi bi-clock me-1"></i>Días Mora</th>
+                            <th><i class="bi bi-currency-dollar me-1"></i>Monto</th>
+                            <th><i class="bi bi-exclamation-circle me-1"></i>Mora</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (dynamic pago in (IEnumerable<object>)ViewBag.PagosConMora)
+                        {
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@GetPropertyValue(pago, "InmuebleDireccion")</div>
+                                    <small class="text-muted">@GetPropertyValue(pago, "Concepto")</small>
+                                </td>
+                                <td>
+                                    <div>@GetPropertyValue(pago, "InquilinoNombre")</div>
+                                    <small class="text-muted">@GetPropertyValue(pago, "InquilinoTelefono")</small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-danger">
+                                        @GetPropertyValueAsDateTime(pago, "FechaVencimiento").ToString("dd/MM/yyyy")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-warning fs-6">
+                                        @GetPropertyValue(pago, "DiasMora") días
+                                    </span>
+                                </td>
+                                <td class="fw-semibold">
+                                    @GetPropertyValueAsDecimal(pago, "MontoBase").ToString("C")
+                                </td>
+                                <td class="fw-semibold text-danger">
+                                    @GetPropertyValueAsDecimal(pago, "MontoMora").ToString("C")
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Edit", "Alquileres", new { id = GetPropertyValue(pago, "IdPago") })" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Pago">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-success" 
+                                                onclick="marcarComoPagado(@GetPropertyValue(pago, "IdPago"))" 
+                                                title="Marcar como Pagado">
+                                            <i class="bi bi-check-circle"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="contactarInquilino('@GetPropertyValue(pago, "InquilinoTelefono")', '@GetPropertyValue(pago, "InquilinoNombre")')" 
+                                                title="Contactar Inquilino">
+                                            <i class="bi bi-telephone"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-success mb-4">
+        <div class="card-body text-center py-4">
+            <i class="bi bi-check-circle text-success fs-1"></i>
+            <h5 class="text-success mt-3">¡Excelente!</h5>
+            <p class="text-muted">No hay pagos con mora en este momento.</p>
+        </div>
+    </div>
+}
+
+<!-- Alertas de Contratos Próximos a Vencer -->
+@if (ViewBag.ContratosVenciendo != null && ((IEnumerable<object>)ViewBag.ContratosVenciendo).Any())
+{
+    <div class="card border-warning mb-4">
+        <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">
+                <i class="bi bi-calendar-week me-2"></i>Contratos Próximos a Vencer
+            </h5>
+            <a href="@Url.Action("Index", "Contratos", new { filtro = "proximosVencer" })" class="btn btn-dark btn-sm">
+                Ver Contratos
+            </a>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th><i class="bi bi-house-door me-1"></i>Inmueble</th>
+                            <th><i class="bi bi-person me-1"></i>Inquilino</th>
+                            <th><i class="bi bi-calendar-event me-1"></i>Fecha Fin</th>
+                            <th><i class="bi bi-hourglass me-1"></i>Días Restantes</th>
+                            <th><i class="bi bi-currency-dollar me-1"></i>Monto Mensual</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (dynamic contrato in (IEnumerable<object>)ViewBag.ContratosVenciendo)
+                        {
+                            var diasRestantes = GetPropertyValueAsInt(contrato, "DiasRestantes");
+                            var badgeClass = diasRestantes <= 7 ? "bg-danger" : (diasRestantes <= 15 ? "bg-warning" : "bg-info");
+                            
+                            <tr>
+                                <td>
+                                    <div class="fw-semibold">@GetPropertyValue(contrato, "InmuebleDireccion")</div>
+                                    <small class="text-muted">Contrato #@GetPropertyValue(contrato, "IdContrato")</small>
+                                </td>
+                                <td>
+                                    <div>@GetPropertyValue(contrato, "InquilinoNombre")</div>
+                                    <small class="text-muted">@GetPropertyValue(contrato, "InquilinoEmail")</small>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass">
+                                        @GetPropertyValueAsDateTime(contrato, "FechaFin").ToString("dd/MM/yyyy")
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge @badgeClass fs-6">
+                                        @diasRestantes días
+                                    </span>
+                                </td>
+                                <td class="fw-semibold">
+                                    @GetPropertyValueAsDecimal(contrato, "MontoMensual").ToString("C")
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Details", "Contratos", new { id = GetPropertyValue(contrato, "IdContrato") })" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Contrato">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", "Contratos", new { id = GetPropertyValue(contrato, "IdContrato") })" 
+                                           class="btn btn-sm btn-outline-warning" title="Renovar/Editar">
+                                            <i class="bi bi-arrow-clockwise"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="enviarNotificacion(@GetPropertyValue(contrato, "IdContrato"), '@GetPropertyValue(contrato, "InquilinoEmail")')" 
+                                                title="Notificar Inquilino">
+                                            <i class="bi bi-envelope"></i>
+                                        </button>
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <div class="card border-success mb-4">
+        <div class="card-body text-center py-4">
+            <i class="bi bi-calendar-check text-success fs-1"></i>
+            <h5 class="text-success mt-3">Contratos bajo Control</h5>
+            <p class="text-muted">No hay contratos próximos a vencer en los próximos 30 días.</p>
+        </div>
+    </div>
+}
+
+<!-- Acciones Rápidas -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-lightning me-2"></i>Acciones Rápidas para Alertas
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <a href="@Url.Action("Index", "Alquileres", new { estado = "conMora" })" 
+                   class="btn btn-outline-danger btn-lg w-100 mb-2">
+                    <i class="bi bi-clock-history d-block fs-3"></i>
+                    <span>Gestionar Mora</span>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Index", "Contratos", new { filtro = "proximosVencer" })" 
+                   class="btn btn-outline-warning btn-lg w-100 mb-2">
+                    <i class="bi bi-calendar-week d-block fs-3"></i>
+                    <span>Renovar Contratos</span>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Ingresos", "Reportes", new { tipo = "alertas" })" 
+                        class="btn btn-outline-info btn-lg w-100 mb-2">
+                    <i class="bi bi-file-earmark-text d-block fs-3"></i>
+                    <span>Ingresos</span>
+                </a>
+            </div>
+            <div class="col-md-3">
+                <a href="@Url.Action("Configuracion", "Pagos")" 
+                   class="btn btn-outline-secondary btn-lg w-100 mb-2">
+                    <i class="bi bi-gear d-block fs-3"></i>
+                    <span>Configurar Alertas</span>
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para contactar inquilino -->
+<div class="modal fade" id="contactarModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="bi bi-telephone me-2"></i>Contactar Inquilino
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Inquilino:</label>
+                    <div id="nombreInquilino" class="fw-semibold"></div>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Teléfono:</label>
+                    <div class="input-group">
+                        <input type="text" id="telefonoInquilino" class="form-control" readonly>
+                        <button class="btn btn-outline-secondary" onclick="copiarTelefono()">
+                            <i class="bi bi-copy"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="mensajeTexto" class="form-label">Mensaje sugerido:</label>
+                    <textarea id="mensajeTexto" class="form-control" rows="4" readonly>Estimado inquilino, le informamos que su pago de alquiler presenta mora. Por favor, póngase en contacto con nosotros para regularizar su situación. Gracias.</textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
+                <button type="button" class="btn btn-primary" onclick="abrirWhatsApp()">
+                    <i class="bi bi-whatsapp me-2"></i>Abrir WhatsApp
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        // Variables globales para modal
+        let telefonoActual = '';
+        let nombreActual = '';
+
+        function actualizarAlertas() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Actualizando...';
+            btn.disabled = true;
+            
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+
+        function marcarComoPagado(idPago) {
+            if (confirm('¿Confirma que desea marcar este pago como pagado?')) {
+                // Implementar la funcionalidad de marcar como pagado
+                fetch(`/Alquileres/MarcarComoPagado/${idPago}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error al marcar el pago como pagado');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión');
+                });
+            }
+        }
+
+        function contactarInquilino(telefono, nombre) {
+            telefonoActual = telefono;
+            nombreActual = nombre;
+            
+            document.getElementById('nombreInquilino').textContent = nombre;
+            document.getElementById('telefonoInquilino').value = telefono;
+            
+            const modal = new bootstrap.Modal(document.getElementById('contactarModal'));
+            modal.show();
+        }
+
+        function copiarTelefono() {
+            const input = document.getElementById('telefonoInquilino');
+            input.select();
+            input.setSelectionRange(0, 99999);
+            
+            navigator.clipboard.writeText(input.value).then(function() {
+                // Cambiar icono temporalmente para mostrar que se copió
+                const btn = event.target.closest('button');
+                const icon = btn.querySelector('i');
+                const originalClass = icon.className;
+                
+                icon.className = 'bi bi-check-circle text-success';
+                setTimeout(() => {
+                    icon.className = originalClass;
+                }, 2000);
+            });
+        }
+
+        function abrirWhatsApp() {
+            const mensaje = document.getElementById('mensajeTexto').value;
+            const telefono = telefonoActual.replace(/\D/g, ''); // Remover caracteres no numéricos
+            const url = `https://wa.me/549${telefono}?text=${encodeURIComponent(mensaje)}`;
+            window.open(url, '_blank');
+        }
+
+        function enviarNotificacion(idContrato, email) {
+            if (confirm(`¿Desea enviar una notificación de vencimiento a ${email}?`)) {
+                // Implementar funcionalidad de notificación
+                fetch(`/Contratos/EnviarNotificacionVencimiento/${idContrato}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        alert('Notificación enviada correctamente');
+                    } else {
+                        alert('Error al enviar la notificación');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión');
+                });
+            }
+        }
+
+        
+        
+       
+    </script>
+
+@functions {
+    public static object GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return "N/A";
+        
+        try 
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            if (property == null) return "N/A";
+            
+            var value = property.GetValue(obj);
+            return value?.ToString() ?? "N/A";
+        }
+        catch 
+        {
+            return "N/A";
+        }
+    }
+    
+    public static int GetPropertyValueAsInt(object obj, string propertyName)
+    {
+        try
+        {
+            var value = GetPropertyValue(obj, propertyName);
+            if (value != null && int.TryParse(value.ToString(), out int result))
+            {
+                return result;
+            }
+        }
+        catch { }
+        return 0;
+    }
+    
+    public static decimal GetPropertyValueAsDecimal(object obj, string propertyName)
+    {
+        try
+        {
+            var value = GetPropertyValue(obj, propertyName);
+            if (value != null && decimal.TryParse(value.ToString(), out decimal result))
+            {
+                return result;
+            }
+        }
+        catch { }
+        return 0m;
+    }
+    
+    public static DateTime GetPropertyValueAsDateTime(object obj, string propertyName)
+    {
+        try
+        {
+            var value = GetPropertyValue(obj, propertyName);
+            if (value != null && DateTime.TryParse(value.ToString(), out DateTime result))
+            {
+                return result;
+            }
+        }
+        catch { }
+        return DateTime.Now;
+    }
+}
+}
+       
+
+</script>

@@ -1,0 +1,348 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Editar Usuario";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-edit"></i> Editar Usuario
+        </h1>
+        <div>
+            <a asp-action="Details" asp-route-id="@Model.IdUsuario" class="btn btn-info shadow-sm">
+                <i class="fas fa-eye fa-sm text-white-50"></i> Ver Detalles
+            </a>
+            <a asp-action="Index" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <!-- Información del usuario actual -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-left-primary shadow">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-auto">
+                            @if (!string.IsNullOrEmpty(Model.Avatar))
+                            {
+                                <img src="@Model.Avatar" alt="Avatar" class="rounded-circle" width="60" height="60">
+                            }
+                            else
+                            {
+                                var colores = new[] { "#E63946", "#F77F00", "#06AED5", "#9D4EDD", "#2A9D8F", "#E76F51", "#3A86FF", "#FF006E" };
+                                var colorIndex = Math.Abs(Model.IdUsuario.GetHashCode()) % colores.Length;
+                                var colorFondo = colores[colorIndex];
+                                
+                                <div class="rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 60px; height: 60px; background-color: @colorFondo;">
+                                    <span class="text-white font-weight-bold h5 mb-0">
+                                        @(Model.Nombre.Substring(0, 1))@(Model.Apellido.Substring(0, 1))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                        <div class="col">
+                            <h5 class="mb-1">@Model.NombreCompleto</h5>
+                            <p class="mb-0 text-muted">@Model.Email • DNI: @Model.Dni</p>
+                        </div>
+                        <div class="col-auto">
+                            @switch (Model.Rol.ToLower())
+                            {
+                                case "administrador":
+                                    <span class="badge badge-danger badge-lg">@Model.Rol.ToUpper()</span>
+                                    break;
+                                case "empleado":
+                                    <span class="badge badge-warning badge-lg">@Model.Rol.ToUpper()</span>
+                                    break;
+                                case "propietario":
+                                    <span class="badge badge-primary badge-lg">@Model.Rol.ToUpper()</span>
+                                    break;
+                                case "inquilino":
+                                    <span class="badge badge-success badge-lg">@Model.Rol.ToUpper()</span>
+                                    break;
+                                default:
+                                    <span class="badge badge-secondary badge-lg">@Model.Rol.ToUpper()</span>
+                                    break;
+                            }
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario de edición con enctype para subida de archivos -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información del Usuario</h6>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" enctype="multipart/form-data">
+                        <input asp-for="IdUsuario" type="hidden" />
+                        <!-- Quitamos el Password hidden, el controlador lo maneja -->
+                        <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+                        
+                        <div class="row">
+                            <!-- Información Personal -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-user"></i> Datos Personales
+                                </h6>
+                                
+                                <div class="form-group">
+                                    <label asp-for="Nombre" class="control-label font-weight-bold">Nombre *</label>
+                                    <input asp-for="Nombre" class="form-control" placeholder="Ingrese el nombre" />
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Apellido" class="control-label font-weight-bold">Apellido *</label>
+                                    <input asp-for="Apellido" class="form-control" placeholder="Ingrese el apellido" />
+                                    <span asp-validation-for="Apellido" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Dni" class="control-label font-weight-bold">DNI *</label>
+                                    <input asp-for="Dni" class="form-control" placeholder="Ingrese el DNI" />
+                                    <span asp-validation-for="Dni" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Telefono" class="control-label font-weight-bold">Teléfono</label>
+                                    <input asp-for="Telefono" class="form-control" placeholder="Ingrese el teléfono" />
+                                    <span asp-validation-for="Telefono" class="text-danger small"></span>
+                                </div>
+                            </div>
+
+                            <!-- Información de Contacto y Sistema -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-envelope"></i> Contacto y Sistema
+                                </h6>
+                                
+                                <div class="form-group">
+                                    <label asp-for="Email" class="control-label font-weight-bold">Email *</label>
+                                    <input asp-for="Email" class="form-control" type="email" placeholder="usuario@ejemplo.com" />
+                                    <span asp-validation-for="Email" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Rol" class="control-label font-weight-bold">Rol del Usuario *</label>
+                                    @if (User.IsInRole("administrador"))
+                                    {
+                                        <select asp-for="Rol" class="form-control" id="rolSelect">
+                                            @if (ViewBag.Roles != null)
+                                            {
+                                                foreach (string rol in ViewBag.Roles)
+                                                {
+                                                    <option value="@rol" selected="@(Model.Rol == rol)">@rol.ToUpper()</option>
+                                                }
+                                            }
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input asp-for="Rol" class="form-control" readonly />
+                                        <small class="text-muted">Solo los administradores pueden cambiar roles</small>
+                                    }
+                                    <span asp-validation-for="Rol" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Estado" class="control-label font-weight-bold">Estado</label>
+                                    @if (User.IsInRole("administrador"))
+                                    {
+                                        <select asp-for="Estado" class="form-control">
+                                            <option value="activo" selected="@(Model.Estado == "activo")">ACTIVO</option>
+                                            <option value="inactivo" selected="@(Model.Estado == "inactivo")">INACTIVO</option>
+                                        </select>
+                                    }
+                                    else
+                                    {
+                                        <input asp-for="Estado" class="form-control" readonly />
+                                        <small class="text-muted">Solo los administradores pueden cambiar el estado</small>
+                                    }
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Direccion" class="control-label font-weight-bold">Dirección</label>
+                                    <textarea asp-for="Direccion" class="form-control" rows="3" placeholder="Ingrese la dirección completa"></textarea>
+                                    <span asp-validation-for="Direccion" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Avatar Mejorado con subida de archivos -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-image"></i> Avatar del Usuario
+                                </h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="control-label font-weight-bold">Subir nueva imagen</label>
+                                            <div class="custom-file">
+                                                <input type="file" class="custom-file-input" id="archivoAvatar" name="archivoAvatar" accept="image/*">
+                                                <label class="custom-file-label" for="archivoAvatar">Elegir archivo...</label>
+                                            </div>
+                                            <small class="text-muted">Formatos: JPG, PNG, GIF. Máximo 5MB</small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label asp-for="Avatar" class="control-label font-weight-bold">O usar URL externa</label>
+                                            <input asp-for="Avatar" class="form-control" placeholder="https://ejemplo.com/avatar.jpg" />
+                                            <small class="text-muted">Deje vacío para usar avatar con iniciales</small>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="alert alert-info">
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Prioridad:</strong> Si sube un archivo, se usará este. Si no, se usará la URL. Si ambos están vacíos, se generará un avatar con las iniciales.
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Botones de acción -->
+                        <div class="form-group text-right">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                            <a asp-action="Index" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Panel de información -->
+        <div class="col-lg-4">
+            <!-- Vista previa del avatar -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-user-circle"></i> Vista Previa
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div id="previewContainer">
+                        @if (!string.IsNullOrEmpty(Model.Avatar))
+                        {
+                            <img id="previewAvatar" src="@Model.Avatar" alt="Vista previa" class="rounded-circle mb-3" width="120" height="120">
+                        }
+                        else
+                        {
+                            var colores = new[] { "#E63946", "#F77F00", "#06AED5", "#9D4EDD", "#2A9D8F", "#E76F51", "#3A86FF", "#FF006E" };
+                            var colorIndex = Math.Abs(Model.IdUsuario.GetHashCode()) % colores.Length;
+                            var colorFondo = colores[colorIndex];
+                            
+                            <div id="avatarInicial" class="rounded-circle d-inline-flex align-items-center justify-content-center mb-3 mx-auto" 
+                                 style="width: 120px; height: 120px; background-color: @colorFondo;">
+                                <span class="text-white font-weight-bold h3 mb-0">
+                                    @(Model.Nombre.Substring(0, 1))@(Model.Apellido.Substring(0, 1))
+                                </span>
+                            </div>
+                            <img id="previewAvatar" src="#" alt="Vista previa" class="rounded-circle mb-3" width="120" height="120" style="display: none;">
+                        }
+                    </div>
+                    <h6 id="previewNombre" class="mb-1">@Model.NombreCompleto</h6>
+                    <p id="previewRol" class="text-muted small">@Model.Rol.ToUpper()</p>
+                </div>
+            </div>
+
+            <!-- Información del sistema -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">
+                        <i class="fas fa-info-circle"></i> Información del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <p class="mb-2"><strong>ID del Usuario:</strong> @Model.IdUsuario</p>
+                            <p class="mb-2"><strong>Estado Actual:</strong> 
+                                @if (Model.Estado == "activo")
+                                {
+                                    <span class="badge badge-success">ACTIVO</span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">INACTIVO</span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Actualizar nombre del archivo seleccionado
+            $('#archivoAvatar').on('change', function() {
+                var fileName = $(this).val().split('\\').pop();
+                $(this).next('.custom-file-label').html(fileName || 'Elegir archivo...');
+                
+                // Previsualizar imagen
+                if (this.files && this.files[0]) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('#avatarInicial').hide();
+                        $('#previewAvatar').attr('src', e.target.result).show();
+                    }
+                    reader.readAsDataURL(this.files[0]);
+                }
+            });
+
+            // Actualizar vista previa cuando cambian los campos
+            $('#Nombre, #Apellido, #rolSelect').on('input change', function() {
+                updatePreview();
+            });
+
+            // Cuando cambia la URL del avatar
+            $('#Avatar').on('input', function() {
+                var url = $(this).val();
+                if (url && url.trim() !== '') {
+                    $('#avatarInicial').hide();
+                    $('#previewAvatar').attr('src', url).show();
+                }
+            });
+
+            function updatePreview() {
+                const nombre = $('#Nombre').val();
+                const apellido = $('#Apellido').val();
+                const rol = $('#Rol').val();
+
+                $('#previewNombre').text(`${nombre} ${apellido}`);
+                $('#previewRol').text(rol.toUpperCase());
+                
+                // Actualizar iniciales si no hay imagen
+                if ($('#avatarInicial').is(':visible')) {
+                    $('#avatarInicial span').text(
+                        nombre.charAt(0).toUpperCase() + apellido.charAt(0).toUpperCase()
+                    );
+                }
+            }
+        });
+    </script>
+}

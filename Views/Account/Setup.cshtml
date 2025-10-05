@@ -1,0 +1,351 @@
+
+@model Inmobiliaria_troncoso_leandro.Services.SetupStatus
+
+@{
+    ViewData["Title"] = "Configuración del Sistema";
+    Layout = "~/Views/Shared/_LayoutLogin.cshtml";
+}
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-xl-10 col-lg-12">
+            <div class="card o-hidden border-0 shadow-lg my-5">
+                <div class="card-body p-0">
+                    <div class="row">
+                        <!-- Panel de información del sistema -->
+                        <div class="col-lg-4 bg-gradient-primary text-white p-4">
+                            <div class="text-center">
+                                <i class="fas fa-cogs fa-4x mb-4"></i>
+                                <h4 class="mb-3">Estado del Sistema</h4>
+                            </div>
+                            
+                            <div class="system-stats">
+                                <div class="stat-item mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Total Usuarios:</span>
+                                        <strong>@Model.TotalUsers</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Administradores:</span>
+                                        <strong class="@(Model.AdminCount > 0 ? "text-success" : "text-warning")">
+                                            @Model.AdminCount
+                                        </strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Empleados:</span>
+                                        <strong>@Model.EmployeeCount</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Propietarios:</span>
+                                        <strong>@Model.PropietarioCount</strong>
+                                    </div>
+                                </div>
+                                
+                                <div class="stat-item mb-3">
+                                    <div class="d-flex justify-content-between">
+                                        <span>Inquilinos:</span>
+                                        <strong>@Model.InquilinoCount</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <hr class="my-4 border-light">
+                            
+                            <div class="alert alert-light text-dark" role="alert">
+                                <small>
+                                    <i class="fas fa-info-circle"></i>
+                                    <strong>Situación detectada:</strong><br>
+                                    @if (Model.RecommendedAction == "CREATE_INITIAL_ADMIN")
+                                    {
+                                        <span>Sistema nuevo - Crear primer administrador</span>
+                                    }
+                                    else if (Model.RecommendedAction == "UPGRADE_EXISTING_USER")
+                                    {
+                                        <span>Datos existentes - Promover usuario a administrador</span>
+                                    }
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <!-- Formularios de configuración -->
+                        <div class="col-lg-8 p-5">
+                            <div class="text-center mb-4">
+                                <h1 class="h3 text-gray-900">Configuración del Sistema</h1>
+                                <p class="text-muted">El sistema necesita al menos un administrador para funcionar</p>
+                            </div>
+
+                            <!-- Mostrar errores -->
+                            @if (!ViewData.ModelState.IsValid)
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    <strong>Errores:</strong>
+                                    <ul class="mb-0 mt-2">
+                                        @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                        {
+                                            <li>@error.ErrorMessage</li>
+                                        }
+                                    </ul>
+                                </div>
+                            }
+
+                            @if (TempData["Error"] != null)
+                            {
+                                <div class="alert alert-danger" role="alert">
+                                    <i class="fas fa-exclamation-triangle"></i>
+                                    @TempData["Error"]
+                                </div>
+                            }
+
+                            <!-- Tabs para diferentes opciones -->
+                            <ul class="nav nav-tabs" id="setupTabs" role="tablist">
+                                @if (Model.RecommendedAction == "CREATE_INITIAL_ADMIN")
+                                {
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link active" id="create-tab" data-toggle="tab" href="#create" role="tab">
+                                            <i class="fas fa-user-plus"></i> Crear Nuevo Administrador
+                                        </a>
+                                    </li>
+                                }
+                                
+                                @if (Model.TotalUsers > 0)
+                                {
+                                    <li class="nav-item" role="presentation">
+                                        <a class="nav-link @(Model.RecommendedAction == "UPGRADE_EXISTING_USER" ? "active" : "")" 
+                                           id="upgrade-tab" data-toggle="tab" href="#upgrade" role="tab">
+                                            <i class="fas fa-user-shield"></i> Promover Usuario Existente
+                                        </a>
+                                    </li>
+                                }
+                            </ul>
+
+                            <div class="tab-content mt-4" id="setupTabContent">
+                                <!-- Tab: Crear nuevo administrador -->
+                                @if (Model.RecommendedAction == "CREATE_INITIAL_ADMIN")
+                                {
+                                    <div class="tab-pane fade show active" id="create" role="tabpanel">
+                                        <form method="post" asp-action="CreateInitialAdmin" id="createForm">
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Nombre *</label>
+                                                        <input name="Nombre" class="form-control" placeholder="Tu nombre" required />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Apellido *</label>
+                                                        <input name="Apellido" class="form-control" placeholder="Tu apellido" required />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">DNI *</label>
+                                                        <input name="Dni" class="form-control" placeholder="12345678" required />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Teléfono</label>
+                                                        <input name="Telefono" class="form-control" placeholder="+54 9 2664 123456" />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label font-weight-bold">Email *</label>
+                                                <input name="Email" type="email" class="form-control" placeholder="admin@inmobiliaria.com" required />
+                                                <small class="text-muted">Este será tu usuario para iniciar sesión</small>
+                                            </div>
+
+                                            <div class="form-group">
+                                                <label class="form-label font-weight-bold">Dirección</label>
+                                                <input name="Direccion" class="form-control" placeholder="Tu dirección" />
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Contraseña *</label>
+                                                        <input type="password" name="password" class="form-control" 
+                                                               placeholder="Mínimo 8 caracteres" required minlength="8" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Confirmar *</label>
+                                                        <input type="password" name="confirmPassword" class="form-control" 
+                                                               placeholder="Repetir contraseña" required />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <button type="submit" class="btn btn-primary btn-lg btn-block">
+                                                <i class="fas fa-user-shield"></i> Crear Administrador
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+
+                                <!-- Tab: Promover usuario existente -->
+                                @if (Model.TotalUsers > 0)
+                                {
+                                    <div class="tab-pane fade @(Model.RecommendedAction == "UPGRADE_EXISTING_USER" ? "show active" : "")" 
+                                         id="upgrade" role="tabpanel">
+                                        <div class="alert alert-info" role="alert">
+                                            <i class="fas fa-info-circle"></i>
+                                            <strong>Tienes @Model.TotalUsers usuarios existentes.</strong>
+                                            Puedes promover uno de ellos a administrador.
+                                        </div>
+
+                                        <form method="post" asp-action="UpgradeToAdmin" id="upgradeForm">
+                                            <div class="form-group">
+                                                <label class="form-label font-weight-bold">Email del Usuario a Promover *</label>
+                                                <input name="email" type="email" class="form-control" 
+                                                       placeholder="email@usuario.com" required />
+                                                <small class="text-muted">
+                                                    Email de un usuario existente en la base de datos
+                                                </small>
+                                            </div>
+
+                                            <div class="row">
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Nueva Contraseña *</label>
+                                                        <input type="password" name="newPassword" class="form-control" 
+                                                               placeholder="Mínimo 8 caracteres" required minlength="8" />
+                                                    </div>
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <div class="form-group">
+                                                        <label class="form-label font-weight-bold">Confirmar *</label>
+                                                        <input type="password" name="confirmPassword" class="form-control" 
+                                                               placeholder="Repetir contraseña" required />
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            <div class="alert alert-warning" role="alert">
+                                                <i class="fas fa-exclamation-triangle"></i>
+                                                <strong>Atención:</strong> 
+                                                Este usuario se convertirá en administrador y se le cambiará la contraseña.
+                                            </div>
+
+                                            <button type="submit" class="btn btn-warning btn-lg btn-block">
+                                                <i class="fas fa-user-shield"></i> Promover a Administrador
+                                            </button>
+                                        </form>
+                                    </div>
+                                }
+                            </div>
+
+                            <hr class="my-4">
+
+                            <div class="text-center">
+                                <small class="text-muted">
+                                    ¿Ya tienes credenciales de administrador? 
+                                    <a href="/Account/Login">Iniciar Sesión</a>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Validación de formularios
+            $('#createForm, #upgradeForm').submit(function(e) {
+                const form = $(this);
+                const password = form.find('input[name="password"], input[name="newPassword"]').val();
+                const confirmPassword = form.find('input[name="confirmPassword"]').val();
+                
+                if (password !== confirmPassword) {
+                    e.preventDefault();
+                    alert('Las contraseñas no coinciden');
+                    return false;
+                }
+                
+                if (password.length < 8) {
+                    e.preventDefault();
+                    alert('La contraseña debe tener al menos 8 caracteres');
+                    return false;
+                }
+                
+                // Deshabilitar botón para evitar doble envío
+                form.find('button[type="submit"]').prop('disabled', true)
+                    .html('<i class="fas fa-spinner fa-spin"></i> Procesando...');
+            });
+
+            // Auto-focus en primer campo visible
+            setTimeout(function() {
+                $('.tab-pane.active input:first').focus();
+            }, 100);
+        });
+    </script>
+}
+
+<style>
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    }
+    
+    .system-stats {
+        background: rgba(255,255,255,0.1);
+        border-radius: 10px;
+        padding: 15px;
+        backdrop-filter: blur(10px);
+    }
+    
+    .stat-item {
+        border-bottom: 1px solid rgba(255,255,255,0.2);
+        padding-bottom: 8px;
+    }
+    
+    .stat-item:last-child {
+        border-bottom: none;
+    }
+    
+    .nav-tabs .nav-link {
+        color: #6c757d;
+        border: none;
+        background: none;
+    }
+    
+    .nav-tabs .nav-link.active {
+        background: #667eea;
+        color: white;
+        border-radius: 5px 5px 0 0;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+    }
+    
+    .btn-warning {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        border: none;
+        border-radius: 25px;
+        padding: 12px 30px;
+        color: white;
+    }
+</style>

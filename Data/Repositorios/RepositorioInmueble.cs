@@ -1,6 +1,8 @@
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
 using MySql.Data.MySqlClient;
+using System.Data.Common;
+using MySql.Data.MySqlClient;
 
 namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 {
@@ -14,7 +16,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                                throw new ArgumentNullException(nameof(configuration));
         }
 
-        // ===== MÉTODOS CRUD BÁSICOS =====
+        
 
         public async Task<bool> CrearInmuebleAsync(Inmueble inmueble)
         {
@@ -1201,5 +1203,200 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 return new List<TipoInmueble>();
             }
         }
+        //Metodos para hacer el contrato venta
+public async Task<IEnumerable<Inmueble>> ObtenerDisponiblesParaVentaAsync()
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT 
+            i.id_inmueble, i.direccion, i.id_tipo_inmueble, i.precio, 
+            i.estado, i.ambientes, i.coordenadas, i.url_portada, i.fecha_alta,
+            i.id_propietario,
+            p.id_propietario, p.id_usuario,
+            u.nombre, u.apellido, u.dni, u.telefono, u.email,
+            ti.nombre as tipo_nombre, ti.descripcion as tipo_descripcion
+        FROM inmueble i
+        INNER JOIN propietario p ON i.id_propietario = p.id_propietario
+        INNER JOIN usuario u ON p.id_usuario = u.id_usuario
+        INNER JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
+        WHERE i.estado IN ('disponible', 'venta')
+        AND i.precio > 0
+        AND i.id_inmueble NOT IN (
+            SELECT cv.id_inmueble 
+            FROM contrato_venta cv 
+            WHERE cv.estado NOT IN ('cancelada', 'finalizada')
+        )
+        ORDER BY i.direccion";
+
+    using var command = new MySqlCommand(query, connection);
+    
+    var inmuebles = new List<Inmueble>();
+    using var reader = await command.ExecuteReaderAsync();
+    
+    while (await reader.ReadAsync())
+    {
+        inmuebles.Add(new Inmueble
+        {
+            IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+            Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+            Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+            Estado = reader.GetString(reader.GetOrdinal("estado")),
+            Ambientes = reader.GetInt32(reader.GetOrdinal("ambientes")),
+            Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString(reader.GetOrdinal("coordenadas")),
+            UrlPortada = reader.IsDBNull(reader.GetOrdinal("url_portada")) ? null : reader.GetString(reader.GetOrdinal("url_portada")),
+            FechaAlta = reader.GetDateTime(reader.GetOrdinal("fecha_alta")),
+            IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+            IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+            Propietario = new Propietario
+            {
+                IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
+                Usuario = new Usuario
+                {
+                    Nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                    Apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                    Dni = reader.GetString(reader.GetOrdinal("dni")),
+                    Telefono = reader.IsDBNull(reader.GetOrdinal("telefono")) ? null : reader.GetString(reader.GetOrdinal("telefono")),
+                    Email = reader.IsDBNull(reader.GetOrdinal("email")) ? null : reader.GetString(reader.GetOrdinal("email"))
+                }
+            },
+            TipoInmueble = new TipoInmueble
+            {
+                IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                Nombre = reader.GetString(reader.GetOrdinal("tipo_nombre")),
+                Descripcion = reader.IsDBNull(reader.GetOrdinal("tipo_descripcion")) ? null : reader.GetString(reader.GetOrdinal("tipo_descripcion"))
+            }
+        });
+    }
+
+    return inmuebles;
+}
+public async Task<IEnumerable<Inmueble>> BuscarParaVentaAsync(string termino, int limite = 10)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT i.*, p.id_propietario, p.id_usuario,
+               u.nombre, u.apellido, u.dni,
+               ti.nombre as tipo_nombre
+        FROM inmueble i
+        INNER JOIN propietario p ON i.id_propietario = p.id_propietario
+        INNER JOIN usuario u ON p.id_usuario = u.id_usuario
+        INNER JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
+        WHERE (i.direccion LIKE @termino OR ti.nombre LIKE @termino OR u.nombre LIKE @termino OR u.apellido LIKE @termino)
+        AND (i.estado = 'disponible' OR i.estado = 'venta')
+        AND i.precio > 0
+        LIMIT @limite";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@termino", $"%{termino}%");
+    command.Parameters.AddWithValue("@limite", limite);
+
+    var inmuebles = new List<Inmueble>();
+    using var reader = await command.ExecuteReaderAsync();
+    
+    while (await reader.ReadAsync())
+    {
+        inmuebles.Add(new Inmueble
+        {
+            IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+            Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+            Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+            Estado = reader.GetString(reader.GetOrdinal("estado")),
+            Ambientes = reader.GetInt32(reader.GetOrdinal("ambientes")),
+            Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString(reader.GetOrdinal("coordenadas")),
+            UrlPortada = reader.IsDBNull(reader.GetOrdinal("url_portada")) ? null : reader.GetString(reader.GetOrdinal("url_portada")),
+            IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+            IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+            Propietario = new Propietario
+            {
+                IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
+                Usuario = new Usuario
+                {
+                    Nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                    Apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                    Dni = reader.GetString(reader.GetOrdinal("dni"))
+                }
+            },
+            TipoInmueble = new TipoInmueble
+            {
+                IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                Nombre = reader.GetString(reader.GetOrdinal("tipo_nombre"))
+            }
+        });
+    }
+
+    return inmuebles;
+}
+
+public async Task<bool> VerificarDisponibilidadParaVenta(int idInmueble)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT COUNT(*) 
+        FROM inmueble i
+        LEFT JOIN contrato_venta cv ON i.id_inmueble = cv.id_inmueble 
+            AND cv.estado NOT IN ('cancelada', 'finalizada')
+        WHERE i.id_inmueble = @idInmueble
+        AND i.estado IN ('disponible', 'venta')
+        AND i.precio > 0
+        AND cv.id_contrato_venta IS NULL";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@idInmueble", idInmueble);
+
+    var count = Convert.ToInt32(await command.ExecuteScalarAsync());
+    return count > 0;
+}
+
+public async Task<IEnumerable<Inmueble>> ObtenerPorPropietarioAsync(int propietarioId)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT i.*, ti.nombre as tipo_nombre
+        FROM inmueble i
+        INNER JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
+        WHERE i.id_propietario = @propietarioId
+        AND i.precio > 0
+        ORDER BY i.estado, i.direccion";
+
+    using var command = new MySqlCommand(query, connection);
+    command.Parameters.AddWithValue("@propietarioId", propietarioId);
+
+    var inmuebles = new List<Inmueble>();
+    using var reader = await command.ExecuteReaderAsync();
+    
+    while (await reader.ReadAsync())
+    {
+        inmuebles.Add(new Inmueble
+        {
+            IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+            Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+            Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+            Estado = reader.GetString(reader.GetOrdinal("estado")),
+            Ambientes = reader.GetInt32(reader.GetOrdinal("ambientes")),
+            Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString(reader.GetOrdinal("coordenadas")),
+            UrlPortada = reader.IsDBNull(reader.GetOrdinal("url_portada")) ? null : reader.GetString(reader.GetOrdinal("url_portada")),
+            FechaAlta = reader.GetDateTime(reader.GetOrdinal("fecha_alta")),
+            IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+            IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+            TipoInmueble = new TipoInmueble
+            {
+                IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                Nombre = reader.GetString(reader.GetOrdinal("tipo_nombre"))
+            }
+        });
+    }
+
+    return inmuebles;
+}
     }
 }

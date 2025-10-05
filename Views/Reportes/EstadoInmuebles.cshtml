@@ -1,0 +1,351 @@
+@model IEnumerable<object>
+@{
+    ViewData["Title"] = "Estado de Inmuebles";
+}
+
+<!-- Page Header -->
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2>
+            <i class="bi bi-pie-chart text-info me-2"></i>
+            Estado de Inmuebles
+        </h2>
+        <p class="text-muted mb-0">
+            Distribución actual de todos los inmuebles por estado
+        </p>
+    </div>
+    <div>
+        <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+        </a>
+        <button class="btn btn-outline-primary ms-2" onclick="location.reload()">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+    </div>
+</div>
+
+@if (Model != null && Model.Any())
+{
+    <!-- Resumen Visual por Estado -->
+    <div class="row mb-4">
+        @foreach (var estado in Model)
+        {
+            var nombreEstado = GetPropertyValue(estado, "Estado")?.ToString() ?? "Sin Estado";
+            var cantidad = Convert.ToInt32(GetPropertyValue(estado, "Cantidad") ?? 0);
+            var badgeClass = GetEstadoBadgeClass(nombreEstado);
+            var iconClass = GetEstadoIcon(nombreEstado);
+            
+            <div class="col-md-3 mb-3">
+                <div class="card border-@badgeClass">
+                    <div class="card-body text-center">
+                        <i class="bi bi-@iconClass text-@badgeClass fs-1"></i>
+                        <h4 class="text-@badgeClass mt-2">@cantidad</h4>
+                        <p class="text-muted small mb-0">@nombreEstado</p>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Tabla Detallada por Estado -->
+    <div class="card">
+        <div class="card-header bg-info text-white">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-table me-2"></i>
+                Detalle por Estado
+                <span class="badge bg-light text-info ms-2">
+                    @Model.Sum(m => Convert.ToInt32(GetPropertyValue(m, "Cantidad") ?? 0)) total
+                </span>
+            </h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>
+                                <i class="bi bi-flag me-1"></i>Estado
+                            </th>
+                            <th class="text-center">
+                                <i class="bi bi-building me-1"></i>Cantidad
+                            </th>
+                            <th class="text-center">
+                                <i class="bi bi-percent me-1"></i>Porcentaje
+                            </th>
+                            <th>
+                                <i class="bi bi-bar-chart me-1"></i>Distribución
+                            </th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            var totalInmuebles = Model.Sum(m => Convert.ToInt32(GetPropertyValue(m, "Cantidad") ?? 0));
+                        }
+                        @foreach (var estado in Model.OrderByDescending(m => Convert.ToInt32(GetPropertyValue(m, "Cantidad") ?? 0)))
+                        {
+                            var nombreEstado = GetPropertyValue(estado, "Estado")?.ToString() ?? "Sin Estado";
+                            var cantidad = Convert.ToInt32(GetPropertyValue(estado, "Cantidad") ?? 0);
+                            var porcentaje = totalInmuebles > 0 ? Math.Round((decimal)cantidad / totalInmuebles * 100, 1) : 0;
+                            var badgeClass = GetEstadoBadgeClass(nombreEstado);
+                            var iconClass = GetEstadoIcon(nombreEstado);
+                            
+                            <tr>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        <i class="bi bi-@iconClass text-@badgeClass me-2 fs-4"></i>
+                                        <div>
+                                            <div class="fw-semibold">@nombreEstado</div>
+                                            <small class="text-muted">
+                                                @GetEstadoDescripcion(nombreEstado)
+                                            </small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@badgeClass fs-6">
+                                        @cantidad
+                                    </span>
+                                </td>
+                                <td class="text-center">
+                                    <span class="fw-bold">@porcentaje%</span>
+                                </td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-@badgeClass" 
+                                             role="progressbar" 
+                                             style="width: @porcentaje%"
+                                             aria-valuenow="@porcentaje" 
+                                             aria-valuemin="0" 
+                                             aria-valuemax="100">
+                                            @porcentaje%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="text-center">
+                                    <a href="@Url.Action("Index", "Inmuebles", new { estado = nombreEstado })" 
+                                       class="btn btn-outline-@badgeClass btn-sm">
+                                        <i class="bi bi-eye me-1"></i>Ver Lista
+                                    </a>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Análisis y Recomendaciones -->
+    <div class="row mt-4">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-success text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-lightbulb me-2"></i>Análisis de la Distribución
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @{
+                        var disponibles = Model.FirstOrDefault(m => GetPropertyValue(m, "Estado")?.ToString()?.ToLower() == "disponible");
+                        var alquilados = Model.FirstOrDefault(m => GetPropertyValue(m, "Estado")?.ToString()?.ToLower() == "alquilado");
+                        var vendidos = Model.FirstOrDefault(m => GetPropertyValue(m, "Estado")?.ToString()?.ToLower() == "vendido");
+                        
+                        var cantDisponibles = disponibles != null ? Convert.ToInt32(GetPropertyValue(disponibles, "Cantidad") ?? 0) : 0;
+                        var cantAlquilados = alquilados != null ? Convert.ToInt32(GetPropertyValue(alquilados, "Cantidad") ?? 0) : 0;
+                        var cantVendidos = vendidos != null ? Convert.ToInt32(GetPropertyValue(vendidos, "Cantidad") ?? 0) : 0;
+                        
+                        var ocupacionPorcentaje = totalInmuebles > 0 ? Math.Round((decimal)(cantAlquilados + cantVendidos) / totalInmuebles * 100, 1) : 0;
+                    }
+                    
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-success">
+                                <i class="bi bi-graph-up me-1"></i>Tasa de Ocupación
+                            </h6>
+                            <div class="progress mb-3" style="height: 25px;">
+                                <div class="progress-bar bg-success" 
+                                     role="progressbar" 
+                                     style="width: @ocupacionPorcentaje%">
+                                    @ocupacionPorcentaje%
+                                </div>
+                            </div>
+                            <p class="small text-muted mb-0">
+                                @(cantAlquilados + cantVendidos) de @totalInmuebles inmuebles están ocupados
+                            </p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-primary">
+                                <i class="bi bi-house me-1"></i>Inmuebles Disponibles
+                            </h6>
+                            <h4 class="text-primary">@cantDisponibles</h4>
+                            <p class="small text-muted mb-0">
+                                Listos para alquilar o vender
+                            </p>
+                        </div>
+                    </div>
+                    
+                    @if (ocupacionPorcentaje < 70)
+                    {
+                        <div class="alert alert-warning mt-3 mb-0">
+                            <i class="bi bi-exclamation-triangle me-2"></i>
+                            <strong>Oportunidad de Mejora:</strong> La tasa de ocupación es baja (@ocupacionPorcentaje%). 
+                            Considere estrategias de marketing o ajustes en precios para atraer más inquilinos o compradores.
+                        </div>
+                    }
+                    else if (ocupacionPorcentaje > 90)
+                    {
+                        <div class="alert alert-success mt-3 mb-0">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Excelente:</strong> Alta tasa de ocupación (@ocupacionPorcentaje%). 
+                            El negocio está funcionando muy bien.
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-gear me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a href="@Url.Action("Index", "Inmuebles")" class="btn btn-outline-primary btn-sm">
+                            <i class="bi bi-building me-1"></i>Gestionar Inmuebles
+                        </a>
+                        <a href="@Url.Action("Create", "Inmuebles")" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-plus-circle me-1"></i>Agregar Inmueble
+                        </a>
+                        <a href="@Url.Action("Index", "Contratos")" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-file-text me-1"></i>Ver Contratos
+                        </a>
+                        <a href="@Url.Action("TopInmuebles")" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-trophy me-1"></i>Top Rentables
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resumen Estadístico -->
+            <div class="card mt-3 border-info">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-calculator me-2"></i>Resumen
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="text-center">
+                        <h3 class="text-info">@totalInmuebles</h3>
+                        <p class="text-muted small mb-2">Total de Inmuebles</p>
+                        <hr>
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div class="text-success fw-bold">@cantAlquilados</div>
+                                <small class="text-muted">Alquilados</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-warning fw-bold">@cantVendidos</div>
+                                <small class="text-muted">Vendidos</small>
+                            </div>
+                            <div class="col-4">
+                                <div class="text-primary fw-bold">@cantDisponibles</div>
+                                <small class="text-muted">Disponibles</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+else
+{
+    <!-- Sin Datos -->
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No hay inmuebles registrados</h4>
+            <p class="text-muted">
+                Para generar este reporte necesita agregar inmuebles al sistema.
+            </p>
+            <div class="mt-4">
+                <a href="@Url.Action("Create", "Inmuebles")" class="btn btn-primary">
+                    <i class="bi bi-plus-circle me-1"></i>Agregar Primer Inmueble
+                </a>
+                <a href="@Url.Action("Index")" class="btn btn-outline-secondary ms-2">
+                    <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Error Messages -->
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show mt-4" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@functions {
+    private object? GetPropertyValue(object obj, string propertyName)
+    {
+        if (obj == null) return null;
+        
+        try
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            return property?.GetValue(obj);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    private string GetEstadoBadgeClass(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "disponible" => "success",
+            "alquilado" => "info",
+            "vendido" => "warning",
+            "mantenimiento" => "danger",
+            "reservado" => "secondary",
+            _ => "primary"
+        };
+    }
+
+    private string GetEstadoIcon(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "disponible" => "house-check",
+            "alquilado" => "house-fill",
+            "vendido" => "house-heart",
+            "mantenimiento" => "tools",
+            "reservado" => "house-lock",
+            _ => "house"
+        };
+    }
+
+    private string GetEstadoDescripcion(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "disponible" => "Listo para alquilar o vender",
+            "alquilado" => "Con contrato de alquiler activo",
+            "vendido" => "Propiedad vendida",
+            "mantenimiento" => "En reparación o mantenimiento",
+            "reservado" => "Apartado para cliente",
+            _ => "Estado no definido"
+        };
+    }
+}

@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
+    [Authorize(Policy = "AdminOEmpleado")]
     public class InquilinosController : Controller
     {
         private readonly IRepositorioInquilino _repositorioInquilino;
@@ -14,21 +16,22 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Inquilinos
-        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", int itemsPorPagina = 10)
+        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", int itemsPorPagina = 10,string estado = "activos")
         {
             try
             {
                 var (inquilinos, totalRegistros) = await _repositorioInquilino
-                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, itemsPorPagina);
+                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, itemsPorPagina, estado);
 
                 // Calcular información de paginación
                 var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
-                
+
                 ViewBag.PaginaActual = pagina;
                 ViewBag.TotalPaginas = totalPaginas;
                 ViewBag.TotalRegistros = totalRegistros;
                 ViewBag.Buscar = buscar;
                 ViewBag.ITEMS_POR_PAGINA = itemsPorPagina;
+                ViewBag.EstadoFiltro = estado;
 
                 return View(inquilinos);
             }
@@ -62,6 +65,12 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Inquilino inquilino)
         {
+            // PARA REMOVER VALIDACIÓN DE CAMPOS QUE SE ASIGNAN AUTOMÁTICAMENTE
+            ModelState.Remove("Usuario.Rol");
+            ModelState.Remove("Usuario.Password");
+            ModelState.Remove("Usuario.Estado");
+            ModelState.Remove("Usuario.Avatar");
+
             if (ModelState.IsValid)
             {
                 try
@@ -89,7 +98,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     }
 
                     bool resultado = await _repositorioInquilino.CrearInquilinoConTransaccionAsync(inquilino);
-                    
+
                     if (resultado)
                     {
                         TempData["SuccessMessage"] = "Inquilino creado exitosamente";
@@ -105,7 +114,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     ModelState.AddModelError("", $"Error al crear el inquilino: {ex.Message}");
                 }
             }
-            
+
             return View(inquilino);
         }
 
@@ -120,7 +129,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             try
             {
                 var inquilino = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
-                
+
                 if (inquilino == null)
                 {
                     return NotFound();
@@ -145,14 +154,32 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return NotFound();
             }
 
+            // Remover validación de campos automáticos
+            ModelState.Remove("Usuario.Rol");
+            ModelState.Remove("Usuario.Password");
+            ModelState.Remove("Usuario.Avatar");
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Verificar DNI único (excluyendo el actual por IdUsuario)
+
                     if (!string.IsNullOrEmpty(inquilino.Usuario?.Dni))
                     {
-                        bool dniExiste = await _repositorioInquilino.ExisteDniAsync(inquilino.Usuario.Dni, inquilino.IdUsuario);
+                        // Primero obtenemos el inquilino actual para tener su IdUsuario
+                        var inquilinoActual = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
+
+                        if (inquilinoActual == null)
+                        {
+                            return NotFound();
+                        }
+
+                        // Ahora verificamos el DNI excluyendo el IdUsuario del inquilino actual
+                        bool dniExiste = await _repositorioInquilino.ExisteDniAsync(
+                            inquilino.Usuario.Dni,
+                            inquilinoActual.IdUsuario  // Usar el IdUsuario del registro actual
+                        );
+
                         if (dniExiste)
                         {
                             ModelState.AddModelError("Usuario.Dni", "Ya existe otro inquilino con este DNI");
@@ -160,10 +187,16 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                         }
                     }
 
-                    // Verificar Email único (si se proporciona, excluyendo el actual)
+                    // Verificar Email único
                     if (!string.IsNullOrEmpty(inquilino.Usuario?.Email))
                     {
-                        bool emailExiste = await _repositorioInquilino.ExisteEmailAsync(inquilino.Usuario.Email, inquilino.IdUsuario);
+                        var inquilinoActual = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
+
+                        bool emailExiste = await _repositorioInquilino.ExisteEmailAsync(
+                            inquilino.Usuario.Email,
+                            inquilinoActual.IdUsuario  // Usar el IdUsuario del registro actual
+                        );
+
                         if (emailExiste)
                         {
                             ModelState.AddModelError("Usuario.Email", "Ya existe otro inquilino con este email");
@@ -172,7 +205,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     }
 
                     bool resultado = await _repositorioInquilino.ActualizarInquilinoConTransaccionAsync(inquilino);
-                    
+
                     if (resultado)
                     {
                         TempData["SuccessMessage"] = "Inquilino actualizado exitosamente";
@@ -188,7 +221,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     ModelState.AddModelError("", $"Error al actualizar el inquilino: {ex.Message}");
                 }
             }
-            
+
             return View(inquilino);
         }
 
@@ -203,7 +236,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             try
             {
                 var inquilino = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
-                
+
                 if (inquilino == null)
                 {
                     return NotFound();
@@ -226,7 +259,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             try
             {
                 bool resultado = await _repositorioInquilino.EliminarInquilinoConTransaccionAsync(id);
-                
+
                 if (resultado)
                 {
                     TempData["SuccessMessage"] = "Inquilino eliminado exitosamente";
@@ -240,7 +273,44 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             {
                 TempData["ErrorMessage"] = $"Error al eliminar el inquilino: {ex.Message}";
             }
-            
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Inquilinos/ToggleEstado/5
+        [HttpPost]
+        public async Task<IActionResult> ToggleEstado(int id)
+        {
+            try
+            {
+                var inquilino = await _repositorioInquilino.ObtenerInquilinoPorIdAsync(id);
+
+                if (inquilino == null)
+                {
+                    TempData["ErrorMessage"] = "Inquilino no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Cambiar el estado al contrario
+                inquilino.Estado = !inquilino.Estado;
+
+                bool resultado = await _repositorioInquilino.ActualizarInquilinoConTransaccionAsync(inquilino);
+
+                if (resultado)
+                {
+                    string nuevoEstado = inquilino.Estado ? "activado" : "desactivado";
+                    TempData["SuccessMessage"] = $"Inquilino {nuevoEstado} exitosamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo cambiar el estado del inquilino";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error: {ex.Message}";
+            }
+
             return RedirectToAction(nameof(Index));
         }
     }

@@ -1,0 +1,827 @@
+@model Inmobiliaria_troncoso_leandro.Models.Pago
+@{
+    ViewData["Title"] = "Crear Pago de Alquiler";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Alquileres")">Alquileres</a></li>
+        <li class="breadcrumb-item active">Crear Nuevo</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-plus-circle me-2"></i>Crear Pago de Alquiler</h2>
+    <a href="@Url.Action("Index", "Alquileres")" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Cancelar
+    </a>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<form asp-action="Create" method="post" enctype="multipart/form-data" id="createPagoForm">
+    @Html.AntiForgeryToken()
+
+    <div class="row">
+        <!-- Columna principal del formulario -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-form-check me-2"></i>Datos del Pago
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Selección de Contrato -->
+                    <div class="mb-3">
+                        <label for="contratoSearch" class="form-label">
+                            <i class="bi bi-search me-1"></i>Buscar Contrato <span class="text-danger">*</span>
+                        </label>
+                        <div class="input-group">
+                            <input type="text" id="contratoSearch" class="form-control"
+                                placeholder="Buscar por dirección, inquilino, número de contrato..." autocomplete="off">
+                            <button type="button" class="btn btn-outline-secondary" id="limpiarContrato">
+                                <i class="bi bi-x-circle"></i>
+                            </button>
+                        </div>
+                        <div id="contratoResults" class="list-group position-absolute w-100"
+                            style="z-index: 1000; display: none;"></div>
+
+                        <!-- Input hidden para el ID del contrato -->
+                        <input asp-for="IdContrato" type="hidden" id="IdContrato" />
+                        <span asp-validation-for="IdContrato" class="text-danger"></span>
+
+                        <!-- Información del contrato seleccionado -->
+                        <div id="contratoSeleccionado" class="mt-2" style="display: none;">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle me-2"></i>
+                                <strong>Contrato seleccionado:</strong>
+                                <div id="contratoInfo"></div>
+                                <button type="button" class="btn btn-sm btn-outline-primary mt-2"
+                                    onclick="cambiarContrato()">
+                                    <i class="bi bi-arrow-repeat me-1"></i>Cambiar contrato
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Número de Pago -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="NumeroPago" class="form-label">
+                                    <i class="bi bi-hash me-1"></i>Número de Pago <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="NumeroPago" class="form-control" id="NumeroPago" readonly />
+                                <div class="form-text">Se asigna automáticamente según el contrato</div>
+                                <span asp-validation-for="NumeroPago" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Fecha de Pago -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FechaPago" class="form-label">
+                                    <i class="bi bi-calendar me-1"></i>Fecha de Pago <span class="text-danger">*</span>
+                                </label>
+                                <input asp-for="FechaPago" type="date" class="form-control" id="FechaPago" />
+                                <span asp-validation-for="FechaPago" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <!-- Fecha de Vencimiento -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="FechaVencimiento" class="form-label">
+                                    <i class="bi bi-calendar-x me-1"></i>Fecha de Vencimiento
+                                </label>
+                                <input asp-for="FechaVencimiento" type="date" class="form-control" id="FechaVencimiento"
+                                    readonly />
+                                <div class="form-text">Se calcula automáticamente según el contrato</div>
+                                <span asp-validation-for="FechaVencimiento" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="Estado" class="form-label">
+                                    <i class="bi bi-check-circle me-1"></i>Estado <span class="text-danger">*</span>
+                                </label>
+                                <select asp-for="Estado" class="form-select">
+                                    <option value="pagado">Pagado</option>
+                                    <option value="pendiente">Pendiente</option>
+                                </select>
+                                <span asp-validation-for="Estado" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Concepto -->
+                    <div class="mb-3">
+                        <label asp-for="Concepto" class="form-label">
+                            <i class="bi bi-chat-text me-1"></i>Concepto <span class="text-danger">*</span>
+                        </label>
+                        <input asp-for="Concepto" class="form-control" id="Concepto"
+                            placeholder="Ej: Alquiler mes de Enero 2024" />
+                        <span asp-validation-for="Concepto" class="text-danger"></span>
+                    </div>
+
+                    <div class="row">
+                        <!-- Monto Base -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="MontoBase" class="form-label">
+                                    <i class="bi bi-currency-dollar me-1"></i>Monto Base <span
+                                        class="text-danger">*</span>
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoBase" type="number" step="0.01" class="form-control"
+                                        id="MontoBase" />
+                                </div>
+                                <span asp-validation-for="MontoBase" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <!-- Monto Diario Mora -->
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label asp-for="MontoDiarioMora" class="form-label">
+                                    <i class="bi bi-clock-history me-1"></i>Mora Diaria
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoDiarioMora" type="number" step="0.01" class="form-control"
+                                        id="MontoDiarioMora" />
+                                    <span class="input-group-text">por día</span>
+                                </div>
+                                <div class="form-text">Se obtiene automáticamente de la configuración</div>
+                                <span asp-validation-for="MontoDiarioMora" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Observaciones -->
+                    <div class="mb-3">
+                        <label asp-for="Observaciones" class="form-label">
+                            <i class="bi bi-chat-dots me-1"></i>Observaciones
+                        </label>
+                        <textarea asp-for="Observaciones" class="form-control" rows="3"
+                            placeholder="Notas adicionales sobre el pago..."></textarea>
+                        <span asp-validation-for="Observaciones" class="text-danger"></span>
+                    </div>
+
+                    <!-- Comprobante -->
+                    <div class="mb-3">
+                        <label for="ComprobanteArchivo" class="form-label">
+                            <i class="bi bi-file-earmark me-1"></i>Comprobante de Pago
+                        </label>
+                        <input type="file" class="form-control" id="ComprobanteArchivo" name="ComprobanteArchivo"
+                            accept=".pdf,.jpg,.jpeg,.png" />
+                        <div class="form-text">Formatos permitidos: PDF, JPG, PNG. Máximo 5MB.</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar con información adicional -->
+        <div class="col-md-4">
+            <!-- Información del pago actual -->
+            <div class="card mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-receipt me-2"></i>Información del Pago
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-2">
+                        <small class="text-muted">Próximo pago:</small>
+                        <div id="proximoPagoInfo" class="fw-bold">-</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Estado de pagos:</small>
+                        <div id="estadoPagosInfo" class="fw-bold">-</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Pagos realizados:</small>
+                        <div id="pagosRealizadosInfo" class="fw-bold">-</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Total permitido:</small>
+                        <div id="totalPermitidoInfo" class="fw-bold">-</div>
+                    </div>
+                    <div class="mb-2">
+                        <small class="text-muted">Pagos restantes:</small>
+                        <div id="pagosRestantesInfo" class="fw-bold">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Cálculo automático de mora -->
+            <div class="card mb-3">
+                <div class="card-header bg-warning text-dark">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-calculator me-2"></i>Cálculo de Mora
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <div class="border-end">
+                                <h5 id="diasMora" class="text-warning">0</h5>
+                                <small class="text-muted">Días de mora</small>
+                            </div>
+                        </div>
+                        <div class="col-6">
+                            <h5 id="montoMora" class="text-danger">$0.00</h5>
+                            <small class="text-muted">Recargo mora</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <strong>Total a pagar:</strong>
+                        <strong id="montoTotal" class="text-primary">$0.00</strong>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información del sistema -->
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-info-circle me-2"></i>Información
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <ul class="list-unstyled mb-0">
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            La mora se calcula automáticamente
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            El número de pago se asigna secuencialmente
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            La fecha de vencimiento se calcula según el contrato
+                        </li>
+                        <li class="mb-2">
+                            <i class="bi bi-check-circle text-success me-2"></i>
+                            Los comprobantes se validan automáticamente
+                        </li>
+                        <li>
+                            <i class="bi bi-shield-check text-primary me-2"></i>
+                            Todos los datos se guardan de forma segura
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-body text-center">
+                    <button type="submit" class="btn btn-primary btn-lg me-3">
+                        <i class="bi bi-floppy me-2"></i>Guardar Pago de Alquiler
+                    </button>
+                    <a href="@Url.Action("Index", "Alquileres")" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-x-circle me-2"></i>Cancelar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Inputs hidden para campos calculados -->
+    <input asp-for="IdInmueble" type="hidden" id="IdInmueble" />
+    <input asp-for="TipoPago" type="hidden" value="alquiler" />
+    <input asp-for="DiasMora" type="hidden" id="DiasMora" />
+    <input asp-for="RecargoMora" type="hidden" id="RecargoMora" />
+    <input asp-for="MontoTotal" type="hidden" id="MontoTotalHidden" />
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            configurarAutocompletadoContratos();
+            configurarCalculosMora();
+            configurarValidacionArchivo();
+
+            // Pre-llenar si viene de un contrato específico
+            const urlParams = new URLSearchParams(window.location.search);
+            const contratoId = urlParams.get('contratoId');
+            if (contratoId) {
+                cargarDatosContrato(contratoId);
+            }
+        });
+
+        // Configurar validación de archivos
+        function configurarValidacionArchivo() {
+            const fileInput = document.getElementById('ComprobanteArchivo');
+            const maxSize = 5 * 1024 * 1024; // 5MB en bytes
+
+            fileInput.addEventListener('change', function (e) {
+                const file = e.target.files[0];
+                
+                if (!file) return;
+
+                // Validar tamaño del archivo
+                if (file.size > maxSize) {
+                    mostrarErrorArchivo('El archivo es demasiado grande. El tamaño máximo permitido es 5MB.');
+                    fileInput.value = ''; // Limpiar el input
+                    return;
+                }
+
+                // Validar tipo de archivo
+                const extensionesPermitidas = ['.pdf', '.jpg', '.jpeg', '.png'];
+                const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                
+                if (!extensionesPermitidas.includes(extension)) {
+                    mostrarErrorArchivo('Tipo de archivo no permitido. Solo se aceptan PDF, JPG, JPEG y PNG.');
+                    fileInput.value = ''; // Limpiar el input
+                    return;
+                }
+
+                // Si pasa todas las validaciones, mostrar información del archivo
+                mostrarInfoArchivo(file);
+            });
+        }
+
+        // Mostrar error de archivo
+        function mostrarErrorArchivo(mensaje) {
+            // Remover mensajes anteriores
+            removerMensajesArchivo();
+
+            const fileInput = document.getElementById('ComprobanteArchivo');
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'alert alert-danger alert-dismissible fade show mt-2';
+            errorDiv.innerHTML = `
+                <i class="bi bi-exclamation-triangle me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            fileInput.parentNode.appendChild(errorDiv);
+        }
+
+        // Mostrar información del archivo válido
+        function mostrarInfoArchivo(file) {
+            // Remover mensajes anteriores
+            removerMensajesArchivo();
+
+            const fileInput = document.getElementById('ComprobanteArchivo');
+            const infoDiv = document.createElement('div');
+            infoDiv.className = 'alert alert-success alert-dismissible fade show mt-2';
+            
+            const tamañoFormateado = formatearTamañoArchivo(file.size);
+            
+            infoDiv.innerHTML = `
+                <i class="bi bi-check-circle me-2"></i>
+                <strong>Archivo válido:</strong> ${file.name} (${tamañoFormateado})
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            fileInput.parentNode.appendChild(infoDiv);
+        }
+
+        // Remover mensajes anteriores de archivo
+        function removerMensajesArchivo() {
+            const fileInput = document.getElementById('ComprobanteArchivo');
+            const mensajesAnteriores = fileInput.parentNode.querySelectorAll('.alert');
+            mensajesAnteriores.forEach(mensaje => mensaje.remove());
+        }
+
+        // Formatear tamaño del archivo para mostrar
+        function formatearTamañoArchivo(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function configurarAutocompletadoContratos() {
+            const searchInput = document.getElementById('contratoSearch');
+            const resultsDiv = document.getElementById('contratoResults');
+            let searchTimeout;
+
+            searchInput.addEventListener('input', function () {
+                clearTimeout(searchTimeout);
+                const query = this.value.trim();
+
+                if (query.length < 2) {
+                    resultsDiv.style.display = 'none';
+                    return;
+                }
+
+                searchTimeout = setTimeout(() => {
+                    buscarContratos(query);
+                }, 300);
+            });
+
+            document.addEventListener('click', function (e) {
+                if (!e.target.closest('#contratoSearch') && !e.target.closest('#contratoResults')) {
+                    resultsDiv.style.display = 'none';
+                }
+            });
+
+            document.getElementById('limpiarContrato').addEventListener('click', function () {
+                limpiarSeleccionContrato();
+            });
+        }
+
+        function buscarContratos(query) {
+            const resultsDiv = document.getElementById('contratoResults');
+
+            resultsDiv.innerHTML = '<div class="list-group-item"><i class="bi bi-hourglass-split me-2"></i>Buscando...</div>';
+            resultsDiv.style.display = 'block';
+
+            fetch(`/Alquileres/BuscarContratosParaPago?termino=${encodeURIComponent(query)}&limite=10`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    mostrarResultadosContratos(data);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    resultsDiv.innerHTML = '<div class="list-group-item text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al buscar contratos</div>';
+                });
+        }
+
+        function mostrarResultadosContratos(contratos) {
+            const resultsDiv = document.getElementById('contratoResults');
+
+            if (!contratos || contratos.length === 0) {
+                resultsDiv.innerHTML = '<div class="list-group-item text-muted"><i class="bi bi-inbox me-2"></i>No se encontraron contratos vigentes</div>';
+                return;
+            }
+
+            let html = '';
+            contratos.forEach(contrato => {
+                // Parsear infoPagos para mostrar mejor
+                const infoPagos = contrato.infoPagos || '0/0';
+                const [realizados, total] = infoPagos.split('/');
+                const restantes = total - realizados;
+                
+                html += `
+                    <div class="list-group-item list-group-item-action" style="cursor: pointer;" 
+                         onclick="seleccionarContrato(
+                            ${contrato.idContrato}, 
+                            '${(contrato.texto || '').replace(/'/g, "\\'")}', 
+                            '${(contrato.montoFormateado || '').replace(/'/g, "\\'")}', 
+                            '${(contrato.inquilinoCompleto || '').replace(/'/g, "\\'")}', 
+                            '${(contrato.propietarioCompleto || '').replace(/'/g, "\\'")}',
+                            ${contrato.idInmueble || 0},
+                            ${contrato.montoMensual || 0},
+                            ${contrato.montoDiarioMora || 0},
+                            '${contrato.infoPagos || '0/0'}'
+                         )">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="flex-grow-1">
+                                <h6 class="mb-1"><strong>${contrato.texto || 'Sin información'}</strong></h6>
+                                <p class="mb-1 text-muted small">
+                                    <i class="bi bi-person me-1"></i> Inquilino: ${contrato.inquilinoCompleto || 'No disponible'}<br>
+                                    <i class="bi bi-person-badge me-1"></i> Propietario: ${contrato.propietarioCompleto || 'No disponible'}
+                                </p>
+                                <small class="text-success"><i class="bi bi-currency-dollar me-1"></i>${contrato.montoFormateado || '$0.00'}</small>
+                                <br>
+                                <small class="${restantes > 0 ? 'text-info' : 'text-warning'}">
+                                    <i class="bi bi-calendar-check me-1"></i>${infoPagos} pagos
+                                    ${restantes > 0 ? `(${restantes} restantes)` : '(COMPLETADO)'}
+                                </small>
+                            </div>
+                            <span class="badge bg-primary">ID: ${contrato.idContrato || 'N/A'}</span>
+                        </div>
+                    </div>
+                `;
+            });
+
+            resultsDiv.innerHTML = html;
+            resultsDiv.style.display = 'block';
+        }
+
+        function seleccionarContrato(id, texto, monto, inquilino, propietario, idInmueble, montoMensual, montoDiarioMora, infoPagos) {
+            console.log('Contrato seleccionado:', {
+                id, texto, monto, inquilino, propietario, 
+                idInmueble, montoMensual, montoDiarioMora, infoPagos
+            });
+
+            document.getElementById('IdContrato').value = id;
+            document.getElementById('contratoSearch').value = texto;
+
+            // Establecer valores directamente
+            if (idInmueble && idInmueble > 0) {
+                document.getElementById('IdInmueble').value = idInmueble;
+                console.log('IdInmueble establecido:', idInmueble);
+            }
+            if (montoMensual && montoMensual > 0) {
+                document.getElementById('MontoBase').value = montoMensual;
+            }
+            if (montoDiarioMora !== undefined && montoDiarioMora > 0) {
+                document.getElementById('MontoDiarioMora').value = montoDiarioMora;
+            }
+
+            // Mostrar información básica del contrato
+            document.getElementById('contratoInfo').innerHTML = `
+                <div class="row">
+                    <div class="col-md-12">
+                        <p class="mb-1"><strong>📍 Inmueble:</strong> ${texto}</p>
+                        <p class="mb-1"><strong>👤 Inquilino:</strong> ${inquilino}</p>
+                        <p class="mb-1"><strong>👔 Propietario:</strong> ${propietario}</p>
+                        <p class="mb-0"><strong>💵 Monto:</strong> ${monto}</p>
+                        <p class="mb-0"><strong>📊 Estado de pagos:</strong> ${infoPagos}</p>
+                    </div>
+                </div>
+            `;
+
+            document.getElementById('contratoSeleccionado').style.display = 'block';
+            document.getElementById('contratoResults').style.display = 'none';
+
+            cargarDatosContrato(id);
+        }
+
+        function cargarDatosContrato(contratoId) {
+            console.log('Cargando datos del contrato:', contratoId);
+            
+            fetch(`/Alquileres/ObtenerDatosContratoParaPago?idContrato=${contratoId}`)
+                .then(response => {
+                    if (!response.ok) {
+                        throw new Error('Error en la respuesta del servidor');
+                    }
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Datos recibidos del servidor:', data);
+                    
+                    if (data.success) {
+                        // Establecer todos los valores
+                        document.getElementById('IdInmueble').value = data.idInmueble;
+                        document.getElementById('MontoBase').value = data.montoMensual;
+                        document.getElementById('MontoDiarioMora').value = data.montoDiarioMora;
+                        document.getElementById('NumeroPago').value = data.proximoNumeroPago;
+                        document.getElementById('Concepto').value = data.concepto;
+                        document.getElementById('FechaVencimiento').value = data.proximaFechaVencimiento;
+
+                        // Actualizar información de pagos en el sidebar
+                        actualizarInformacionPagos(data);
+
+                        console.log('Datos del contrato cargados correctamente:', {
+                            idInmueble: data.idInmueble,
+                            montoBase: data.montoMensual,
+                            montoDiarioMora: data.montoDiarioMora,
+                            numeroPago: data.proximoNumeroPago,
+                            totalMeses: data.totalMeses,
+                            infoPagos: data.infoPagos,
+                            fechaVencimiento: data.proximaFechaVencimiento
+                        });
+
+                        calcularMora();
+                    } else {
+                        console.error('Error del servidor:', data.error);
+                        alert('Error: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar datos del contrato:', error);
+                    alert('Error al cargar datos del contrato: ' + error.message);
+                });
+        }
+
+        function actualizarInformacionPagos(data) {
+            const infoPagos = data.infoPagos || '0/0';
+            const [realizados, total] = infoPagos.split('/');
+            const restantes = total - realizados;
+            
+            document.getElementById('proximoPagoInfo').textContent = `#${data.proximoNumeroPago}`;
+            document.getElementById('estadoPagosInfo').textContent = infoPagos;
+            document.getElementById('pagosRealizadosInfo').textContent = realizados;
+            document.getElementById('totalPermitidoInfo').textContent = total;
+            
+            const pagosRestantesElement = document.getElementById('pagosRestantesInfo');
+            pagosRestantesElement.textContent = restantes;
+            
+            // Colorear según los pagos restantes
+            if (restantes <= 0) {
+                pagosRestantesElement.className = 'fw-bold text-danger';
+            } else if (restantes <= 2) {
+                pagosRestantesElement.className = 'fw-bold text-warning';
+            } else {
+                pagosRestantesElement.className = 'fw-bold text-success';
+            }
+
+            // Actualizar también la información del contrato seleccionado
+            const contratoInfoDiv = document.getElementById('contratoInfo');
+            const existingHtml = contratoInfoDiv.innerHTML;
+            contratoInfoDiv.innerHTML = existingHtml.replace(
+                /<p class="mb-0"><strong>📊 Estado de pagos:<\/strong>.*?<\/p>/,
+                `<p class="mb-0"><strong>📊 Estado de pagos:</strong> ${infoPagos} (${restantes} restantes)</p>`
+            );
+        }
+
+        function limpiarSeleccionContrato() {
+            document.getElementById('IdContrato').value = '';
+            document.getElementById('IdInmueble').value = '';
+            document.getElementById('contratoSearch').value = '';
+            document.getElementById('contratoSeleccionado').style.display = 'none';
+            document.getElementById('contratoResults').style.display = 'none';
+
+            document.getElementById('NumeroPago').value = '';
+            document.getElementById('MontoBase').value = '';
+            document.getElementById('MontoDiarioMora').value = '';
+            document.getElementById('Concepto').value = '';
+            document.getElementById('FechaVencimiento').value = '';
+
+            // Limpiar información del sidebar
+            document.getElementById('proximoPagoInfo').textContent = '-';
+            document.getElementById('estadoPagosInfo').textContent = '-';
+            document.getElementById('pagosRealizadosInfo').textContent = '-';
+            document.getElementById('totalPermitidoInfo').textContent = '-';
+            document.getElementById('pagosRestantesInfo').textContent = '-';
+            document.getElementById('pagosRestantesInfo').className = 'fw-bold';
+
+            calcularMora();
+        }
+
+        function cambiarContrato() {
+            limpiarSeleccionContrato();
+            document.getElementById('contratoSearch').focus();
+        }
+
+        function configurarCalculosMora() {
+            ['FechaPago', 'FechaVencimiento', 'MontoBase', 'MontoDiarioMora'].forEach(fieldId => {
+                const field = document.getElementById(fieldId);
+                if (field) {
+                    field.addEventListener('change', calcularMora);
+                    field.addEventListener('input', calcularMora);
+                }
+            });
+
+            calcularMora();
+        }
+
+        function calcularMora() {
+            const fechaPago = document.getElementById('FechaPago').value;
+            const fechaVencimiento = document.getElementById('FechaVencimiento').value;
+            const montoBase = parseFloat(document.getElementById('MontoBase').value) || 0;
+            const montoDiarioMora = parseFloat(document.getElementById('MontoDiarioMora').value) || 0;
+
+            let diasMora = 0;
+            let montoMora = 0;
+
+            if (fechaPago && fechaVencimiento) {
+                const fechaPagoDate = new Date(fechaPago);
+                const fechaVencimientoDate = new Date(fechaVencimiento);
+
+                if (fechaPagoDate > fechaVencimientoDate) {
+                    diasMora = Math.ceil((fechaPagoDate - fechaVencimientoDate) / (1000 * 60 * 60 * 24));
+                    montoMora = diasMora * montoDiarioMora;
+                }
+            }
+
+            const montoTotal = montoBase + montoMora;
+
+            document.getElementById('diasMora').textContent = diasMora;
+            document.getElementById('montoMora').textContent = montoMora.toLocaleString('es-AR', {
+                style: 'currency',
+                currency: 'ARS'
+            });
+            document.getElementById('montoTotal').textContent = montoTotal.toLocaleString('es-AR', {
+                style: 'currency',
+                currency: 'ARS'
+            });
+
+            document.getElementById('DiasMora').value = diasMora;
+            document.getElementById('RecargoMora').value = montoMora;
+            document.getElementById('MontoTotalHidden').value = montoTotal;
+
+            const diasElement = document.getElementById('diasMora');
+            const moraElement = document.getElementById('montoMora');
+
+            if (diasMora > 0) {
+                diasElement.className = 'text-danger';
+                moraElement.className = 'text-danger';
+            } else {
+                diasElement.className = 'text-success';
+                moraElement.className = 'text-success';
+            }
+        }
+
+        // EVENT LISTENER DEL FORMULARIO
+        document.getElementById('createPagoForm').addEventListener('submit', function (e) {
+            const contratoId = document.getElementById('IdContrato').value;
+            const montoBase = document.getElementById('MontoBase').value;
+            const idInmueble = document.getElementById('IdInmueble').value;
+            const fileInput = document.getElementById('ComprobanteArchivo');
+            const maxSize = 5 * 1024 * 1024; // 5MB
+
+            // Validaciones
+            if (!contratoId) {
+                e.preventDefault();
+                alert('Debe seleccionar un contrato válido');
+                document.getElementById('contratoSearch').focus();
+                return;
+            }
+
+            if (!montoBase || parseFloat(montoBase) <= 0) {
+                e.preventDefault();
+                alert('Debe ingresar un monto base válido');
+                document.getElementById('MontoBase').focus();
+                return;
+            }
+
+            if (!idInmueble || idInmueble <= 0) {
+                e.preventDefault();
+                alert('Error: No se pudo obtener el ID del inmueble. Por favor, seleccione el contrato nuevamente.');
+                document.getElementById('contratoSearch').focus();
+                return;
+            }
+
+            // Validación de archivo
+            if (fileInput.files.length > 0) {
+                const file = fileInput.files[0];
+                
+                if (file.size > maxSize) {
+                    e.preventDefault();
+                    mostrarErrorArchivo('El archivo es demasiado grande. El tamaño máximo permitido es 5MB.');
+                    fileInput.focus();
+                    return;
+                }
+
+                const extensionesPermitidas = ['.pdf', '.jpg', '.jpeg', '.png'];
+                const extension = file.name.toLowerCase().substring(file.name.lastIndexOf('.'));
+                
+                if (!extensionesPermitidas.includes(extension)) {
+                    e.preventDefault();
+                    mostrarErrorArchivo('Tipo de archivo no permitido. Solo se aceptan PDF, JPG, JPEG y PNG.');
+                    fileInput.focus();
+                    return;
+                }
+            }
+
+            // Mostrar spinner de carga
+            const submitBtn = this.querySelector('button[type="submit"]');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...';
+            submitBtn.disabled = true;
+
+            setTimeout(() => {
+                console.log({
+                    IdContrato: document.getElementById('IdContrato').value,
+                    IdInmueble: document.getElementById('IdInmueble').value,
+                    MontoBase: document.getElementById('MontoBase').value,
+                    NumeroPago: document.getElementById('NumeroPago').value
+                });
+                if (submitBtn.disabled) {
+                    submitBtn.innerHTML = originalText;
+                    submitBtn.disabled = false;
+                }
+            }, 10000);
+        });
+        
+    </script>
+}
+
+<style>
+    #contratoResults {
+        max-height: 400px;
+        overflow-y: auto;
+        border: 1px solid #dee2e6;
+        border-top: none;
+        border-radius: 0 0 0.375rem 0.375rem;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+
+    #contratoResults .list-group-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .card-header.bg-warning {
+        border-bottom: 1px solid rgba(0, 0, 0, .125);
+    }
+
+    .card-header.bg-info {
+        border-bottom: 1px solid rgba(255, 255, 255, .2);
+    }
+</style>

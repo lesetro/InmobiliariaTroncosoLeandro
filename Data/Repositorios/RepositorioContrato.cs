@@ -276,102 +276,110 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         // ========================================
 
         public async Task<(IList<Contrato> contratos, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
-            int pagina, string buscar, string estado, int itemsPorPagina)
+    int pagina, string buscar, string estado, string tipoContrato, int itemsPorPagina) // Agregar tipoContrato
+{
+    try
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        // Construir WHERE dinámico
+        var whereConditions = new List<string>();
+        var parameters = new List<MySqlParameter>();
+
+        if (!string.IsNullOrEmpty(buscar))
         {
-            try
+            whereConditions.Add(@"(i.direccion LIKE @buscar 
+                                  OR ui.nombre LIKE @buscar 
+                                  OR ui.apellido LIKE @buscar 
+                                  OR ui.dni LIKE @buscar
+                                  OR up.nombre LIKE @buscar 
+                                  OR up.apellido LIKE @buscar
+                                  OR CONCAT(ui.apellido, ', ', ui.nombre) LIKE @buscar
+                                  OR CONCAT(up.apellido, ', ', up.nombre) LIKE @buscar)");
+            parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
+        }
+
+        if (!string.IsNullOrEmpty(estado))
+        {
+            whereConditions.Add("c.estado = @estado");
+            parameters.Add(new MySqlParameter("@estado", estado));
+        }
+
+        // AGREGAR FILTRO POR TIPO DE CONTRATO
+        if (!string.IsNullOrEmpty(tipoContrato))
+        {
+            whereConditions.Add("c.tipo_contrato = @tipoContrato");
+            parameters.Add(new MySqlParameter("@tipoContrato", tipoContrato));
+        }
+
+        string whereClause = whereConditions.Count > 0
+            ? "WHERE " + string.Join(" AND ", whereConditions)
+            : "";
+
+        // 1. Contar total de registros
+        string countQuery = $@"
+            SELECT COUNT(*) 
+            FROM contrato c
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario ui ON inq.id_usuario = ui.id_usuario
+            INNER JOIN propietario prop ON c.id_propietario = prop.id_propietario
+            INNER JOIN usuario up ON prop.id_usuario = up.id_usuario
+            {whereClause}";
+
+        int totalRegistros;
+        using (var countCommand = new MySqlCommand(countQuery, connection))
+        {
+            foreach (var param in parameters)
             {
-                using var connection = new MySqlConnection(_connectionString);
-                await connection.OpenAsync();
-
-                // Construir WHERE dinámico
-                var whereConditions = new List<string>();
-                var parameters = new List<MySqlParameter>();
-
-                if (!string.IsNullOrEmpty(buscar))
-                {
-                    whereConditions.Add(@"(i.direccion LIKE @buscar 
-                                          OR ui.nombre LIKE @buscar 
-                                          OR ui.apellido LIKE @buscar 
-                                          OR ui.dni LIKE @buscar
-                                          OR up.nombre LIKE @buscar 
-                                          OR up.apellido LIKE @buscar
-                                          OR CONCAT(ui.apellido, ', ', ui.nombre) LIKE @buscar
-                                          OR CONCAT(up.apellido, ', ', up.nombre) LIKE @buscar)");
-                    parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
-                }
-
-                if (!string.IsNullOrEmpty(estado))
-                {
-                    whereConditions.Add("c.estado = @estado");
-                    parameters.Add(new MySqlParameter("@estado", estado));
-                }
-
-                string whereClause = whereConditions.Count > 0
-                    ? "WHERE " + string.Join(" AND ", whereConditions)
-                    : "";
-
-                // 1. Contar total de registros
-                string countQuery = $@"
-                    SELECT COUNT(*) 
-                    FROM contrato c
-                    INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
-                    INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
-                    INNER JOIN usuario ui ON inq.id_usuario = ui.id_usuario
-                    INNER JOIN propietario prop ON c.id_propietario = prop.id_propietario
-                    INNER JOIN usuario up ON prop.id_usuario = up.id_usuario
-                    {whereClause}";
-
-                int totalRegistros;
-                using (var countCommand = new MySqlCommand(countQuery, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                    }
-                    totalRegistros = Convert.ToInt32(await countCommand.ExecuteScalarAsync());
-                }
-
-                // 2. Obtener registros con paginación
-                int offset = (pagina - 1) * itemsPorPagina;
-                string dataQuery = $@"
-                    SELECT c.id_contrato, c.fecha_inicio, c.fecha_fin, c.monto_mensual, c.estado,
-                           i.direccion AS inmueble_direccion,
-                           ui.nombre AS inquilino_nombre, ui.apellido AS inquilino_apellido,
-                           up.nombre AS propietario_nombre, up.apellido AS propietario_apellido
-                    FROM contrato c
-                    INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
-                    INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
-                    INNER JOIN usuario ui ON inq.id_usuario = ui.id_usuario
-                    INNER JOIN propietario prop ON c.id_propietario = prop.id_propietario
-                    INNER JOIN usuario up ON prop.id_usuario = up.id_usuario
-                    {whereClause}
-                    ORDER BY c.id_contrato DESC
-                    LIMIT @limit OFFSET @offset";
-
-                var contratos = new List<Contrato>();
-                using (var dataCommand = new MySqlCommand(dataQuery, connection))
-                {
-                    foreach (var param in parameters)
-                    {
-                        dataCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-                    }
-                    dataCommand.Parameters.AddWithValue("@limit", itemsPorPagina);
-                    dataCommand.Parameters.AddWithValue("@offset", offset);
-
-                    using var reader = await dataCommand.ExecuteReaderAsync();
-                    while (await reader.ReadAsync())
-                    {
-                        contratos.Add(MapearContratoParaIndex(reader));
-                    }
-                }
-
-                return (contratos, totalRegistros);
+                countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
             }
-            catch (Exception ex)
+            totalRegistros = Convert.ToInt32(await countCommand.ExecuteScalarAsync());
+        }
+
+        // 2. Obtener registros con paginación
+        int offset = (pagina - 1) * itemsPorPagina;
+        string dataQuery = $@"
+            SELECT c.id_contrato, c.fecha_inicio, c.fecha_fin, c.monto_mensual, c.estado, 
+                   c.tipo_contrato,  -- AGREGAR ESTA COLUMNA
+                   i.direccion AS inmueble_direccion,
+                   ui.nombre AS inquilino_nombre, ui.apellido AS inquilino_apellido,
+                   up.nombre AS propietario_nombre, up.apellido AS propietario_apellido
+            FROM contrato c
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario ui ON inq.id_usuario = ui.id_usuario
+            INNER JOIN propietario prop ON c.id_propietario = prop.id_propietario
+            INNER JOIN usuario up ON prop.id_usuario = up.id_usuario
+            {whereClause}
+            ORDER BY c.id_contrato DESC
+            LIMIT @limit OFFSET @offset";
+
+        var contratos = new List<Contrato>();
+        using (var dataCommand = new MySqlCommand(dataQuery, connection))
+        {
+            foreach (var param in parameters)
             {
-                throw new Exception($"Error al obtener contratos con paginación: {ex.Message}", ex);
+                dataCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
+            }
+            dataCommand.Parameters.AddWithValue("@limit", itemsPorPagina);
+            dataCommand.Parameters.AddWithValue("@offset", offset);
+
+            using var reader = await dataCommand.ExecuteReaderAsync();
+            while (await reader.ReadAsync())
+            {
+                contratos.Add(MapearContratoParaIndex(reader));
             }
         }
+
+        return (contratos, totalRegistros);
+    }
+    catch (Exception ex)
+    {
+        throw new Exception($"Error al obtener contratos con paginación: {ex.Message}", ex);
+    }
+}
 
         // ========================================
         // MÉTODOS PRIVADOS DE MAPEO
@@ -482,6 +490,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
                 MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
                 Estado = reader.GetString(reader.GetOrdinal("estado")),
+                TipoContrato = reader.GetString(reader.GetOrdinal("tipo_contrato")),
                 Inmueble = new Inmueble
                 {
                     Direccion = reader.GetString(reader.GetOrdinal("inmueble_direccion"))

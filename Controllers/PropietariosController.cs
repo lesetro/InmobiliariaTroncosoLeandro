@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
+    [Authorize(Policy = "AdminOEmpleado")]
     public class PropietariosController : Controller
     {
         private readonly IRepositorioPropietario _repositorioPropietario;
@@ -14,12 +16,12 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Propietarios
-        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", int itemsPorPagina = 10)
+        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", int itemsPorPagina = 10, string estado = "activos")
         {
             try
             {
                 var (propietarios, totalRegistros) = await _repositorioPropietario
-                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, itemsPorPagina);
+                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, itemsPorPagina, estado);
 
                 // Calcular información de paginación
                 var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
@@ -29,6 +31,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 ViewBag.TotalRegistros = totalRegistros;
                 ViewBag.Buscar = buscar;
                 ViewBag.ITEMS_POR_PAGINA = itemsPorPagina;
+                ViewBag.EstadoFiltro = estado;
 
                 return View(propietarios);
             }
@@ -62,6 +65,12 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Propietario propietario)
         {
+            // PARA REMOVER VALIDACIÓN DE CAMPOS QUE SE ASIGNAN AUTOMÁTICAMENTE
+            ModelState.Remove("Usuario.Rol");
+            ModelState.Remove("Usuario.Password");
+            ModelState.Remove("Usuario.Estado");
+            ModelState.Remove("Usuario.Avatar");
+
             Console.WriteLine("=== INICIO DEBUG CREATE ===");
             Console.WriteLine($"ModelState.IsValid: {ModelState.IsValid}");
 
@@ -91,7 +100,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                         Console.WriteLine($"Campo: {error.Key} | Error: {err.ErrorMessage}");
                     }
                 }
-                
+
                 return View(propietario);
             }
 
@@ -192,14 +201,31 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return NotFound();
             }
 
+            // Remover validación de campos automáticos
+            ModelState.Remove("Usuario.Rol");
+            ModelState.Remove("Usuario.Password");
+            ModelState.Remove("Usuario.Avatar");
+
             if (ModelState.IsValid)
             {
                 try
                 {
-                    // Verificar DNI único (excluyendo el actual por IdUsuario)
+                    // OBTENER EL PROPIETARIO ACTUAL 
+                    var propietarioActual = await _repositorioPropietario.ObtenerPropietarioPorIdAsync(id);
+
+                    if (propietarioActual == null)
+                    {
+                        return NotFound();
+                    }
+
+                    // Verificar DNI único
                     if (!string.IsNullOrEmpty(propietario.Usuario?.Dni))
                     {
-                        bool dniExiste = await _repositorioPropietario.ExisteDniAsync(propietario.Usuario.Dni, propietario.IdUsuario);
+                        bool dniExiste = await _repositorioPropietario.ExisteDniAsync(
+                            propietario.Usuario.Dni,
+                            propietarioActual.IdUsuario
+                        );
+
                         if (dniExiste)
                         {
                             ModelState.AddModelError("Usuario.Dni", "Ya existe otro propietario con este DNI");
@@ -207,10 +233,14 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                         }
                     }
 
-                    // Verificar Email único (si se proporciona, excluyendo el actual)
+                    // Verificar Email único
                     if (!string.IsNullOrEmpty(propietario.Usuario?.Email))
                     {
-                        bool emailExiste = await _repositorioPropietario.ExisteEmailAsync(propietario.Usuario.Email, propietario.IdUsuario);
+                        bool emailExiste = await _repositorioPropietario.ExisteEmailAsync(
+                            propietario.Usuario.Email,
+                            propietarioActual.IdUsuario
+                        );
+
                         if (emailExiste)
                         {
                             ModelState.AddModelError("Usuario.Email", "Ya existe otro propietario con este email");
@@ -235,6 +265,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     ModelState.AddModelError("", $"Error al actualizar el propietario: {ex.Message}");
                 }
             }
+
 
             return View(propietario);
         }
@@ -286,6 +317,43 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             catch (Exception ex)
             {
                 TempData["ErrorMessage"] = $"Error al eliminar el propietario: {ex.Message}";
+            }
+
+            return RedirectToAction(nameof(Index));
+        }
+
+        // POST: Propietarios/ToggleEstado/5
+        [HttpPost]
+        public async Task<IActionResult> ToggleEstado(int id)
+        {
+            try
+            {
+                var propietario = await _repositorioPropietario.ObtenerPropietarioPorIdAsync(id);
+
+                if (propietario == null)
+                {
+                    TempData["ErrorMessage"] = "Propietario no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Cambiar el estado al contrario
+                propietario.Estado = !propietario.Estado;
+
+                bool resultado = await _repositorioPropietario.ActualizarPropietarioConTransaccionAsync(propietario);
+
+                if (resultado)
+                {
+                    string nuevoEstado = propietario.Estado ? "activado" : "desactivado";
+                    TempData["SuccessMessage"] = $"Propietario {nuevoEstado} exitosamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo cambiar el estado del propietario";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error: {ex.Message}";
             }
 
             return RedirectToAction(nameof(Index));

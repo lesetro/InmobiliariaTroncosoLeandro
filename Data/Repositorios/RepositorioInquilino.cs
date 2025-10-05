@@ -15,74 +15,152 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         }
 
         // MÉTODO Create
+        // MÉTODO Create INQUILINO
         public async Task<bool> CrearInquilinoConTransaccionAsync(Inquilino inquilino)
         {
+            Console.WriteLine("=== INICIO REPOSITORIO CREATE INQUILINO ===");
+
             using var connection = new MySqlConnection(_connectionString);
-            await connection.OpenAsync();
-            using var transaction = await connection.BeginTransactionAsync();
 
             try
             {
-                // Verificar DNI único
-                if (!string.IsNullOrEmpty(inquilino.Usuario.Dni) && await ExisteDniInternoAsync(inquilino.Usuario.Dni, connection, transaction))
+                Console.WriteLine("Abriendo conexión...");
+                await connection.OpenAsync();
+                Console.WriteLine("Conexión abierta exitosamente");
+
+                using var transaction = await connection.BeginTransactionAsync();
+                Console.WriteLine("Transacción iniciada");
+
+                try
                 {
-                    return false; // DNI ya existe
-                }
+                    Console.WriteLine("=== VERIFICACIONES INTERNAS ===");
 
-                // Verificar Email único
-                if (!string.IsNullOrEmpty(inquilino.Usuario.Email) && await ExisteEmailInternoAsync(inquilino.Usuario.Email, connection, transaction))
+                    // Verificar DNI único
+                    if (!string.IsNullOrEmpty(inquilino.Usuario.Dni))
+                    {
+                        Console.WriteLine($"Verificando DNI interno: {inquilino.Usuario.Dni}");
+                        bool dniExiste = await ExisteDniInternoAsync(inquilino.Usuario.Dni, connection, transaction);
+                        Console.WriteLine($"DNI existe (interno): {dniExiste}");
+
+                        if (dniExiste)
+                        {
+                            Console.WriteLine("DNI ya existe - retornando false");
+                            return false;
+                        }
+                    }
+
+                    // Verificar Email único
+                    if (!string.IsNullOrEmpty(inquilino.Usuario.Email))
+                    {
+                        Console.WriteLine($"Verificando Email interno: {inquilino.Usuario.Email}");
+                        bool emailExiste = await ExisteEmailInternoAsync(inquilino.Usuario.Email, connection, transaction);
+                        Console.WriteLine($"Email existe (interno): {emailExiste}");
+
+                        if (emailExiste)
+                        {
+                            Console.WriteLine("Email ya existe - retornando false");
+                            return false;
+                        }
+                    }
+
+                    Console.WriteLine("=== CREANDO USUARIO CON MÉTODO ESTÁTICO ===");
+
+                    // ✅ CREAR USUARIO USANDO MÉTODO ESTÁTICO PARA INQUILINO
+                    var usuarioCompleto = Usuario.CrearInquilino(
+                        inquilino.Usuario.Nombre,
+                        inquilino.Usuario.Apellido,
+                        inquilino.Usuario.Dni,
+                        inquilino.Usuario.Email,
+                        inquilino.Usuario.Telefono,
+                        inquilino.Usuario.Direccion
+                    );
+
+                    Console.WriteLine($"Usuario creado con rol: {usuarioCompleto.Rol}"); // Debería mostrar "inquilino"
+                    Console.WriteLine($"Usuario creado con avatar: {usuarioCompleto.Avatar}"); // Avatar verde con iniciales
+                    Console.WriteLine($"Password ya hasheado: {!string.IsNullOrEmpty(usuarioCompleto.Password)}");
+
+                    // Query actualizada con avatar
+                    string queryUsuario = @"
+                        INSERT INTO usuario 
+                        (dni, nombre, apellido, telefono, email, direccion, password, rol, estado, avatar) 
+                        VALUES (@dni, @nombre, @apellido, @telefono, @email, @direccion, @password, @rol, @estado, @avatar);
+                        SELECT LAST_INSERT_ID();";
+
+                    Console.WriteLine($"Query usuario: {queryUsuario}");
+
+                    int idUsuario;
+                    using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
+                    {
+                        // ✅ USAR LOS DATOS DEL USUARIO CREADO POR EL MÉTODO ESTÁTICO
+                        commandUsuario.Parameters.AddWithValue("@dni", usuarioCompleto.Dni);
+                        commandUsuario.Parameters.AddWithValue("@nombre", usuarioCompleto.Nombre);
+                        commandUsuario.Parameters.AddWithValue("@apellido", usuarioCompleto.Apellido);
+                        commandUsuario.Parameters.AddWithValue("@telefono", usuarioCompleto.Telefono ?? (object)DBNull.Value);
+                        commandUsuario.Parameters.AddWithValue("@email", usuarioCompleto.Email ?? (object)DBNull.Value);
+                        commandUsuario.Parameters.AddWithValue("@direccion", usuarioCompleto.Direccion ?? (object)DBNull.Value);
+                        commandUsuario.Parameters.AddWithValue("@password", usuarioCompleto.Password); // Ya viene hasheado del método estático
+                        commandUsuario.Parameters.AddWithValue("@rol", usuarioCompleto.Rol); // ✅ Será "inquilino"
+                        commandUsuario.Parameters.AddWithValue("@estado", usuarioCompleto.Estado); // "activo"
+                        commandUsuario.Parameters.AddWithValue("@avatar", usuarioCompleto.Avatar ?? (object)DBNull.Value); // Avatar verde con iniciales
+
+                        Console.WriteLine($"Insertando usuario con rol: {usuarioCompleto.Rol}");
+                        Console.WriteLine($"Insertando usuario con avatar: {usuarioCompleto.Avatar}");
+
+                        var result = await commandUsuario.ExecuteScalarAsync();
+                        Console.WriteLine($"Resultado ExecuteScalar: {result}");
+
+                        if (result == null)
+                        {
+                            Console.WriteLine("ERROR: ExecuteScalar devolvió NULL");
+                            return false;
+                        }
+
+                        idUsuario = Convert.ToInt32(result);
+                        Console.WriteLine($"ID Usuario creado: {idUsuario}");
+                    }
+
+                    Console.WriteLine("=== CREANDO INQUILINO ===");
+
+                    // Crear inquilino en tabla inquilino
+                    string queryInquilino = @"
+                        INSERT INTO inquilino 
+                        (id_usuario, fecha_alta, estado) 
+                        VALUES (@id_usuario, @fecha_alta, @estado)";
+
+                    Console.WriteLine($"Query inquilino: {queryInquilino}");
+
+                    using (var commandInquilino = new MySqlCommand(queryInquilino, connection, transaction))
+                    {
+                        commandInquilino.Parameters.AddWithValue("@id_usuario", idUsuario);
+                        commandInquilino.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
+                        commandInquilino.Parameters.AddWithValue("@estado", true);
+
+                        Console.WriteLine("Ejecutando INSERT inquilino...");
+                        int rowsAffected = await commandInquilino.ExecuteNonQueryAsync();
+                        Console.WriteLine($"Filas afectadas en inquilino: {rowsAffected}");
+                    }
+
+                    Console.WriteLine("Haciendo COMMIT...");
+                    await transaction.CommitAsync();
+                    Console.WriteLine("=== REPOSITORIO INQUILINO: ÉXITO ===");
+                    return true;
+                }
+                catch (Exception ex)
                 {
-                    return false; // Email ya existe
+                    Console.WriteLine($"=== ERROR EN TRANSACCIÓN: {ex.Message} ===");
+                    Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                    Console.WriteLine("Haciendo ROLLBACK...");
+                    await transaction.RollbackAsync();
+                    return false;
                 }
-
-                // Crear usuario - SIN fecha_creacion, solo fecha_alta para inquilino
-                string queryUsuario = @"
-                    INSERT INTO usuario 
-                    (dni, nombre, apellido, telefono, email, direccion, password, rol, estado) 
-                    VALUES (@dni, @nombre, @apellido, @telefono, @email, @direccion, @password, @rol, @estado);
-                    SELECT LAST_INSERT_ID();";
-
-                int idUsuario;
-                using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
-                {
-                    commandUsuario.Parameters.AddWithValue("@dni", inquilino.Usuario.Dni);
-                    commandUsuario.Parameters.AddWithValue("@nombre", inquilino.Usuario.Nombre);
-                    commandUsuario.Parameters.AddWithValue("@apellido", inquilino.Usuario.Apellido);
-                    commandUsuario.Parameters.AddWithValue("@telefono", inquilino.Usuario.Telefono ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@email", inquilino.Usuario.Email ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@direccion", inquilino.Usuario.Direccion ?? (object)DBNull.Value);
-                    commandUsuario.Parameters.AddWithValue("@password", BCrypt.Net.BCrypt.HashPassword("passwordtemporal"));
-                    commandUsuario.Parameters.AddWithValue("@rol", "inquilino");
-                    commandUsuario.Parameters.AddWithValue("@estado", "activo");
-
-                    idUsuario = Convert.ToInt32(await commandUsuario.ExecuteScalarAsync());
-                }
-
-                // Crear inquilino - USAR fecha_alta
-                string queryInquilino = @"
-                    INSERT INTO inquilino 
-                    (id_usuario, fecha_alta, estado) 
-                    VALUES (@id_usuario, @fecha_alta, @estado)";
-
-                using (var commandInquilino = new MySqlCommand(queryInquilino, connection, transaction))
-                {
-                    commandInquilino.Parameters.AddWithValue("@id_usuario", idUsuario);
-                    commandInquilino.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
-                    commandInquilino.Parameters.AddWithValue("@estado", true);
-
-                    await commandInquilino.ExecuteNonQueryAsync();
-                }
-
-                await transaction.CommitAsync();
-                return true;
             }
-            catch
+            catch (Exception ex)
             {
-                await transaction.RollbackAsync();
+                Console.WriteLine($"=== ERROR EN CONEXIÓN: {ex.Message} ===");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
                 return false;
             }
         }
-
         // MÉTODO Edit
         public async Task<bool> ActualizarInquilinoConTransaccionAsync(Inquilino inquilino)
         {
@@ -258,30 +336,35 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
         // MÉTODO para Index con paginación
         public async Task<(IList<Inquilino> inquilinos, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
-            int pagina, string buscar, int itemsPorPagina)
+    int pagina, string buscar, int itemsPorPagina, string estadoFiltro = "activos")
         {
             try
             {
                 using var connection = new MySqlConnection(_connectionString);
                 await connection.OpenAsync();
-                
-                // Construir la consulta base con JOIN
+
+                // Construir la consulta base con JOIN y WHERE inicial
                 string baseQuery = @"
-                    FROM inquilino i 
-                    INNER JOIN usuario u ON i.id_usuario = u.id_usuario 
-                    WHERE i.estado = true";
-                
+            FROM inquilino i 
+            INNER JOIN usuario u ON i.id_usuario = u.id_usuario
+            WHERE 1=1 ";  
+
+                if (estadoFiltro == "activos")
+                    baseQuery += " AND i.estado = true";
+                else if (estadoFiltro == "inactivos")
+                    baseQuery += " AND i.estado = false";
+
                 // Agregar filtro de búsqueda si se proporciona
                 string whereClause = baseQuery;
                 if (!string.IsNullOrWhiteSpace(buscar))
                 {
                     whereClause += " AND (u.nombre LIKE @buscar OR u.apellido LIKE @buscar OR u.dni LIKE @buscar OR u.email LIKE @buscar)";
                 }
-                
+
                 // 1. Contar total de registros
                 string countQuery = $"SELECT COUNT(*) {whereClause}";
                 int totalRegistros;
-                
+
                 using (var countCommand = new MySqlCommand(countQuery, connection))
                 {
                     if (!string.IsNullOrWhiteSpace(buscar))
@@ -290,18 +373,18 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                     }
                     totalRegistros = Convert.ToInt32(await countCommand.ExecuteScalarAsync());
                 }
-                
+
                 // 2. Obtener registros con paginación
                 int offset = (pagina - 1) * itemsPorPagina;
                 string dataQuery = $@"
-                    SELECT i.id_inquilino, i.id_usuario, i.fecha_alta, i.estado,
-                           u.id_usuario, u.dni, u.nombre, u.apellido, u.telefono, u.email, u.direccion
-                    {whereClause}
-                    ORDER BY i.id_inquilino 
-                    LIMIT @limit OFFSET @offset";
-                
+            SELECT i.id_inquilino, i.id_usuario, i.fecha_alta, i.estado,
+                   u.id_usuario, u.dni, u.nombre, u.apellido, u.telefono, u.email, u.direccion
+            {whereClause}
+            ORDER BY i.id_inquilino 
+            LIMIT @limit OFFSET @offset";
+
                 var inquilinos = new List<Inquilino>();
-                
+
                 using (var dataCommand = new MySqlCommand(dataQuery, connection))
                 {
                     if (!string.IsNullOrWhiteSpace(buscar))
@@ -310,9 +393,9 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                     }
                     dataCommand.Parameters.AddWithValue("@limit", itemsPorPagina);
                     dataCommand.Parameters.AddWithValue("@offset", offset);
-                    
+
                     using var reader = await dataCommand.ExecuteReaderAsync();
-                    
+
                     while (await reader.ReadAsync())
                     {
                         inquilinos.Add(new Inquilino
@@ -334,7 +417,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                         });
                     }
                 }
-                
+
                 return (inquilinos, totalRegistros);
             }
             catch (Exception ex)
@@ -347,7 +430,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         public async Task<bool> ExisteDniAsync(string? dni, int idExcluir = 0)
         {
             if (string.IsNullOrEmpty(dni)) return false;
-            
+
             using var connection = new MySqlConnection(_connectionString);
             await connection.OpenAsync();
             return await ExisteDniInternoAsync(dni, connection, null, idExcluir);
@@ -356,7 +439,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         public async Task<bool> ExisteEmailAsync(string? email, int idExcluir = 0)
         {
             if (string.IsNullOrEmpty(email)) return false;
-            
+
             using var connection = new MySqlConnection(_connectionString);
             await connection.OpenAsync();
             return await ExisteEmailInternoAsync(email, connection, null, idExcluir);
@@ -375,7 +458,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             {
                 command.Parameters.AddWithValue("@id", idExcluir);
             }
-            
+
             return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
         }
 
@@ -393,7 +476,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             {
                 command.Parameters.AddWithValue("@id", idExcluir);
             }
-            
+
             return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
         }
     }

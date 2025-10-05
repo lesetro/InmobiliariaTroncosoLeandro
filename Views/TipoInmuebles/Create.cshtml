@@ -1,0 +1,184 @@
+@model Inmobiliaria_troncoso_leandro.Models.TipoInmueble
+
+@{
+    ViewData["Title"] = "Crear Tipo de Inmueble";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" class="text-decoration-none">
+                            <i class="fas fa-building me-1"></i>
+                            Tipos de Inmueble
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Crear Nuevo</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-plus-circle text-primary me-2"></i>
+                        Crear Tipo de Inmueble
+                    </h2>
+                    <p class="text-muted mb-0">Complete los datos para crear un nuevo tipo de inmueble</p>
+                </div>
+                <a asp-action="Index" class="btn btn-outline-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>
+                    Volver al Listado
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Información del Tipo de Inmueble
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Create" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+                        
+                        <!-- Nombre -->
+                        <div class="mb-3">
+                            <label asp-for="Nombre" class="form-label required">
+                                <i class="fas fa-tag text-primary me-1"></i>
+                                Nombre del Tipo
+                            </label>
+                            <input asp-for="Nombre" class="form-control" placeholder="Ej: Casa, Departamento, Local Comercial..." 
+                                   maxlength="50" autocomplete="off">
+                            <span asp-validation-for="Nombre" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Máximo 50 caracteres. Debe ser único.
+                            </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label asp-for="Descripcion" class="form-label">
+                                <i class="fas fa-align-left text-primary me-1"></i>
+                                Descripción
+                            </label>
+                            <textarea asp-for="Descripcion" class="form-control" rows="4" 
+                                      placeholder="Descripción detallada del tipo de inmueble (opcional)..."
+                                      maxlength="255"></textarea>
+                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Máximo 255 caracteres. Campo opcional.
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="Estado" class="form-check-input" type="checkbox" role="switch" checked>
+                                <label asp-for="Estado" class="form-check-label">
+                                    <i class="fas fa-toggle-on text-success me-1"></i>
+                                    Tipo de inmueble activo
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Los tipos activos estarán disponibles para asignar a inmuebles.
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>
+                                Crear Tipo de Inmueble
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información adicional -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-info">
+                <h6 class="alert-heading">
+                    <i class="fas fa-lightbulb me-1"></i>
+                    Información importante
+                </h6>
+                <ul class="mb-0">
+                    <li>El <strong>nombre</strong> debe ser único en el sistema</li>
+                    <li>Los tipos de inmueble se utilizan para categorizar las propiedades</li>
+                    <li>Puedes desactivar un tipo si ya no lo utilizas (no se eliminará de inmuebles existentes)</li>
+                    <li>La <strong>descripción</strong> ayuda a clarificar el uso del tipo de inmueble</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Contador de caracteres para nombre
+            $('#Nombre').on('input', function() {
+                const maxLength = 50;
+                const currentLength = $(this).val().length;
+                const remaining = maxLength - currentLength;
+                
+                if (remaining <= 10) {
+                    $(this).next('.text-danger').after(`<small class="text-warning">Quedan ${remaining} caracteres</small>`);
+                } else {
+                    $(this).parent().find('.text-warning').remove();
+                }
+            });
+
+            // Contador de caracteres para descripción
+            $('#Descripcion').on('input', function() {
+                const maxLength = 255;
+                const currentLength = $(this).val().length;
+                const remaining = maxLength - currentLength;
+                
+                $(this).next('.text-danger').next('.form-text').after(`<small class="text-muted">Caracteres: ${currentLength}/${maxLength}</small>`);
+                $(this).parent().find('small:contains("Caracteres:")').remove();
+                $(this).next('.text-danger').next('.form-text').after(`<small class="text-muted">Caracteres: ${currentLength}/${maxLength}</small>`);
+            });
+
+            // Validación en tiempo real del nombre
+            $('#Nombre').on('blur', function() {
+                const nombre = $(this).val().trim();
+                if (nombre.length > 0) {
+                    // Aquí podrías agregar validación AJAX para verificar si el nombre ya existe
+                    // Por ahora solo validamos longitud
+                    if (nombre.length < 2) {
+                        $(this).addClass('is-invalid');
+                        $(this).next('.text-danger').text('El nombre debe tener al menos 2 caracteres');
+                    } else {
+                        $(this).removeClass('is-invalid').addClass('is-valid');
+                        $(this).next('.text-danger').empty();
+                    }
+                }
+            });
+
+            // Enfocar el primer campo al cargar
+            $('#Nombre').focus();
+        });
+    </script>
+}

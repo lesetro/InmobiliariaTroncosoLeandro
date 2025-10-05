@@ -1,11 +1,497 @@
 ﻿@{
-    ViewData["Title"] = "Pagina Inicio";
+    ViewData["Title"] = "Inmobiliaria CISMA - Tu hogar te está esperando";
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Bienvenido </h1>
-    <div class="overlay-text">
-        
+<!-- Hero Section -->
+<section class="hero-section">
+    <div class="hero-overlay">
+        <div class="container">
+            <div class="row align-items-center min-vh-100 py-5">
+                <div class="col-lg-6">
+                    <div class="hero-content text-white">
+                        <h1 class="display-4 fw-bold mb-4">
+                            Tu hogar te está <span class="text-warning">esperando</span>
+                        </h1>
+                        <p class="lead mb-4">
+                            Más de @ViewBag.AñosExperiencia años ayudando a las familias de Villa Mercedes 
+                            a encontrar la propiedad perfecta. Profesionalismo y confianza garantizados.
+                        </p>
+                        
+                        <div class="hero-buttons">
+                            <a href="#propiedades-destacadas" class="btn btn-warning btn-lg me-3 scroll-to">
+                                <i class="fas fa-search"></i> Ver Propiedades
+                            </a>
+                            <a asp-action="Contacto" class="btn btn-outline-light btn-lg">
+                                <i class="fas fa-phone"></i> Contactanos
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="hero-image text-center">
+                        <img src="~/Image/imagen1.jpg" 
+                             alt="Inmobiliaria CISMA" class="img-fluid rounded shadow-lg">
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
+    
+    <!-- Scroll Indicator -->
+    <div class="scroll-indicator">
+        <a href="#estadisticas" class="scroll-to">
+            <i class="fas fa-chevron-down"></i>
+        </a>
+    </div>
+</section>
 
-</div>
+<!-- Estadísticas Reales -->
+<section id="estadisticas" class="py-5 bg-light">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card h-100">
+                    <div class="stat-icon">
+                        <i class="fas fa-home text-primary"></i>
+                    </div>
+                    <h3 class="stat-number" data-target="@(ViewBag.TotalPropiedades ?? 0)">0</h3>
+                    <p class="stat-label">Propiedades Totales</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card h-100">
+                    <div class="stat-icon">
+                        <i class="fas fa-key text-success"></i>
+                    </div>
+                    <h3 class="stat-number" data-target="@(ViewBag.PropiedadesDisponibles ?? 0)">0</h3>
+                    <p class="stat-label">Disponibles Ahora</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card h-100">
+                    <div class="stat-icon">
+                        <i class="fas fa-users text-info"></i>
+                    </div>
+                    <h3 class="stat-number" data-target="@(ViewBag.ClientesInteresados ?? 0)">0</h3>
+                    <p class="stat-label">Clientes Interesados</p>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="stat-card h-100">
+                    <div class="stat-icon">
+                        <i class="fas fa-award text-warning"></i>
+                    </div>
+                    <h3 class="stat-number" data-target="@ViewBag.AñosExperiencia">0</h3>
+                    <p class="stat-label">Años de Experiencia</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Propiedades Destacadas -->
+<section id="propiedades-destacadas" class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-4 mb-3">Propiedades <span class="text-primary">Destacadas</span></h2>
+                <p class="lead text-muted">Las mejores oportunidades inmobiliarias disponibles</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            @if (ViewBag.PropiedadesDestacadas != null && ((IList<Inmobiliaria_troncoso_leandro.Models.Inmueble>)ViewBag.PropiedadesDestacadas).Any())
+            {
+                @foreach (var propiedad in (IList<Inmobiliaria_troncoso_leandro.Models.Inmueble>)ViewBag.PropiedadesDestacadas)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="property-card h-100">
+                            <div class="property-image">
+                                @if (propiedad.Imagenes?.Any() == true)
+                                {
+                                    <img src="@Model.ImagenInmueble.First().url" alt="@propiedad.Direccion" class="img-fluid">
+                                }
+                                else
+                                {
+                                    <img src="~/images/no-image.jpg" alt="Sin imagen" class="img-fluid">
+                                }
+                                <div class="property-badge">
+                                    <span class="badge bg-success">@propiedad.Estado</span>
+                                </div>
+                                <div class="property-type">
+                                    <span class="badge bg-primary">@(propiedad.TipoInmueble?.Nombre ?? "Propiedad")</span>
+                                </div>
+                            </div>
+                            <div class="property-content">
+                                <div class="property-price">
+                                    <h4 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h4>
+                                    <small class="text-muted">@propiedad.Uso</small>
+                                </div>
+                                <h5 class="property-title">@propiedad.Direccion</h5>
+                                <p class="property-location">
+                                    <i class="fas fa-map-marker-alt text-muted"></i> Villa Mercedes, San Luis
+                                </p>
+                                <div class="property-features">
+                                    <span class="feature">
+                                        <i class="fas fa-home"></i> @propiedad.Ambientes amb.
+                                    </span>
+                                    <span class="feature">
+                                        <i class="fas fa-tag"></i> @propiedad.Uso
+                                    </span>
+                                </div>
+                                <div class="property-actions mt-3">
+                                    <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" class="btn btn-primary btn-block">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+            }
+            else
+            {
+                <div class="col-12 text-center">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        Próximamente tendremos nuevas propiedades disponibles.
+                    </div>
+                </div>
+            }
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12 text-center">
+                <a asp-action="Catalogo" class="btn btn-outline-primary btn-lg">
+                    <i class="fas fa-search"></i> Ver Todas las Propiedades
+                </a>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Servicios -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-4 mb-3">Nuestros <span class="text-primary">Servicios</span></h2>
+                <p class="lead text-muted">Soluciones integrales para todas tus necesidades inmobiliarias</p>
+            </div>
+        </div>
+        
+        <div class="row">
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="service-card text-center h-100">
+                    <div class="service-icon">
+                        <i class="fas fa-key text-primary"></i>
+                    </div>
+                    <h4>Alquileres</h4>
+                    <p class="text-muted">Gestión integral de alquileres con garantía de cobro y mantenimiento incluido.</p>
+                    <a asp-action="Servicios" class="btn btn-outline-primary btn-sm">Más Info</a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="service-card text-center h-100">
+                    <div class="service-icon">
+                        <i class="fas fa-home text-success"></i>
+                    </div>
+                    <h4>Ventas</h4>
+                    <p class="text-muted">Te ayudamos a vender tu propiedad al mejor precio con asesoramiento profesional.</p>
+                    <a asp-action="Servicios" class="btn btn-outline-success btn-sm">Más Info</a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="service-card text-center h-100">
+                    <div class="service-icon">
+                        <i class="fas fa-building text-info"></i>
+                    </div>
+                    <h4>Administración</h4>
+                    <p class="text-muted">Administración profesional de consorcios y propiedades con informes detallados.</p>
+                    <a asp-action="Servicios" class="btn btn-outline-info btn-sm">Más Info</a>
+                </div>
+            </div>
+            
+            <div class="col-lg-3 col-md-6 mb-4">
+                <div class="service-card text-center h-100">
+                    <div class="service-icon">
+                        <i class="fas fa-handshake text-warning"></i>
+                    </div>
+                    <h4>Asesoramiento</h4>
+                    <p class="text-muted">Consultoría experta en inversiones inmobiliarias y aspectos legales.</p>
+                    <a asp-action="Servicios" class="btn btn-outline-warning btn-sm">Más Info</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h2 class="display-4 mb-3">¿Listo para encontrar tu hogar ideal?</h2>
+                <p class="lead mb-4">
+                    Nuestro equipo de expertos está esperando para ayudarte en cada paso del camino.
+                </p>
+                <div class="cta-buttons">
+                    <a asp-action="Catalogo" class="btn btn-warning btn-lg me-3">
+                        <i class="fas fa-search"></i> Explorar Propiedades
+                    </a>
+                    <a asp-action="Contacto" class="btn btn-outline-light btn-lg">
+                        <i class="fas fa-comments"></i> Hablar con un Asesor
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+
+    <script>
+    //mejor la imagen con movimiento 
+    let bounceCount = 0;
+const maxBounces = 10;
+const duration = 5000; // 5 segundos en milisegundos
+const img = document.querySelector('.hero-image img');
+let height = 0;
+let amplitude = 50; // Altura inicial del salto
+let decay = 0.8; // Decaimiento del rebote
+
+function bounce() {
+    if (bounceCount < maxBounces && Date.now() < startTime + duration) {
+        height = amplitude * Math.sin(Date.now() / 100);
+        amplitude *= decay; // Reduce la amplitud con cada rebote
+        img.style.transform = `translateY(${height}px)`;
+        requestAnimationFrame(bounce);
+        bounceCount++;
+    } else {
+        img.style.transform = `translateY(0)`;
+    }
+}
+
+const startTime = Date.now();
+bounce();
+        // Animación de contadores en las estadísticas
+        $(document).ready(function() {
+            function animateCounter() {
+                $('.stat-number').each(function() {
+                    var $this = $(this);
+                    var target = parseInt($this.data('target')) || 0;
+                    var current = 0;
+                    var increment = Math.max(1, target / 50);
+                    
+                    if (target === 0) {
+                        $this.text('0');
+                        return;
+                    }
+                    
+                    var timer = setInterval(function() {
+                        current += increment;
+                        if (current >= target) {
+                            current = target;
+                            clearInterval(timer);
+                        }
+                        $this.text(Math.floor(current));
+                    }, 30);
+                });
+            }
+
+            // Ejecutar animación cuando la sección sea visible
+            var statsSection = $('#estadisticas');
+            var animated = false;
+
+            $(window).scroll(function() {
+                if (!animated && statsSection.length && $(window).scrollTop() + $(window).height() > statsSection.offset().top + 100) {
+                    animateCounter();
+                    animated = true;
+                }
+            });
+
+            // Smooth scroll para enlaces internos
+            $('.scroll-to').click(function(e) {
+                e.preventDefault();
+                var target = $(this.getAttribute('href'));
+                if (target.length) {
+                    $('html, body').animate({
+                        scrollTop: target.offset().top - 70
+                    }, 1000);
+                }
+            });
+
+            // Lazy loading para imágenes
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src || img.src;
+                            img.classList.remove('lazy');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+        });
+    </script>
+
+    <style>
+        .hero-section {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.9), rgba(231, 76, 60, 0.8)), 
+                        url('~/images/hero-bg.jpg') center/cover;
+            position: relative;
+        }
+
+        .property-card {
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .property-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+        }
+
+        .property-image {
+            position: relative;
+            overflow: hidden;
+            height: 250px;
+        }
+
+        .property-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: transform 0.3s ease;
+        }
+
+        .property-card:hover .property-image img {
+            transform: scale(1.1);
+        }
+
+        .property-badge, .property-type {
+            position: absolute;
+            top: 15px;
+            z-index: 2;
+        }
+
+        .property-badge {
+            right: 15px;
+        }
+
+        .property-type {
+            left: 15px;
+        }
+
+        .property-content {
+            padding: 1.5rem;
+        }
+
+        .property-features {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin: 1rem 0;
+        }
+
+        .feature {
+            color: #6c757d;
+            font-size: 0.9rem;
+        }
+
+        .stat-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .stat-number {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 0.5rem 0;
+            color: #2c3e50;
+        }
+
+        .service-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.1);
+        }
+
+        .service-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .scroll-indicator {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            animation: bounce 2s infinite;
+        }
+
+        .scroll-indicator a {
+            color: white;
+            font-size: 2rem;
+            text-decoration: none;
+        }
+
+        @@keyframes bounce {
+            0%, 20%, 50%, 80%, 100% {
+                transform: translateY(0);
+            }
+            40% {
+                transform: translateY(-10px);
+            }
+            60% {
+                transform: translateY(-5px);
+            }
+        }
+
+        @@media (max-width: 768px) {
+            .hero-content h1 {
+                font-size: 2rem;
+            }
+            
+            .property-features {
+                justify-content: center;
+            }
+            
+            .cta-buttons .btn {
+                display: block;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+}

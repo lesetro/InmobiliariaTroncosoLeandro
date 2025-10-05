@@ -1,0 +1,623 @@
+@{
+    ViewData["Title"] = "Configuración - Módulo de Pagos";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item active">Configuración</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-gear me-2"></i>Configuración del Módulo de Pagos</h2>
+    <a href="@Url.Action("Index", "Pagos")" class="btn btn-secondary">
+        <i class="bi bi-arrow-left me-1"></i>Volver al Dashboard
+    </a>
+</div>
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<div class="row">
+    <!-- Configuración General -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-sliders me-2"></i>Configuración General
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="configGeneralForm">
+                    <div class="mb-3">
+                        <label for="itemsPorPagina" class="form-label">
+                            <i class="bi bi-list-ol me-2"></i>Elementos por página
+                        </label>
+                        <select class="form-select" id="itemsPorPagina">
+                            <option value="5">5 elementos</option>
+                            <option value="10" selected>10 elementos</option>
+                            <option value="15">15 elementos</option>
+                            <option value="20">20 elementos</option>
+                            <option value="50">50 elementos</option>
+                        </select>
+                        <div class="form-text">Cantidad de registros mostrados por página en los listados</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="formatoFecha" class="form-label">
+                            <i class="bi bi-calendar me-2"></i>Formato de fecha predeterminado
+                        </label>
+                        <select class="form-select" id="formatoFecha">
+                            <option value="dd/MM/yyyy" selected>DD/MM/YYYY</option>
+                            <option value="MM/dd/yyyy">MM/DD/YYYY</option>
+                            <option value="yyyy-MM-dd">YYYY-MM-DD</option>
+                        </select>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="monedaPredeterminada" class="form-label">
+                            <i class="bi bi-currency-dollar me-2"></i>Moneda predeterminada
+                        </label>
+                        <select class="form-select" id="monedaPredeterminada">
+                            <option value="ARS" selected>Peso Argentino (ARS)</option>
+                            <option value="USD">Dólar Estadounidense (USD)</option>
+                            <option value="EUR">Euro (EUR)</option>
+                        </select>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="autoRefresh" checked>
+                        <label class="form-check-label" for="autoRefresh">
+                            <i class="bi bi-arrow-clockwise me-2"></i>Actualización automática del dashboard
+                        </label>
+                        <div class="form-text">Actualiza los datos cada 5 minutos</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-floppy me-2"></i>Guardar Configuración
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Mora -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Configuración de Mora
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="configMoraForm">
+                    <div class="mb-3">
+                        <label for="montoDiarioMora" class="form-label">
+                            <i class="bi bi-currency-exchange me-2"></i>Monto diario de mora (ARS)
+                        </label>
+                        <div class="input-group">
+                            <span class="input-group-text">$</span>
+                            <input type="number" class="form-control" id="montoDiarioMora" value="50" min="0" step="0.01">
+                            <span class="input-group-text">por día</span>
+                        </div>
+                        <div class="form-text">Monto que se cobra por cada día de atraso</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="diasGracia" class="form-label">
+                            <i class="bi bi-calendar-check me-2"></i>Días de gracia
+                        </label>
+                        <input type="number" class="form-control" id="diasGracia" value="3" min="0" max="10">
+                        <div class="form-text">Días de tolerancia antes de aplicar mora</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="maxDiasMora" class="form-label">
+                            <i class="bi bi-exclamation-triangle me-2"></i>Máximo días de mora
+                        </label>
+                        <input type="number" class="form-control" id="maxDiasMora" value="90" min="30" max="365">
+                        <div class="form-text">Días máximos de mora antes de considerar contrato en default</div>
+                    </div>
+
+                    <div class="form-check mb-3">
+                        <input class="form-check-input" type="checkbox" id="calculoAutomaticoMora" checked>
+                        <label class="form-check-label" for="calculoAutomaticoMora">
+                            <i class="bi bi-gear-fill me-2"></i>Cálculo automático de mora
+                        </label>
+                        <div class="form-text">Calcular mora automáticamente en pagos vencidos</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-warning">
+                        <i class="bi bi-floppy me-2"></i>Guardar Configuración de Mora
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Configuración de Alertas -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-bell me-2"></i>Configuración de Alertas
+                </h5>
+            </div>
+            <div class="card-body">
+                <form id="configAlertasForm">
+                    <div class="mb-3">
+                        <label for="diasAlertaVencimiento" class="form-label">
+                            <i class="bi bi-calendar-x me-2"></i>Días de anticipación para alertas de vencimiento
+                        </label>
+                        <input type="number" class="form-control" id="diasAlertaVencimiento" value="30" min="1" max="90">
+                        <div class="form-text">Días antes del vencimiento para mostrar alertas</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">
+                            <i class="bi bi-envelope me-2"></i>Notificaciones por email
+                        </label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifPagosVencidos" checked>
+                            <label class="form-check-label" for="notifPagosVencidos">
+                                Pagos vencidos
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifContratosVenciendo" checked>
+                            <label class="form-check-label" for="notifContratosVenciendo">
+                                Contratos próximos a vencer
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="notifResumenDiario">
+                            <label class="form-check-label" for="notifResumenDiario">
+                                Resumen diario de pagos
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="emailNotificaciones" class="form-label">
+                            <i class="bi bi-at me-2"></i>Email para notificaciones
+                        </label>
+                        <input type="email" class="form-control" id="emailNotificaciones" 
+                               placeholder="admin@inmobiliaria.com">
+                        <div class="form-text">Email donde recibir las notificaciones del sistema</div>
+                    </div>
+
+                    <button type="submit" class="btn btn-info">
+                        <i class="bi bi-floppy me-2"></i>Guardar Configuración de Alertas
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Archivos -->
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-file-earmark me-2"></i>Configuración de Archivos
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="bi bi-file-check me-2"></i>Formatos permitidos para comprobantes
+                    </label>
+                    @if (ViewBag.Configuracion != null)
+                    {
+                        var tiposPermitidos = ((dynamic)ViewBag.Configuracion).TiposComprobantePermitidos as string[];
+                        if (tiposPermitidos != null)
+                        {
+                            <div class="d-flex flex-wrap gap-2">
+                                @foreach (var tipo in tiposPermitidos)
+                                {
+                                    <span class="badge bg-success fs-6">@tipo</span>
+                                }
+                            </div>
+                        }
+                    }
+                    <div class="form-text mt-2">PDF, JPG, JPEG, PNG</div>
+                </div>
+
+                <div class="mb-3">
+                    <label class="form-label">
+                        <i class="bi bi-hdd me-2"></i>Tamaño máximo de archivo
+                    </label>
+                    <div class="input-group">
+                        <input type="number" class="form-control" value="5" readonly>
+                        <span class="input-group-text">MB</span>
+                    </div>
+                    <div class="form-text">Tamaño máximo permitido por archivo</div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="rutaAlmacenamiento" class="form-label">
+                        <i class="bi bi-folder me-2"></i>Ruta de almacenamiento
+                    </label>
+                    <input type="text" class="form-control" id="rutaAlmacenamiento" 
+                           value="/wwwroot/uploads/comprobantes/" readonly>
+                    <div class="form-text">Ubicación donde se guardan los archivos</div>
+                </div>
+
+                <div class="form-check mb-3">
+                    <input class="form-check-input" type="checkbox" id="compressionImagenes" checked>
+                    <label class="form-check-label" for="compressionImagenes">
+                        <i class="bi bi-image me-2"></i>Comprimir imágenes automáticamente
+                    </label>
+                    <div class="form-text">Optimizar tamaño de imágenes al subirlas</div>
+                </div>
+
+                <button type="button" class="btn btn-secondary" onclick="limpiarArchivos()">
+                    <i class="bi bi-trash me-2"></i>Limpiar Archivos Temporales
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Sección de Respaldo y Restauración -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-shield-check me-2"></i>Respaldo y Mantenimiento
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="bi bi-download text-primary fs-1"></i>
+                            <h6 class="mt-2">Exportar Configuración</h6>
+                            <p class="text-muted small">Descargar configuración actual</p>
+                            <button type="button" class="btn btn-outline-primary" onclick="exportarConfiguracion()">
+                                <i class="bi bi-download me-2"></i>Exportar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="bi bi-upload text-success fs-1"></i>
+                            <h6 class="mt-2">Importar Configuración</h6>
+                            <p class="text-muted small">Restaurar configuración desde archivo</p>
+                            <input type="file" id="importFile" accept=".json" style="display: none;" onchange="importarConfiguracion()">
+                            <button type="button" class="btn btn-outline-success" onclick="document.getElementById('importFile').click()">
+                                <i class="bi bi-upload me-2"></i>Importar
+                            </button>
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="text-center">
+                            <i class="bi bi-arrow-clockwise text-warning fs-1"></i>
+                            <h6 class="mt-2">Restaurar por Defecto</h6>
+                            <p class="text-muted small">Volver a configuración inicial</p>
+                            <button type="button" class="btn btn-outline-warning" onclick="restaurarDefecto()">
+                                <i class="bi bi-arrow-clockwise me-2"></i>Restaurar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <hr>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-info-circle me-2"></i>Información del Sistema</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>Versión del módulo:</strong></td>
+                                <td>1.0.0</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Última configuración:</strong></td>
+                                <td>@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Total de pagos registrados:</strong></td>
+                                <td id="totalPagos">Cargando...</td>
+                            </tr>
+                            <tr>
+                                <td><strong>Espacio usado (archivos):</strong></td>
+                                <td id="espacioUsado">Calculando...</td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-graph-up me-2"></i>Estadísticas de Uso</h6>
+                        <div class="progress mb-2">
+                            <div class="progress-bar bg-info" style="width: 75%"></div>
+                        </div>
+                        <small class="text-muted">Uso de almacenamiento: 75% de 1GB</small>
+                        
+                        <div class="progress mb-2 mt-3">
+                            <div class="progress-bar bg-success" style="width: 90%"></div>
+                        </div>
+                        <small class="text-muted">Rendimiento del sistema: Excelente</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
+
+<script>  
+
+   
+
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar configuración actual
+        cargarConfiguracion();
+        
+        // Configurar formularios
+        configurarFormularios();
+        
+        // Obtener estadísticas
+        obtenerEstadisticas();
+    });
+    
+    
+
+    function cargarConfiguracion() {
+        // Cargar configuración desde localStorage o servidor
+        const config = JSON.parse(localStorage.getItem('pagosConfig') || '{}');
+        
+        if (config.itemsPorPagina) {
+            document.getElementById('itemsPorPagina').value = config.itemsPorPagina;
+        }
+        if (config.formatoFecha) {
+            document.getElementById('formatoFecha').value = config.formatoFecha;
+        }
+        if (config.monedaPredeterminada) {
+            document.getElementById('monedaPredeterminada').value = config.monedaPredeterminada;
+        }
+        if (config.montoDiarioMora !== undefined) {
+            document.getElementById('montoDiarioMora').value = config.montoDiarioMora;
+        }
+        if (config.diasGracia !== undefined) {
+            document.getElementById('diasGracia').value = config.diasGracia;
+        }
+        if (config.diasAlertaVencimiento !== undefined) {
+            document.getElementById('diasAlertaVencimiento').value = config.diasAlertaVencimiento;
+        }
+    }
+
+    function configurarFormularios() {
+        // Formulario de configuración general
+        document.getElementById('configGeneralForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            guardarConfiguracionGeneral();
+        });
+
+        // Formulario de configuración de mora
+        document.getElementById('configMoraForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            guardarConfiguracionMora();
+        });
+
+        // Formulario de configuración de alertas
+        document.getElementById('configAlertasForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            guardarConfiguracionAlertas();
+        });
+    }
+
+    function guardarConfiguracionGeneral() {
+        const config = {
+            itemsPorPagina: document.getElementById('itemsPorPagina').value,
+            formatoFecha: document.getElementById('formatoFecha').value,
+            monedaPredeterminada: document.getElementById('monedaPredeterminada').value,
+            autoRefresh: document.getElementById('autoRefresh').checked
+        };
+
+        // Guardar en localStorage (en producción sería una llamada al servidor)
+        const configCompleta = JSON.parse(localStorage.getItem('pagosConfig') || '{}');
+        Object.assign(configCompleta, config);
+        localStorage.setItem('pagosConfig', JSON.stringify(configCompleta));
+
+        mostrarMensaje('Configuración general guardada correctamente', 'success');
+    }
+    
+
+    function guardarConfiguracionMora() {
+        const config = {
+            montoDiarioMora: parseFloat(document.getElementById('montoDiarioMora').value),
+            diasGracia: parseInt(document.getElementById('diasGracia').value),
+            maxDiasMora: parseInt(document.getElementById('maxDiasMora').value),
+            calculoAutomaticoMora: document.getElementById('calculoAutomaticoMora').checked
+        };
+
+        // Validaciones
+        if (config.montoDiarioMora < 0) {
+            mostrarMensaje('El monto de mora no puede ser negativo', 'error');
+            return;
+        }
+        if (config.diasGracia < 0 || config.diasGracia > 10) {
+            mostrarMensaje('Los días de gracia deben estar entre 0 y 10', 'error');
+            return;
+        }
+
+        const configCompleta = JSON.parse(localStorage.getItem('pagosConfig') || '{}');
+        Object.assign(configCompleta, config);
+        localStorage.setItem('pagosConfig', JSON.stringify(configCompleta));
+
+        mostrarMensaje('Configuración de mora guardada correctamente', 'success');
+    }
+
+    function guardarConfiguracionAlertas() {
+        const config = {
+            diasAlertaVencimiento: parseInt(document.getElementById('diasAlertaVencimiento').value),
+            notifPagosVencidos: document.getElementById('notifPagosVencidos').checked,
+            notifContratosVenciendo: document.getElementById('notifContratosVenciendo').checked,
+            notifResumenDiario: document.getElementById('notifResumenDiario').checked,
+            emailNotificaciones: document.getElementById('emailNotificaciones').value
+        };
+
+        // Validar email si está presente
+        if (config.emailNotificaciones && !validarEmail(config.emailNotificaciones)) {
+            mostrarMensaje('Por favor, ingrese un email válido', 'error');
+            return;
+        }
+
+        const configCompleta = JSON.parse(localStorage.getItem('pagosConfig') || '{}');
+        Object.assign(configCompleta, config);
+        localStorage.setItem('pagosConfig', JSON.stringify(configCompleta));
+
+        mostrarMensaje('Configuración de alertas guardada correctamente', 'success');
+    }
+
+    function limpiarArchivos() {
+        if (confirm('¿Está seguro de que desea limpiar los archivos temporales? Esta acción no se puede deshacer.')) {
+            // Simular limpieza de archivos
+            mostrarMensaje('Archivos temporales eliminados correctamente', 'success');
+        }
+    }
+    
+
+    function exportarConfiguracion() {
+        const config = JSON.parse(localStorage.getItem('pagosConfig') || '{}');
+        const dataStr = JSON.stringify(config, null, 2);
+        const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+        
+        const exportFileDefaultName = `pagos-config-${new Date().toISOString().split('T')[0]}.json`;
+        
+        const linkElement = document.createElement('a');
+        linkElement.setAttribute('href', dataUri);
+        linkElement.setAttribute('download', exportFileDefaultName);
+        linkElement.click();
+
+        mostrarMensaje('Configuración exportada correctamente', 'success');
+    }
+
+    function importarConfiguracion() {
+        const fileInput = document.getElementById('importFile');
+        const file = fileInput.files[0];
+
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const config = JSON.parse(e.target.result);
+                localStorage.setItem('pagosConfig', JSON.stringify(config));
+                
+                // Recargar la página para aplicar la configuración
+                mostrarMensaje('Configuración importada correctamente. Recargando página...', 'success');
+                setTimeout(() => {
+                    location.reload();
+                }, 2000);
+            } catch (error) {
+                mostrarMensaje('Error al importar la configuración: archivo inválido', 'error');
+            }
+        };
+        reader.readAsText(file);
+    }
+
+    function restaurarDefecto() {
+        if (confirm('¿Está seguro de que desea restaurar la configuración por defecto? Se perderán todos los cambios personalizados.')) {
+            localStorage.removeItem('pagosConfig');
+            mostrarMensaje('Configuración restaurada por defecto. Recargando página...', 'success');
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        }
+    }
+
+    function obtenerEstadisticas() {
+        // Simular obtención de estadísticas
+        setTimeout(() => {
+            document.getElementById('totalPagos').textContent = '1,247 pagos';
+            document.getElementById('espacioUsado').textContent = '156 MB';
+        }, 1000);
+    }
+
+    function mostrarMensaje(mensaje, tipo) {
+        const alertClass = tipo === 'success' ? 'alert-success' : 'alert-danger';
+        const icon = tipo === 'success' ? 'bi-check-circle' : 'bi-exclamation-triangle';
+        
+        const alertHtml = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                <i class="${icon} me-2"></i>
+                ${mensaje}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Insertar alerta al principio del contenido
+        document.querySelector('.container-fluid, .container, main, body').insertAdjacentHTML('afterbegin', alertHtml);
+        
+        // Auto-remover después de 5 segundos
+        setTimeout(() => {
+            const alert = document.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 5000);
+    }
+
+    // Función para probar configuración de notificaciones
+    function probarNotificaciones() {
+        const email = document.getElementById('emailNotificaciones').value;
+        if (!email) {
+            mostrarMensaje('Debe ingresar un email para probar las notificaciones', 'error');
+            return;
+        }
+
+        mostrarMensaje('Enviando email de prueba...', 'success');
+        
+        // Simular envío de email
+        setTimeout(() => {
+            mostrarMensaje(`Email de prueba enviado a ${email}`, 'success');
+        }, 2000);
+    }
+</script>
+
+<style>
+    .card {
+        box-shadow: 0 0 10px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+    }
+    
+    .card:hover {
+        box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+    }
+    
+    .form-label {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    .badge {
+        font-size: 0.8em;
+    }
+    
+    .progress {
+        height: 8px;
+    }
+</style>

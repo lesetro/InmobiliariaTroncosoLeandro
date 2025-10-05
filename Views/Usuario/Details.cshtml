@@ -1,0 +1,512 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Detalles del Usuario";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user"></i> Detalles del Usuario
+        </h1>
+        <div>
+            @if (User.IsInRole("administrador") || 
+                 (User.IsInRole("empleado") && (Model.Rol == "propietario" || Model.Rol == "inquilino")))
+            {
+                <a asp-action="Edit" asp-route-id="@Model.IdUsuario" class="btn btn-warning shadow-sm">
+                    <i class="fas fa-edit fa-sm text-white-50"></i> Editar
+                </a>
+            }
+            <a asp-action="Index" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Lista
+            </a>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información principal del usuario -->
+        <div class="col-lg-8">
+            <!-- Tarjeta principal -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Información Personal</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center mb-4">
+                        <div class="col-auto">
+                            @if (!string.IsNullOrEmpty(Model.Avatar))
+                            {
+                                <img src="@Model.Avatar" alt="Avatar de @Model.NombreCompleto" class="rounded-circle" width="100" height="100">
+                            }
+                            else
+                            {
+                                <div class="bg-gradient-primary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                     style="width: 100px; height: 100px;">
+                                    <span class="text-white font-weight-bold h3 mb-0">
+                                        @(Model.Nombre.Substring(0, 1))@(Model.Apellido.Substring(0, 1))
+                                    </span>
+                                </div>
+                            }
+                        </div>
+                        <div class="col">
+                            <h3 class="mb-1">@Model.NombreCompleto</h3>
+                            <p class="mb-2 text-muted">
+                                @switch (Model.Rol.ToLower())
+                                {
+                                    case "administrador":
+                                        <span class="badge badge-danger badge-lg">@Model.Rol.ToUpper()</span>
+                                        break;
+                                    case "empleado":
+                                        <span class="badge badge-warning badge-lg">@Model.Rol.ToUpper()</span>
+                                        break;
+                                    case "propietario":
+                                        <span class="badge badge-primary badge-lg">@Model.Rol.ToUpper()</span>
+                                        break;
+                                    case "inquilino":
+                                        <span class="badge badge-success badge-lg">@Model.Rol.ToUpper()</span>
+                                        break;
+                                    default:
+                                        <span class="badge badge-secondary badge-lg">@Model.Rol.ToUpper()</span>
+                                        break;
+                                }
+                            </p>
+                            <p class="mb-0">
+                                @if (Model.Estado == "activo")
+                                {
+                                    <span class="badge badge-success">
+                                        <i class="fas fa-check-circle"></i> ACTIVO
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge badge-secondary">
+                                        <i class="fas fa-ban"></i> INACTIVO
+                                    </span>
+                                }
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-user"></i> Datos Personales
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <strong>Nombre Completo:</strong><br>
+                                <span class="text-muted">@Model.NombreCompleto</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>DNI:</strong><br>
+                                <span class="text-muted">@Model.Dni</span>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Teléfono:</strong><br>
+                                <span class="text-muted">
+                                    @if (!string.IsNullOrEmpty(Model.Telefono) && Model.Telefono != "Sin especificar")
+                                    {
+                                        <a href="tel:@Model.Telefono">@Model.Telefono</a>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary">Sin especificar</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-6">
+                            <h6 class="text-primary mb-3">
+                                <i class="fas fa-envelope"></i> Información de Contacto
+                            </h6>
+                            
+                            <div class="mb-3">
+                                <strong>Email:</strong><br>
+                                <a href="mailto:@Model.Email" class="text-decoration-none">@Model.Email</a>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <strong>Dirección:</strong><br>
+                                <span class="text-muted">
+                                    @if (!string.IsNullOrEmpty(Model.Direccion) && Model.Direccion != "Sin dirección especificada")
+                                    {
+                                        @Model.Direccion
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary">Sin dirección especificada</span>
+                                    }
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información adicional según el rol -->
+            @if (Model.Rol.ToLower() == "propietario")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-primary">
+                            <i class="fas fa-home"></i> Información de Propietario
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card border-left-primary h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">Propiedades</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-building fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-left-success h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Alquiladas</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-check fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-left-warning h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Disponibles</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-key fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <p class="text-muted">La información de propiedades se mostrará cuando esté disponible</p>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            @if (Model.Rol.ToLower() == "inquilino")
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-success">
+                            <i class="fas fa-key"></i> Información de Inquilino
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="card border-left-info h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-info text-uppercase mb-1">Contrato Activo</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">No</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-file-contract fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-left-success h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-success text-uppercase mb-1">Pagos al Día</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">-</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="card border-left-warning h-100 py-2">
+                                    <div class="card-body">
+                                        <div class="row no-gutters align-items-center">
+                                            <div class="col mr-2">
+                                                <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">Días de Atraso</div>
+                                                <div class="h5 mb-0 font-weight-bold text-gray-800">0</div>
+                                            </div>
+                                            <div class="col-auto">
+                                                <i class="fas fa-calendar-times fa-2x text-gray-300"></i>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="text-center mt-3">
+                            <p class="text-muted">La información de contratos y pagos se mostrará cuando esté disponible</p>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+
+        <!-- Sidebar de información del sistema -->
+        <div class="col-lg-4">
+            <!-- Información del sistema -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-secondary">
+                        <i class="fas fa-cog"></i> Información del Sistema
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <strong>ID del Usuario:</strong><br>
+                        <span class="text-muted">#@Model.IdUsuario</span>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <strong>Estado del Usuario:</strong><br>
+                        @if (Model.Estado == "activo")
+                        {
+                            <span class="badge badge-success">
+                                <i class="fas fa-check-circle"></i> ACTIVO
+                            </span>
+                        }
+                        else
+                        {
+                            <span class="badge badge-secondary">
+                                <i class="fas fa-ban"></i> INACTIVO
+                            </span>
+                        }
+                    </div>
+
+                    <div class="mb-3">
+                        <strong>Rol en el Sistema:</strong><br>
+                        @switch (Model.Rol.ToLower())
+                        {
+                            case "administrador":
+                                <span class="badge badge-danger">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Acceso completo al sistema</small>
+                                break;
+                            case "empleado":
+                                <span class="badge badge-warning">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Gestión limitada de usuarios</small>
+                                break;
+                            case "propietario":
+                                <span class="badge badge-primary">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Gestión de sus propiedades</small>
+                                break;
+                            case "inquilino":
+                                <span class="badge badge-success">@Model.Rol.ToUpper()</span>
+                                <br><small class="text-muted">Acceso a información de alquiler</small>
+                                break;
+                            default:
+                                <span class="badge badge-secondary">@Model.Rol.ToUpper()</span>
+                                break;
+                        }
+                    </div>
+
+                    @if (!string.IsNullOrEmpty(Model.Avatar))
+                    {
+                        <div class="mb-3">
+                            <strong>Avatar:</strong><br>
+                            <small class="text-muted">Personalizado</small>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="mb-3">
+                            <strong>Avatar:</strong><br>
+                            <small class="text-muted">Generado automáticamente</small>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Acciones rápidas -->
+             @if (User.IsInRole("administrador"))
+            {
+                <div class="card shadow mb-4">
+                    <div class="card-header py-3">
+                        <h6 class="m-0 font-weight-bold text-warning">
+                            <i class="fas fa-tools"></i> Acciones Administrativas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <!-- Mostrar mensaje de advertencia si viene de eliminación fallida -->
+                        @if (TempData["Warning"] != null)
+                        {
+                            <div class="alert alert-warning mb-3">
+                                <h6 class="alert-heading">
+                                    <i class="fas fa-exclamation-triangle"></i> Eliminación No Permitida
+                                </h6>
+                                <p class="mb-2">@TempData["Warning"]</p>
+                                <small class="text-muted">Use las alternativas disponibles a continuación.</small>
+                            </div>
+                        }
+                        
+                        <div class="d-grid gap-2">
+                            <a asp-action="Edit" asp-route-id="@Model.IdUsuario" class="btn btn-warning btn-sm mb-2">
+                                <i class="fas fa-edit"></i> Editar Usuario
+                            </a>
+                            
+                            <button type="button" class="btn btn-info btn-sm mb-2" 
+                                    onclick="resetearPassword(@Model.IdUsuario)">
+                                <i class="fas fa-key"></i> Resetear Contraseña
+                            </button>
+                            
+                            <!-- Botón de cambio de estado más prominente si viene de eliminación -->
+                            @if (TempData["MostrarDesactivar"] != null && (bool)TempData["MostrarDesactivar"])
+                            {
+                                <button type="button" class="btn btn-warning btn-sm mb-2" 
+                                        onclick="cambiarEstado(@Model.IdUsuario, '@(Model.Estado == "activo" ? "inactivo" : "activo")')"
+                                        style="font-weight: bold;">
+                                    <i class="fas @(Model.Estado == "activo" ? "fa-ban" : "fa-check")"></i> 
+                                    @(Model.Estado == "activo" ? "⚠️ DESACTIVAR" : "✅ ACTIVAR") Usuario
+                                </button>
+                            }
+                            else
+                            {
+                                <button type="button" class="btn btn-secondary btn-sm mb-2" 
+                                        onclick="cambiarEstado(@Model.IdUsuario, '@(Model.Estado == "activo" ? "inactivo" : "activo")')">
+                                    <i class="fas @(Model.Estado == "activo" ? "fa-ban" : "fa-check")"></i> 
+                                    @(Model.Estado == "activo" ? "Desactivar" : "Activar") Usuario
+                                </button>
+                            }
+                            
+                            <!-- Botón eliminar con texto explicativo si hay restricciones -->
+                            <a asp-action="Delete" asp-route-id="@Model.IdUsuario" class="btn btn-danger btn-sm">
+                                <i class="fas fa-trash"></i> Eliminar Usuario
+                            </a>
+                        </div>
+                        
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle"></i>
+                            <strong>Nota:</strong> Si el usuario tiene relaciones activas (contratos, propiedades, etc.), 
+                            no podrá ser eliminado y se le ofrecerá desactivarlo como alternativa segura.
+                        </div>
+                        
+                        @if (TempData["MostrarDesactivar"] == null)
+                        {
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle"></i>
+                                <strong>Cuidado:</strong> Estas acciones pueden ser irreversibles.
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Ayuda y información -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-question-circle"></i> Información Adicional
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (Model.Rol.ToLower() == "propietario")
+                    {
+                        <p class="small text-muted mb-2">
+                            <i class="fas fa-info-circle"></i>
+                            Como propietario, este usuario puede gestionar sus propiedades, ver contratos y monitorear pagos.
+                        </p>
+                    }
+                    else if (Model.Rol.ToLower() == "inquilino")
+                    {
+                        <p class="small text-muted mb-2">
+                            <i class="fas fa-info-circle"></i>
+                            Como inquilino, este usuario puede ver su información de alquiler, realizar pagos y solicitar mantenimiento.
+                        </p>
+                    }
+                    else if (Model.Rol.ToLower() == "empleado")
+                    {
+                        <p class="small text-muted mb-2">
+                            <i class="fas fa-info-circle"></i>
+                            Como empleado, este usuario puede gestionar propietarios e inquilinos, pero tiene permisos limitados.
+                        </p>
+                    }
+                    else if (Model.Rol.ToLower() == "administrador")
+                    {
+                        <p class="small text-muted mb-2">
+                            <i class="fas fa-info-circle"></i>
+                            Como administrador, este usuario tiene acceso completo a todas las funcionalidades del sistema.
+                        </p>
+                    }
+                    
+                    <hr class="my-3">
+                    
+                    <div class="text-center">
+                        <a href="mailto:@Model.Email" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-envelope"></i> Enviar Email
+                        </a>
+                        @if (!string.IsNullOrEmpty(Model.Telefono) && Model.Telefono != "Sin especificar")
+                        {
+                            <a href="tel:@Model.Telefono" class="btn btn-outline-success btn-sm ml-1">
+                                <i class="fas fa-phone"></i> Llamar
+                            </a>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Forms ocultos para acciones AJAX -->
+<form id="cambiarEstadoForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="usuarioId" name="id" />
+    <input type="hidden" id="nuevoEstado" name="nuevoEstado" />
+</form>
+
+<form id="resetPasswordForm" method="post" style="display: none;">
+    @Html.AntiForgeryToken()
+    <input type="hidden" id="resetUsuarioId" name="id" />
+</form>
+
+@section Scripts {
+    <script>
+        function cambiarEstado(usuarioId, nuevoEstado) {
+            if (confirm('¿Está seguro que desea ' + (nuevoEstado === 'activo' ? 'activar' : 'desactivar') + ' este usuario?')) {
+                $('#usuarioId').val(usuarioId);
+                $('#nuevoEstado').val(nuevoEstado);
+                $('#cambiarEstadoForm').attr('action', '@Url.Action("CambiarEstado", "Usuario")').submit();
+            }
+        }
+
+        function resetearPassword(usuarioId) {
+            if (confirm('¿Está seguro que desea resetear la contraseña de este usuario? Se establecerá como "PasswordTemporal123"')) {
+                $('#resetUsuarioId').val(usuarioId);
+                $('#resetPasswordForm').attr('action', '@Url.Action("ResetearPassword", "Usuario")').submit();
+            }
+        }
+    </script>
+}

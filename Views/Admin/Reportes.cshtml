@@ -1,0 +1,230 @@
+@{
+    ViewData["Title"] = "Reportes del Sistema";
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-file-bar-graph me-2"></i>Reportes del Sistema
+        </h1>
+        <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left me-1"></i>Dashboard
+        </a>
+    </div>
+
+    <!-- Tipos de Reportes -->
+    <div class="row">
+        <div class="col-lg-4 mb-4">
+            <div class="card border-left-primary shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Reporte de Usuarios
+                            </div>
+                            <div class="mb-2 text-gray-600">
+                                Estadísticas completas de usuarios por rol, estado y actividad.
+                            </div>
+                            <button class="btn btn-primary btn-sm" onclick="generarReporte('usuarios')">
+                                <i class="bi bi-download me-1"></i>Generar
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card border-left-success shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Reporte de Contratos
+                            </div>
+                            <div class="mb-2 text-gray-600">
+                                Análisis de contratos vigentes, vencidos y próximos a vencer.
+                            </div>
+                            <button class="btn btn-success btn-sm" onclick="generarReporte('contratos')">
+                                <i class="bi bi-download me-1"></i>Generar
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-file-earmark-text fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4 mb-4">
+            <div class="card border-left-info shadow h-100">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Reporte Financiero
+                            </div>
+                            <div class="mb-2 text-gray-600">
+                                Ingresos, pagos pendientes y análisis financiero mensual.
+                            </div>
+                            <button class="btn btn-info btn-sm" onclick="generarReporte('financiero')">
+                                <i class="bi bi-download me-1"></i>Generar
+                            </button>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reportes Recientes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-clock-history me-2"></i>Reportes Recientes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-bordered" width="100%" cellspacing="0">
+                            <thead>
+                                <tr>
+                                    <th>Tipo</th>
+                                    <th>Fecha Generación</th>
+                                    <th>Usuario</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Reporte de Usuarios</td>
+                                    <td>@DateTime.Now.AddDays(-1).ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>Admin Principal</td>
+                                    <td><span class="badge bg-success">Completado</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-download"></i> Descargar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Reporte Financiero</td>
+                                    <td>@DateTime.Now.AddDays(-3).ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>Admin Principal</td>
+                                    <td><span class="badge bg-success">Completado</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-download"></i> Descargar
+                                        </button>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Reporte de Contratos</td>
+                                    <td>@DateTime.Now.AddDays(-7).ToString("dd/MM/yyyy HH:mm")</td>
+                                    <td>Admin Principal</td>
+                                    <td><span class="badge bg-warning">En proceso</span></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-outline-secondary" disabled>
+                                            <i class="bi bi-clock"></i> Procesando
+                                        </button>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Configuración de Reportes -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-gear me-2"></i>Configuración de Reportes
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h5>Programación Automática</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="reporteMensual">
+                                <label class="form-check-label" for="reporteMensual">
+                                    Generar reporte financiero mensual
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="reporteSemanal">
+                                <label class="form-check-label" for="reporteSemanal">
+                                    Generar reporte de actividad semanal
+                                </label>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h5>Formatos de Exportación</h5>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formatoPDF" checked>
+                                <label class="form-check-label" for="formatoPDF">
+                                    PDF
+                                </label>
+                            </div>
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="formatoExcel" checked>
+                                <label class="form-check-label" for="formatoExcel">
+                                    Excel
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    <hr>
+                    <button class="btn btn-primary">
+                        <i class="bi bi-check me-1"></i>Guardar Configuración
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-primary { border-left: 0.25rem solid #4e73df !important; }
+.border-left-success { border-left: 0.25rem solid #1cc88a !important; }
+.border-left-info { border-left: 0.25rem solid #36b9cc !important; }
+</style>
+
+@section Scripts {
+    <script>
+        function generarReporte(tipo) {
+            // Simular generación de reporte
+            alert('Generando reporte de ' + tipo + '...\nEsto puede tomar unos minutos.');
+            
+            // Aquí  hacer una llamada AJAX al controlador
+            // para generar el reporte real
+            // Esto esta solo para maquillar
+            /*
+            $.ajax({
+                url: '@Url.Action("GenerarReporte", "Admin")',
+                method: 'POST',
+                data: { tipo: tipo },
+                success: function(response) {
+                    // Manejar respuesta
+                }
+            });
+            */
+        }
+    </script>
+}

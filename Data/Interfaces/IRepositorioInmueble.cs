@@ -48,5 +48,12 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         Task<IList<Inmueble>> ObtenerInmueblesConPortadaAsync(int limite = 20);
         Task<IList<Inmueble>> ObtenerInmueblesSinPortadaAsync();
         Task<Dictionary<string, object>> ObtenerEstadisticasImagenesInmuebleAsync(int idInmueble);
+
+        // Metodos que voy a usar en ContratoVenta
+        Task<bool> VerificarDisponibilidadParaVenta(int idInmueble);
+        Task<IEnumerable<Inmueble>> ObtenerDisponiblesParaVentaAsync();
+        Task<IEnumerable<Inmueble>> BuscarParaVentaAsync(string termino, int limite = 10);
+        Task<IEnumerable<Inmueble>> ObtenerPorPropietarioAsync(int propietarioId);
+        
     }
 }

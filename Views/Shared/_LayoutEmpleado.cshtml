@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Panel Empleado CIMA</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <!-- Empleado Dashboard Styles -->
+    <style>
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fc;
+        }
+        
+        /*  SIDEBAR VIOLETA PARA EMPLEADO - SIN CAMBIOS */
+        .sidebar {
+            min-height: 100vh;
+            max-height: 100vh;
+            background: linear-gradient(180deg, #8E44AD 10%, #6C3483 100%);
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 2rem;
+        }
+        
+        /* Personalizar scrollbar del sidebar */
+        .sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-track {
+            background: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.3);
+            border-radius: 3px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 1rem 1.5rem;
+            border-radius: 0;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+        
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateX(3px);
+        }
+        
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.2);
+            border-left: 3px solid #fff;
+        }
+        
+        .sidebar .nav-link i {
+            width: 20px;
+            margin-right: 10px;
+        }
+        
+        .content-wrapper {
+            margin-left: 250px;
+            min-height: 100vh;
+        }
+        
+        .topbar {
+            height: 4.375rem;
+            background-color: #fff;
+            border-bottom: 1px solid #e3e6f0;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .sidebar-brand {
+            height: 4.375rem;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 800;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.15);
+            color: #fff;
+            flex-shrink: 0;
+            transition: all 0.3s ease;
+        }
+        
+        .sidebar-brand:hover {
+            background-color: rgba(0, 0, 0, 0.25);
+            color: #fff;
+        }
+        
+        .sidebar-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin: 0 1rem;
+        }
+        
+        .sidebar-heading {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            padding: 1.5rem 1.5rem 0.5rem;
+        }
+        
+        .main-content {
+            padding: 1.5rem;
+        }
+        
+        /* Estilos para los elementos colapsables */
+        .collapse-item {
+            display: block;
+            padding: 0.5rem 1.5rem 0.5rem 3rem;
+            text-decoration: none;
+            color: #3a3b45;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+            border-radius: 0.375rem;
+            margin: 0 1rem;
+        }
+        
+        .collapse-item:hover {
+            color: #5a5c69;
+            background-color: #f8f9fc;
+            text-decoration: none;
+            transform: translateX(2px);
+        }
+        
+        .collapse-item.active {
+            background-color: #e3f2fd;
+            color: #1976d2;
+            font-weight: 600;
+        }
+        
+        /* Badge de rol empleado */
+        .empleado-badge {
+            background: linear-gradient(45deg, #E74C3C, #8E44AD);
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.7rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        /* Breadcrumb personalizado */
+        .empleado-breadcrumb {
+            background: linear-gradient(135deg, #f8f9fc 0%, #e9ecef 100%);
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
+            border-radius: 0.5rem;
+            border-left: 4px solid #8E44AD;
+        }
+        
+        .empleado-breadcrumb .breadcrumb {
+            margin-bottom: 0;
+            background: transparent;
+            padding: 0;
+        }
+        
+        .empleado-breadcrumb .breadcrumb-item + .breadcrumb-item::before {
+            content: "❯";
+            color: #8E44AD;
+            font-weight: bold;
+        }
+        
+        .empleado-breadcrumb .breadcrumb-item.active {
+            color: #8E44AD;
+            font-weight: 600;
+        }
+        
+        /* Cards mejoradas */
+        .card-empleado {
+            border: none;
+            border-radius: 0.75rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+            border-left: 4px solid #8E44AD;
+            transition: all 0.3s ease;
+        }
+        
+        .card-empleado:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 0.25rem 2rem 0 rgba(58, 59, 69, 0.2);
+        }
+        
+        /* Botones específicos para empleado */
+        .btn-empleado {
+            background: linear-gradient(45deg, #8E44AD, #6C3483);
+            border: none;
+            color: white;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-empleado:hover {
+            background: linear-gradient(45deg, #6C3483, #5B2C87);
+            color: white;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(108, 52, 131, 0.3);
+        }
+        
+        .btn-empleado-outline {
+            border: 2px solid #8E44AD;
+            color: #8E44AD;
+            background: transparent;
+            border-radius: 0.5rem;
+            padding: 0.5rem 1.2rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+        }
+        
+        .btn-empleado-outline:hover {
+            background: #8E44AD;
+            color: white;
+            transform: translateY(-1px);
+        }
+        
+        /* Alertas personalizadas */
+        .alert-empleado {
+            background: linear-gradient(135deg, rgba(142, 68, 173, 0.1) 0%, rgba(108, 52, 131, 0.05) 100%);
+            border: 1px solid rgba(142, 68, 173, 0.2);
+            border-left: 4px solid #8E44AD;
+            color: #5B2C87;
+        }
+        
+        /* Indicadores de estado */
+        .status-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.25rem 0.75rem;
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .status-activo {
+            background-color: rgba(40, 167, 69, 0.1);
+            color: #28a745;
+            border: 1px solid rgba(40, 167, 69, 0.2);
+        }
+        
+        .status-pendiente {
+            background-color: rgba(255, 193, 7, 0.1);
+            color: #ffc107;
+            border: 1px solid rgba(255, 193, 7, 0.2);
+        }
+        
+        .status-inactivo {
+            background-color: rgba(220, 53, 69, 0.1);
+            color: #dc3545;
+            border: 1px solid rgba(220, 53, 69, 0.2);
+        }
+        
+        /* Mobile responsiveness */
+        @@media (max-width: 768px) {
+            .sidebar {
+                margin-left: -250px;
+                max-height: none;
+                transition: margin-left 0.3s ease;
+            }
+            .content-wrapper {
+                margin-left: 0;
+            }
+            .sidebar.show {
+                margin-left: 0;
+            }
+            
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .empleado-breadcrumb {
+                padding: 0.75rem 1rem;
+                margin-bottom: 1rem;
+            }
+        }
+        
+        /* Avatar específico para empleado */
+        .avatar-empleado {
+            width: 2rem;
+            height: 2rem;
+            background: linear-gradient(135deg, #8E44AD 0%, #6C3483 100%);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+            font-size: 0.8rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .icon-circle {
+            width: 2.5rem;
+            height: 2.5rem;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .badge-counter {
+            position: absolute;
+            transform: scale(0.7);
+            transform-origin: top right;
+            right: -0.25rem;
+            top: -0.25rem;
+        }
+        
+        /* Animaciones sutiles */
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+        
+        @@keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        
+        /* Quick actions panel */
+        .quick-actions {
+            position: fixed;
+            bottom: 2rem;
+            right: 2rem;
+            z-index: 999;
+        }
+        
+        .quick-action-btn {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: linear-gradient(45deg, #8E44AD, #6C3483);
+            color: white;
+            border: none;
+            font-size: 1.2rem;
+            margin: 0.25rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+        
+        .quick-action-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(142, 68, 173, 0.4);
+        }
+        
+        /* Tabla responsiva mejorada */
+        .table-empleado {
+            background: white;
+            border-radius: 0.75rem;
+            overflow: hidden;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+        }
+        
+        .table-empleado th {
+            background: linear-gradient(135deg, #8E44AD 0%, #6C3483 100%);
+            color: white;
+            border: none;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.5px;
+            padding: 1rem;
+        }
+        
+        .table-empleado td {
+            padding: 1rem;
+            border-top: 1px solid rgba(0,0,0,0.05);
+            vertical-align: middle;
+        }
+        
+        .table-empleado tbody tr:hover {
+            background-color: rgba(142, 68, 173, 0.02);
+        }
+    </style>
+</head>
+<body>
+    <!-- Sidebar -->
+    <nav class="sidebar" id="accordionSidebar">
+        <!-- Sidebar Brand -->
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" asp-controller="Empleado" asp-action="Index">
+            <div class="sidebar-brand-icon">
+                <i class="bi bi-person-badge"></i>
+            </div>
+            <div class="sidebar-brand-text mx-3">
+                CIMA Empleado
+            </div>
+        </a>
+
+        <!-- Indicador de Rol -->
+        <div class="text-center py-2">
+            <span class="empleado-badge">
+                <i class="bi bi-shield-check"></i> Empleado
+            </span>
+        </div>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0">
+
+        <!-- Dashboard -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Empleado" asp-action="Index">
+                <i class="bi bi-speedometer2"></i>
+                <span>Panel Principal</span>
+            </a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">Gestión de Clientes</div>
+
+        <!-- Usuarios (Solo propietarios e inquilinos) -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseUsuarios" aria-expanded="false">
+                <i class="bi bi-people"></i>
+                <span>Clientes</span>
+            </a>
+            <div id="collapseUsuarios" class="collapse">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="Usuarios">
+                        <i class="bi bi-eye me-2"></i>Ver Todos
+                    </a>
+                    <div class="dropdown-divider"></div>
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="CrearPropietario">
+                        <i class="bi bi-person-plus me-2"></i>Crear Propietario
+                    </a>
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="CrearInquilino">
+                        <i class="bi bi-person-plus-fill me-2"></i>Crear Inquilino
+                    </a>
+                </div>
+            </div>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">Gestión Inmobiliaria</div>
+
+        <!-- Inmuebles -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseInmuebles" aria-expanded="false">
+                <i class="bi bi-building"></i>
+                <span>Inmuebles</span>
+            </a>
+            <div id="collapseInmuebles" class="collapse">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="Inmuebles">
+                        <i class="bi bi-eye me-2"></i>Ver Todos
+                    </a>
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="CrearInmueble">
+                        <i class="bi bi-building-add me-2"></i>Agregar Inmueble
+                    </a>
+                </div>
+            </div>
+        </li>
+
+        <!-- Contratos -->
+        <li class="nav-item">
+            <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#collapseContratos" aria-expanded="false">
+                <i class="bi bi-file-earmark-text"></i>
+                <span>Contratos</span>
+            </a>
+            <div id="collapseContratos" class="collapse">
+                <div class="bg-white py-2 collapse-inner rounded">
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="Contratos">
+                        <i class="bi bi-eye me-2"></i>Ver Contratos
+                    </a>
+                    <a class="collapse-item" asp-controller="Empleado" asp-action="CrearContrato">
+                        <i class="bi bi-file-earmark-plus me-2"></i>Nuevo Contrato
+                    </a>
+                </div>
+            </div>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">Comunicación</div>
+
+        <!-- Intereses -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Empleado" asp-action="Intereses">
+                <i class="bi bi-envelope-heart"></i>
+                <span>Personas Interesadas</span>
+            </a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- Heading -->
+        <div class="sidebar-heading">Reportes</div>
+
+        <!-- Reportes Básicos -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Empleado" asp-action="Reportes">
+                <i class="bi bi-file-bar-graph"></i>
+                <span>Reportes Básicos</span>
+            </a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider d-none d-md-block">
+
+        <!-- Nota informativa -->
+        <div class="px-3 py-2">
+            <div class="card border-warning bg-transparent">
+                <div class="card-body py-2 px-3 text-center">
+                    <i class="bi bi-info-circle text-warning"></i>
+                    <small class="d-block text-white-50 mt-1">
+                        Solo lectura<br>
+                        <strong>No editar/eliminar</strong>
+                    </small>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Content Wrapper -->
+    <div class="content-wrapper">
+        <!-- Topbar -->
+        <nav class="navbar navbar-expand navbar-light topbar mb-4 static-top shadow">
+            <div class="container-fluid">
+                <!-- Sidebar Toggle (Topbar) -->
+                <button id="sidebarToggleTop" class="btn btn-link d-md-none rounded-circle me-3">
+                    <i class="bi bi-list"></i>
+                </button>
+
+                <!-- Indicador de Rol en el topbar -->
+                <div class="d-flex align-items-center me-3">
+                    <span class="empleado-badge">
+                        <i class="bi bi-person-badge"></i>
+                        Modo Empleado
+                    </span>
+                </div>
+
+                <!-- Buscador básico -->
+                <div class="d-flex flex-grow-1">
+                    <div class="d-none d-sm-flex form-inline mw-100 navbar-search me-auto">
+                        <div class="input-group">
+                            <input type="text" 
+                                   class="form-control bg-light border-0 small" 
+                                   placeholder="Buscar clientes, inmuebles..." 
+                                   aria-label="Search">
+                            <div class="input-group-append">
+                                <button class="btn btn-outline-secondary" type="button">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Elementos de la derecha -->
+                <ul class="navbar-nav ms-auto d-flex align-items-center">
+                    <!-- Notificaciones básicas -->
+                    <li class="nav-item dropdown no-arrow me-3">
+                        <a class="nav-link dropdown-toggle" href="#" id="alertsDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-bell fa-fw"></i>
+                            <span class="badge badge-warning badge-counter">2</span>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="alertsDropdown">
+                            <h6 class="dropdown-header">
+                                <i class="bi bi-bell me-2"></i>
+                                Notificaciones
+                            </h6>
+                            <a class="dropdown-item d-flex align-items-center" href="#">
+                                <div class="me-3">
+                                    <div class="icon-circle bg-warning">
+                                        <i class="bi bi-envelope-heart text-white"></i>
+                                    </div>
+                                </div>
+                                <div>
+                                    <div class="small text-gray-500">Hoy</div>
+                                    <span class="font-weight-bold">Nueva persona interesada</span>
+                                </div>
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item text-center small text-gray-500" href="#">
+                                <i class="bi bi-eye me-1"></i>
+                                Ver Todas
+                            </a>
+                        </div>
+                    </li>
+
+                    <!-- Separador -->
+                    <div class="topbar-divider d-none d-sm-block"></div>
+
+                    <!-- Usuario Empleado -->
+                    <li class="nav-item dropdown no-arrow">
+                        <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                            <span class="me-2 d-none d-lg-inline text-gray-600 small">
+                                @User.FindFirst("FullName")?.Value
+                            </span>
+                            <div class="avatar-empleado">
+                                <span class="avatar-initials">@User.FindFirst("Avatar")?.Value</span>
+                            </div>
+                        </a>
+                        <div class="dropdown-menu dropdown-menu-end shadow animated--grow-in" aria-labelledby="userDropdown">
+                            <div class="dropdown-header text-center">
+                                <span class="empleado-badge mb-2 d-inline-block">
+                                    <i class="bi bi-person-badge"></i> Empleado
+                                </span>
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <a class="dropdown-item" asp-controller="Empleado" asp-action="MiPerfil">
+                                <i class="bi bi-person me-2 text-gray-400"></i>
+                                Mi Perfil
+                            </a>
+                            <div class="dropdown-divider"></div>
+                            <div class="dropdown-item-text small text-muted">
+                                <i class="bi bi-info-circle me-2"></i>
+                                Permisos: Solo lectura + creación
+                            </div>
+                            <div class="dropdown-divider"></div>
+                            <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
+                                <button type="submit" class="dropdown-item">
+                                    <i class="bi bi-box-arrow-right me-2 text-gray-400"></i>
+                                    Cerrar Sesión
+                                </button>
+                            </form>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+
+        <!-- Begin Page Content -->
+        <div id="content">
+            <!-- Breadcrumb personalizado -->
+            <div class="empleado-breadcrumb fade-in">
+                <nav aria-label="breadcrumb">
+                    <ol class="breadcrumb">
+                        <li class="breadcrumb-item">
+                            <a href="@Url.Action("Index", "Empleado")" class="text-decoration-none">
+                                <i class="bi bi-house-door"></i> Inicio
+                            </a>
+                        </li>
+                        @if (ViewBag.Breadcrumb != null)
+                        {
+                            @foreach (var item in ViewBag.Breadcrumb)
+                            {
+                                <li class="breadcrumb-item active" aria-current="page">@item</li>
+                            }
+                        }
+                        else
+                        {
+                            <li class="breadcrumb-item active" aria-current="page">@ViewData["Title"]</li>
+                        }
+                    </ol>
+                </nav>
+            </div>
+
+            <div class="main-content fade-in">
+                <!-- Mensajes de notificación -->
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show" role="alert">
+                        <i class="bi bi-check-circle"></i>
+                        @TempData["SuccessMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                        <i class="bi bi-exclamation-triangle"></i>
+                        @TempData["ErrorMessage"]
+                    </div>
+                }
+
+                @RenderBody()
+            </div>
+        </div>
+
+        <!-- Footer -->
+        <footer class="sticky-footer bg-white">
+            <div class="container my-auto">
+                <div class="copyright text-center my-auto">
+                    <span>Copyright &copy; CIMA Inmobiliaria 2023 - Panel Empleado</span>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Quick Actions (opcional) -->
+    <div class="quick-actions d-none d-lg-block">
+        <div class="d-flex flex-column">
+            <button class="quick-action-btn" title="Crear Cliente" onclick="window.location.href='@Url.Action("CrearPropietario", "Empleado")'">
+                <i class="bi bi-person-plus"></i>
+            </button>
+            <button class="quick-action-btn" title="Agregar Inmueble" onclick="window.location.href='@Url.Action("CrearInmueble", "Empleado")'">
+                <i class="bi bi-building-add"></i>
+            </button>
+            <button class="quick-action-btn" title="Nuevo Contrato" onclick="window.location.href='@Url.Action("CrearContrato", "Empleado")'">
+                <i class="bi bi-file-earmark-plus"></i>
+            </button>
+        </div>
+    </div>
+
+    <!-- Bootstrap JavaScript -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Custom Empleado Scripts -->
+    <script>
+        // Toggle sidebar for mobile
+        $("#sidebarToggleTop").click(function() {
+            $("#accordionSidebar").toggleClass("show");
+        });
+
+        // Auto-close mobile sidebar when clicking outside
+        $(document).click(function(e) {
+            if (!$(e.target).closest('#accordionSidebar, #sidebarToggleTop').length) {
+                $("#accordionSidebar").removeClass("show");
+            }
+        });
+
+        // Mark active nav items based on current URL
+        $(document).ready(function() {
+            var currentPath = window.location.pathname;
+            var controller = currentPath.split('/')[1]?.toLowerCase();
+            var action = currentPath.split('/')[2]?.toLowerCase();
+            
+            // Marcar enlaces activos en sidebar
+            $('.sidebar .nav-link').each(function() {
+                var href = $(this).attr('href');
+                if (href && href !== '#' && currentPath.indexOf(href) === 0) {
+                    $(this).addClass('active');
+                    // Si es un enlace colapsable, expandir el menú
+                    $(this).removeClass('collapsed');
+                    var target = $(this).data('bs-target');
+                    if (target) {
+                        $(target).addClass('show');
+                    }
+                }
+            });
+            
+            // Marcar elementos de collapse activos
+            $('.collapse-item').each(function() {
+                var href = $(this).attr('href');
+                if (href && currentPath.indexOf(href) === 0) {
+                    $(this).addClass('active');
+                    // Expandir el menú padre
+                    $(this).closest('.collapse').addClass('show');
+                    $(this).closest('.collapse').prev('.nav-link').removeClass('collapsed');
+                    $(this).closest('.collapse').prev('.nav-link').addClass('active');
+                }
+            });
+            
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                $('.alert').fadeOut('slow');
+            }, 5000);
+            
+            // Initialize tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl);
+            });
+            
+            // Mostrar recordatorio de permisos cada 30 minutos
+            setInterval(function() {
+                if (Math.random() < 0.1) { // 10% probabilidad
+                    mostrarRecordatorioPermisos();
+                }
+            }, 1800000); // 30 minutos
+        });
+        
+        // Función para recordar permisos
+        function mostrarRecordatorioPermisos() {
+            const today = new Date().toDateString();
+            if (localStorage.getItem('recordatorio_mostrado_hoy') !== today) {
+                const toast = `
+                    <div class="toast align-items-center text-white bg-warning border-0 position-fixed" 
+                         style="top: 20px; right: 20px; z-index: 9999;" role="alert">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-shield-check me-2"></i>
+                                <strong>Recordatorio:</strong> Solo puedes crear registros, no editar ni eliminar.
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                        </div>
+                    </div>
+                `;
+                $('body').append(toast);
+                $('.toast').toast({delay: 5000}).toast('show');
+                
+                // Marcar como mostrado hoy
+                localStorage.setItem('recordatorio_mostrado_hoy', today);
+            }
+        }
+        
+        // Función para confirmar acciones
+        function confirmarAccion(mensaje, callback) {
+            if (confirm(mensaje || '¿Está seguro de realizar esta acción?')) {
+                if (typeof callback === 'function') {
+                    callback();
+                }
+                return true;
+            }
+            return false;
+        }
+        
+        // Mejorar experiencia de búsqueda
+        $('.navbar-search input').on('keyup', function(e) {
+            if (e.key === 'Enter') {
+                var searchTerm = $(this).val();
+                if (searchTerm.length >= 2) {
+                    // Aquí puedes implementar búsqueda AJAX
+                    console.log('Buscando: ' + searchTerm);
+                }
+            }
+        });
+        
+        // Animación suave para transiciones
+        $('.nav-link, .collapse-item').on('click', function(e) {
+            var target = $(this).attr('href');
+            if (target && target !== '#' && !target.startsWith('javascript:')) {
+                $('body').addClass('page-loading');
+            }
+        });
+        
+        // Loading state management
+        $(window).on('beforeunload', function() {
+            $('body').addClass('page-loading');
+        });
+        
+        $(window).on('load', function() {
+            $('body').removeClass('page-loading');
+        });
+    </script>
+
+    <!-- Estilos adicionales para estados de carga -->
+    <style>
+        .page-loading {
+            pointer-events: none;
+        }
+        
+        .page-loading .main-content {
+            opacity: 0.7;
+            transition: opacity 0.3s ease;
+        }
+        
+        /* Estilos para tablas responsive */
+        .table-responsive {
+            border-radius: 0.75rem;
+            overflow: hidden;
+        }
+        
+        /* Paginación personalizada */
+        .pagination .page-link {
+            color: #8E44AD;
+            border: 1px solid rgba(142, 68, 173, 0.2);
+            margin: 0 2px;
+            border-radius: 0.5rem;
+        }
+        
+        .pagination .page-link:hover {
+            color: #fff;
+            background-color: #8E44AD;
+            border-color: #8E44AD;
+        }
+        
+        .pagination .page-item.active .page-link {
+            background-color: #8E44AD;
+            border-color: #8E44AD;
+        }
+        
+        /* Form controls mejorados */
+        .form-control:focus {
+            border-color: rgba(142, 68, 173, 0.5);
+            box-shadow: 0 0 0 0.2rem rgba(142, 68, 173, 0.25);
+        }
+        
+        .form-select:focus {
+            border-color: rgba(142, 68, 173, 0.5);
+            box-shadow: 0 0 0 0.2rem rgba(142, 68, 173, 0.25);
+        }
+        
+        /* Checkbox y radio buttons personalizados */
+        .form-check-input:checked {
+            background-color: #8E44AD;
+            border-color: #8E44AD;
+        }
+        
+        .form-check-input:focus {
+            box-shadow: 0 0 0 0.2rem rgba(142, 68, 173, 0.25);
+        }
+    </style>
+
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

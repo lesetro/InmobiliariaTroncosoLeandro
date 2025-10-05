@@ -1,0 +1,295 @@
+@{
+    ViewData["Title"] = "Acceso Denegado";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8 col-md-10">
+            <div class="text-center mt-5">
+                <!-- Imagen de error -->
+                <div class="error-icon mb-4">
+                    <i class="fas fa-ban text-danger" style="font-size: 6rem;"></i>
+                </div>
+
+                <!-- Mensaje principal -->
+                <h1 class="display-4 text-danger mb-3">Acceso Denegado</h1>
+                <h2 class="h4 text-gray-600 mb-4">No tienes permisos para acceder a esta página</h2>
+
+                <!-- Descripción del error -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-lg-6 mb-3">
+                                <div class="error-detail">
+                                    <i class="fas fa-shield-alt text-warning fa-2x mb-3"></i>
+                                    <h5>Permisos Insuficientes</h5>
+                                    <p class="text-muted">
+                                        Tu cuenta no tiene los permisos necesarios para acceder al recurso solicitado.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 mb-3">
+                                <div class="error-detail">
+                                    <i class="fas fa-user-lock text-info fa-2x mb-3"></i>
+                                    <h5>Acceso Restringido</h5>
+                                    <p class="text-muted">
+                                        Esta funcionalidad está limitada a usuarios con roles específicos.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información del usuario actual -->
+                @if (User?.Identity != null && User.Identity.IsAuthenticated)
+                {
+                    <div class="card border-info mb-4">
+                        <div class="card-header bg-info text-white">
+                            <h6 class="mb-0">
+                                <i class="fas fa-user"></i> Información de tu Cuenta
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="row text-left">
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Usuario:</strong> @User.FindFirst("FullName")?.Value
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Email:</strong> @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p class="mb-2">
+                                        <strong>Rol actual:</strong> 
+                                        @{
+                                            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                                        }
+                                        @switch (userRole?.ToLower())
+                                        {
+                                            case "administrador":
+                                                <span class="badge badge-danger">@userRole.ToUpper()</span>
+                                                break;
+                                            case "empleado":
+                                                <span class="badge badge-warning">@userRole.ToUpper()</span>
+                                                break;
+                                            case "propietario":
+                                                <span class="badge badge-primary">@userRole.ToUpper()</span>
+                                                break;
+                                            case "inquilino":
+                                                <span class="badge badge-success">@userRole.ToUpper()</span>
+                                                break;
+                                            default:
+                                                <span class="badge badge-secondary">@userRole?.ToUpper()</span>
+                                                break;
+                                        }
+                                    </p>
+                                    <p class="mb-2">
+                                        <strong>Estado:</strong> 
+                                        <span class="badge badge-success">
+                                            <i class="fas fa-check-circle"></i> Autenticado
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                }
+
+                <!-- Acciones disponibles -->
+                <div class="card shadow mb-4">
+                    <div class="card-header">
+                        <h6 class="mb-0 text-primary">
+                            <i class="fas fa-lightbulb"></i> ¿Qué puedes hacer?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            @if (User?.Identity != null && User.Identity.IsAuthenticated)
+                            {
+                                <!-- Usuario autenticado -->
+                                <div class="col-md-4 mb-3">
+                                    <div class="action-card">
+                                        <i class="fas fa-tachometer-alt text-primary fa-2x mb-3"></i>
+                                        <h6>Ir al Dashboard</h6>
+                                        <p class="small text-muted">Accede a tu panel de control principal</p>
+                                        @{
+                                            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                                            var dashboardAction = userRole?.ToLower() switch
+                                            {
+                                                "administrador" => Url.Action("Index", "Admin"),
+                                                "empleado" => Url.Action("Index", "Empleado"),
+                                                "propietario" => Url.Action("Index", "Propietario"),
+                                                "inquilino" => Url.Action("Index", "Inquilino"),
+                                                _ => Url.Action("Index", "Home")
+                                            };
+                                        }
+                                        <a href="@dashboardAction" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-arrow-right"></i> Ir al Dashboard
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <div class="action-card">
+                                        <i class="fas fa-user-circle text-info fa-2x mb-3"></i>
+                                        <h6>Ver Mi Perfil</h6>
+                                        <p class="small text-muted">Revisa y actualiza tu información personal</p>
+                                        <a asp-controller="Usuario" asp-action="Perfil" class="btn btn-info btn-sm">
+                                            <i class="fas fa-user"></i> Mi Perfil
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-4 mb-3">
+                                    <div class="action-card">
+                                        <i class="fas fa-envelope text-warning fa-2x mb-3"></i>
+                                        <h6>Solicitar Acceso</h6>
+                                        <p class="small text-muted">Contacta al administrador si necesitas permisos adicionales</p>
+                                        <a href="mailto:admin@inmobiliaria.com?subject=Solicitud de Acceso" class="btn btn-warning btn-sm">
+                                            <i class="fas fa-envelope"></i> Contactar
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                            else
+                            {
+                                <!-- Usuario no autenticado -->
+                                <div class="col-md-6 mb-3">
+                                    <div class="action-card">
+                                        <i class="fas fa-sign-in-alt text-primary fa-2x mb-3"></i>
+                                        <h6>Iniciar Sesión</h6>
+                                        <p class="small text-muted">Accede con tu cuenta para ver más contenido</p>
+                                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-sm">
+                                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                                        </a>
+                                    </div>
+                                </div>
+
+                                <div class="col-md-6 mb-3">
+                                    <div class="action-card">
+                                        <i class="fas fa-home text-secondary fa-2x mb-3"></i>
+                                        <h6>Volver al Inicio</h6>
+                                        <p class="small text-muted">Regresa a la página principal del sitio</p>
+                                        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary btn-sm">
+                                            <i class="fas fa-home"></i> Página Principal
+                                        </a>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Información de ayuda -->
+                <div class="card border-warning mb-4">
+                    <div class="card-header bg-warning text-dark">
+                        <h6 class="mb-0">
+                            <i class="fas fa-question-circle"></i> ¿Necesitas ayuda?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6>Roles del Sistema:</h6>
+                                <ul class="list-unstyled small">
+                                    <li class="mb-1">
+                                        <span class="badge badge-danger">ADMINISTRADOR</span> - Acceso completo
+                                    </li>
+                                    <li class="mb-1">
+                                        <span class="badge badge-warning">EMPLEADO</span> - Gestión limitada
+                                    </li>
+                                    <li class="mb-1">
+                                        <span class="badge badge-primary">PROPIETARIO</span> - Sus propiedades
+                                    </li>
+                                    <li class="mb-1">
+                                        <span class="badge badge-success">INQUILINO</span> - Su información
+                                    </li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <h6>Contacto de Soporte:</h6>
+                                <p class="small mb-2">
+                                    <i class="fas fa-envelope"></i>
+                                    <a href="mailto:admin@inmobiliaria.com">admin@inmobiliaria.com</a>
+                                </p>
+                                <p class="small mb-2">
+                                    <i class="fas fa-phone"></i>
+                                    <a href="tel:+5493000000000">+54 9 3000 000 000</a>
+                                </p>
+                                <p class="small text-muted mb-0">
+                                    Horario de atención: Lunes a Viernes, 9:00 - 18:00
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Botones de navegación -->
+                <div class="mb-5">
+                    @if (User?.Identity != null && User.Identity.IsAuthenticated)
+                    {
+                        <a href="javascript:history.back()" class="btn btn-secondary btn-lg mr-2">
+                            <i class="fas fa-arrow-left"></i> Volver Atrás
+                        </a>
+                        {
+                            var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                            var dashboardUrl = userRole?.ToLower() switch
+                            {
+                                "administrador" => Url.Action("Index", "Admin"),
+                                "empleado" => Url.Action("Index", "Empleado"),
+                                "propietario" => Url.Action("Index", "Propietario"),
+                                "inquilino" => Url.Action("Index", "Inquilino"),
+                                _ => Url.Action("Index", "Home")
+                            };
+                        }
+                        <a href="@@dashboardUrl" class="btn btn-primary btn-lg">
+                            <i class="fas fa-tachometer-alt"></i> Ir al Dashboard
+                        </a>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-primary btn-lg mr-2">
+                            <i class="fas fa-sign-in-alt"></i> Iniciar Sesión
+                        </a>
+                        <a asp-controller="Home" asp-action="Index" class="btn btn-secondary btn-lg">
+                            <i class="fas fa-home"></i> Página Principal
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Animación de entrada
+            $('.error-icon').addClass('animated bounce');
+            
+            // Efecto hover en las tarjetas de acción
+            $('.action-card').hover(function() {
+                $(this).addClass('shadow-lg');
+                $(this).css('transform', 'translateY(-2px)');
+            }, function() {
+                $(this).removeClass('shadow-lg');
+                $(this).css('transform', 'translateY(0)');
+            });
+            
+            // Auto-redirect después de 30 segundos si no está autenticado
+            @if (User?.Identity != null && User.Identity.IsAuthenticated)
+            {
+                <text>
+                setTimeout(function() {
+                    if (confirm('¿Deseas ser redirigido a la página de inicio?')) {
+                        window.location.href = '@Url.Action("Index", "Home")';
+                    }
+                }, 30000); // 30 segundos
+                </text>
+            }
+        });
+    </script>
+}

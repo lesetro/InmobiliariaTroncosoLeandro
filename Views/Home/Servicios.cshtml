@@ -1,0 +1,486 @@
+@{
+    ViewData["Title"] = "Nuestros Servicios - Inmobiliaria CISMA";
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
+}
+
+<!-- Hero Section -->
+<section class="hero-services py-5">
+    <div class="container">
+        <div class="row align-items-center">
+            <div class="col-lg-6">
+                <h1 class="display-4 text-white fw-bold mb-4">
+                    Servicios <span class="text-warning">Inmobiliarios</span>
+                </h1>
+                <p class="lead text-white mb-4">
+                    Soluciones integrales para todas tus necesidades inmobiliarias en Villa Mercedes. 
+                    Más de 15 años de experiencia nos respaldan.
+                </p>
+                <a href="#servicios-principales" class="btn btn-warning btn-lg">
+                    <i class="fas fa-arrow-down"></i> Conocer Servicios
+                </a>
+            </div>
+            <div class="col-lg-6 text-center">
+                <img src="~/images/servicios-hero.jpg" alt="Servicios Inmobiliarios" class="img-fluid rounded shadow">
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Servicios Principales -->
+<section id="servicios-principales" class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5 mb-3">Nuestros Servicios Principales</h2>
+                <p class="lead text-muted">Cada servicio diseñado para brindarte la mejor experiencia inmobiliaria</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <!-- Alquiler de Propiedades -->
+            <div class="col-lg-6 mb-5">
+                <div class="service-detail-card h-100">
+                    <div class="service-header bg-primary text-white p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="service-icon-large me-3">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-1">Gestión de Alquileres</h3>
+                                <p class="mb-0">Administración integral de propiedades</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="service-content p-4">
+                        <p class="mb-4">Nos encargamos de todo el proceso de alquiler, desde la búsqueda del inquilino ideal hasta la gestión mensual de tu propiedad.</p>
+                        
+                        <h5 class="text-primary mb-3">¿Qué incluye?</h5>
+                        <ul class="service-features mb-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Búsqueda y selección de inquilinos</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Verificación de antecedentes crediticios</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Redacción y gestión de contratos</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Cobro mensual de alquileres</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Gestión de garantías</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Inspecciones periódicas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Mantenimiento preventivo</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Gestión de reclamos</li>
+                        </ul>
+
+                        <div class="service-pricing">
+                            <h6 class="text-primary">Comisión</h6>
+                            <p class="text-muted">8% del valor del alquiler mensual</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Venta de Propiedades -->
+            <div class="col-lg-6 mb-5">
+                <div class="service-detail-card h-100">
+                    <div class="service-header bg-success text-white p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="service-icon-large me-3">
+                                <i class="fas fa-home"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-1">Venta de Inmuebles</h3>
+                                <p class="mb-0">Maximiza el valor de tu propiedad</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="service-content p-4">
+                        <p class="mb-4">Te ayudamos a vender tu propiedad al mejor precio del mercado con estrategias de marketing personalizadas.</p>
+                        
+                        <h5 class="text-success mb-3">¿Qué incluye?</h5>
+                        <ul class="service-features mb-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Tasación profesional gratuita</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Análisis de mercado comparativo</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Fotografía profesional</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Marketing digital multicanal</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Publicación en portales inmobiliarios</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Visitas guiadas organizadas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Negociación profesional</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Asesoramiento legal completo</li>
+                        </ul>
+
+                        <div class="service-pricing">
+                            <h6 class="text-success">Comisión</h6>
+                            <p class="text-muted">4% del valor de venta</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Administración de Consorcios -->
+            <div class="col-lg-6 mb-5">
+                <div class="service-detail-card h-100">
+                    <div class="service-header bg-info text-white p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="service-icon-large me-3">
+                                <i class="fas fa-building"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-1">Administración</h3>
+                                <p class="mb-0">Consorcios y edificios</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="service-content p-4">
+                        <p class="mb-4">Administramos consorcios y edificios con transparencia, eficiencia y profesionalismo reconocido.</p>
+                        
+                        <h5 class="text-info mb-3">¿Qué incluye?</h5>
+                        <ul class="service-features mb-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Gestión financiera completa</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Cobro de expensas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Pago a proveedores</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Mantenimiento preventivo</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Organización de asambleas</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Informes mensuales detallados</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Gestión de seguros</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Atención de reclamos</li>
+                        </ul>
+
+                        <div class="service-pricing">
+                            <h6 class="text-info">Honorarios</h6>
+                            <p class="text-muted">Según cantidad de unidades</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Asesoramiento e Inversiones -->
+            <div class="col-lg-6 mb-5">
+                <div class="service-detail-card h-100">
+                    <div class="service-header bg-warning text-dark p-4">
+                        <div class="d-flex align-items-center">
+                            <div class="service-icon-large me-3">
+                                <i class="fas fa-handshake"></i>
+                            </div>
+                            <div>
+                                <h3 class="mb-1">Asesoramiento</h3>
+                                <p class="mb-0">Consultoría e inversiones</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="service-content p-4">
+                        <p class="mb-4">Brindamos consultoría experta para inversiones inmobiliarias y asesoramiento integral en el sector.</p>
+                        
+                        <h5 class="text-warning mb-3">¿Qué incluye?</h5>
+                        <ul class="service-features mb-4">
+                            <li><i class="fas fa-check text-success me-2"></i>Análisis de oportunidades de inversión</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Estudios de rentabilidad</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Asesoramiento legal inmobiliario</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Gestión de créditos hipotecarios</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Análisis de mercado local</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Consultoría en desarrollo inmobiliario</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Estrategias de portfolio</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Seguimiento post-inversión</li>
+                        </ul>
+
+                        <div class="service-pricing">
+                            <h6 class="text-warning">Consulta inicial</h6>
+                            <p class="text-muted">Sin costo</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Servicios Adicionales -->
+<section class="py-5 bg-light">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5 mb-3">Servicios Adicionales</h2>
+                <p class="lead text-muted">Completamos tu experiencia inmobiliaria</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="additional-service-card h-100">
+                    <div class="service-icon-small">
+                        <i class="fas fa-calculator text-primary"></i>
+                    </div>
+                    <h4>Tasaciones</h4>
+                    <p>Valuaciones técnicas profesionales para cualquier finalidad: bancaria, judicial, seguros o comercial.</p>
+                    <small class="text-muted">Desde $15.000</small>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="additional-service-card h-100">
+                    <div class="service-icon-small">
+                        <i class="fas fa-camera text-success"></i>
+                    </div>
+                    <h4>Fotografía Inmobiliaria</h4>
+                    <p>Sesiones fotográficas profesionales para destacar tu propiedad en todos los medios de difusión.</p>
+                    <small class="text-muted">Desde $8.000</small>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="additional-service-card h-100">
+                    <div class="service-icon-small">
+                        <i class="fas fa-gavel text-info"></i>
+                    </div>
+                    <h4>Gestión Legal</h4>
+                    <p>Tramitación de escrituras, boletos de compraventa y toda la documentación necesaria.</p>
+                    <small class="text-muted">Consultar</small>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="additional-service-card h-100">
+                    <div class="service-icon-small">
+                        <i class="fas fa-tools text-warning"></i>
+                    </div>
+                    <h4>Mantenimiento</h4>
+                    <p>Servicio de mantenimiento preventivo y correctivo para mantener tu propiedad en óptimas condiciones.</p>
+                    <small class="text-muted">Según trabajo</small>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="additional-service-card h-100">
+                    <div class="service-icon-small">
+                        <i class="fas fa-shield-alt text-danger"></i>
+                    </div>
+                    <h4>Seguros</h4>
+                    <p>Asesoramiento en seguros de hogar, responsabilidad civil y seguros de cauci&oacute;n para alquileres.</p>
+                    <small class="text-muted">Sin costo adicional</small>
+                </div>
+            </div>
+
+            <div class="col-lg-4 col-md-6 mb-4">
+                <div class="additional-service-card h-100">
+                    <div class="service-icon-small">
+                        <i class="fas fa-chart-line text-purple"></i>
+                    </div>
+                    <h4>Informes de Mercado</h4>
+                    <p>Reportes detallados sobre tendencias del mercado inmobiliario local y oportunidades de inversión.</p>
+                    <small class="text-muted">Consultar</small>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Por Qué Elegirnos -->
+<section class="py-5">
+    <div class="container">
+        <div class="row mb-5">
+            <div class="col-12 text-center">
+                <h2 class="display-5 mb-3">¿Por qué elegir Inmobiliaria CISMA?</h2>
+                <p class="lead text-muted">Nuestra experiencia marca la diferencia</p>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-lg-4 mb-4">
+                <div class="why-choose-card text-center">
+                    <div class="why-icon">
+                        <i class="fas fa-medal text-warning"></i>
+                    </div>
+                    <h4>15 Años de Experiencia</h4>
+                    <p>Conocemos el mercado inmobiliario de Villa Mercedes como nadie. Nuestra experiencia es tu garantía de éxito.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <div class="why-choose-card text-center">
+                    <div class="why-icon">
+                        <i class="fas fa-users text-primary"></i>
+                    </div>
+                    <h4>Equipo Profesional</h4>
+                    <p>Profesionales matriculados y capacitados constantemente para brindarte el mejor servicio y asesoramiento.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <div class="why-choose-card text-center">
+                    <div class="why-icon">
+                        <i class="fas fa-handshake text-success"></i>
+                    </div>
+                    <h4>Confianza Garantizada</h4>
+                    <p>Trabajamos con transparencia total. Todos nuestros procesos están regulados y supervisados por organismos competentes.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <div class="why-choose-card text-center">
+                    <div class="why-icon">
+                        <i class="fas fa-clock text-info"></i>
+                    </div>
+                    <h4>Atención Personalizada</h4>
+                    <p>Cada cliente es único. Adaptamos nuestros servicios a tus necesidades específicas y te acompañamos en todo momento.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <div class="why-choose-card text-center">
+                    <div class="why-icon">
+                        <i class="fas fa-mobile-alt text-danger"></i>
+                    </div>
+                    <h4>Tecnología Avanzada</h4>
+                    <p>Utilizamos las mejores herramientas digitales para marketing inmobiliario y gestión de propiedades.</p>
+                </div>
+            </div>
+
+            <div class="col-lg-4 mb-4">
+                <div class="why-choose-card text-center">
+                    <div class="why-icon">
+                        <i class="fas fa-map-marked-alt text-purple"></i>
+                    </div>
+                    <h4>Conocimiento Local</h4>
+                    <p>Conocemos cada barrio, cada zona y cada oportunidad en Villa Mercedes. Esto nos permite ofrecerte las mejores opciones.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- Call to Action -->
+<section class="py-5 bg-primary text-white">
+    <div class="container">
+        <div class="row text-center">
+            <div class="col-12">
+                <h2 class="display-5 mb-3">¿Necesitas alguno de nuestros servicios?</h2>
+                <p class="lead mb-4">
+                    Contáctanos hoy mismo para una consulta personalizada y sin compromiso.
+                </p>
+                <div class="cta-buttons">
+                    <a asp-action="Contacto" class="btn btn-warning btn-lg me-3">
+                        <i class="fas fa-phone"></i> Consulta Gratuita
+                    </a>
+                    <a href="https://wa.me/5492664123456?text=Hola,%20necesito%20información%20sobre%20sus%20servicios" 
+                       target="_blank" class="btn btn-outline-light btn-lg">
+                        <i class="fab fa-whatsapp"></i> WhatsApp
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Smooth scroll para enlaces ancla
+            $('a[href^="#"]').click(function(e) {
+                e.preventDefault();
+                var target = $(this.getAttribute('href'));
+                if (target.length) {
+                    $('html, body').animate({
+                        scrollTop: target.offset().top - 70
+                    }, 1000);
+                }
+            });
+
+            // Animación para las tarjetas de servicios
+            $('.service-detail-card').hover(
+                function() {
+                    $(this).addClass('shadow-lg').css('transform', 'translateY(-5px)');
+                },
+                function() {
+                    $(this).removeClass('shadow-lg').css('transform', 'translateY(0)');
+                }
+            );
+
+            // Animación para servicios adicionales
+            $('.additional-service-card').hover(
+                function() {
+                    $(this).find('.service-icon-small i').addClass('fa-bounce');
+                },
+                function() {
+                    $(this).find('.service-icon-small i').removeClass('fa-bounce');
+                }
+            );
+        });
+    </script>
+
+    <style>
+        .hero-services {
+            background: linear-gradient(135deg, rgba(52, 152, 219, 0.9), rgba(231, 76, 60, 0.8)), 
+                        url('~/images/servicios-bg.jpg') center/cover;
+        }
+
+        .service-detail-card {
+            border: none;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        .service-icon-large {
+            font-size: 3rem;
+        }
+
+        .service-features {
+            list-style: none;
+            padding: 0;
+        }
+
+        .service-features li {
+            margin-bottom: 0.5rem;
+        }
+
+        .additional-service-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+            text-align: center;
+        }
+
+        .additional-service-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(0,0,0,0.15);
+        }
+
+        .service-icon-small {
+            font-size: 2.5rem;
+            margin-bottom: 1rem;
+        }
+
+        .why-choose-card {
+            padding: 2rem;
+            height: 100%;
+        }
+
+        .why-icon {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+        }
+
+        .text-purple {
+            color: #6f42c1;
+        }
+
+        .service-pricing {
+            background: rgba(0,0,0,0.05);
+            padding: 1rem;
+            border-radius: 8px;
+            margin-top: 1rem;
+        }
+
+        @@media (max-width: 768px) {
+            .hero-services h1 {
+                font-size: 2.5rem;
+            }
+            
+            .service-detail-card {
+                margin-bottom: 2rem;
+            }
+            
+            .cta-buttons .btn {
+                display: block;
+                margin: 0.5rem 0;
+            }
+        }
+    </style>
+}

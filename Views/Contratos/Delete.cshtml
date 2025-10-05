@@ -148,6 +148,46 @@
                         </div>
                     </div>
                 </div>
+                <!-- Modal para aplicar multa al finalizar -->
+<div class="modal fade" id="modalMultaContrato" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-warning">
+                <h5 class="modal-title">
+                    <i class="bi bi-exclamation-triangle"></i> Finalizar Contrato
+                </h5>
+            </div>
+            <div class="modal-body">
+                <h6>Contrato #@Model.IdContrato terminado el @DateTime.Now.ToString("dd/MM/yyyy")</h6>
+                <p><strong>Inquilino:</strong> @Model.Inquilino?.Usuario?.NombreCompleto</p>
+                <p><strong>Inmueble:</strong> @Model.Inmueble?.Direccion</p>
+                
+                <hr>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="aplicarMulta">
+                    <label class="form-check-label" for="aplicarMulta">
+                        <strong>¿Se aplica multa por daños o condiciones de entrega?</strong>
+                    </label>
+                </div>
+                
+                <div id="divMontoMulta" style="display: none;" class="mt-3">
+                    <label for="montoMulta" class="form-label">Monto de la multa:</label>
+                    <div class="input-group">
+                        <span class="input-group-text">$</span>
+                        <input type="number" class="form-control" id="montoMulta" step="0.01" min="0">
+                    </div>
+                    <small class="text-muted">Será agregado al último pago mensual</small>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btnConfirmarModal">
+                    Finalizar Contrato
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
 
                 <!-- Consecuencias de la finalización -->
                 <div class="row mt-4">
@@ -184,8 +224,8 @@
                                 <input type="hidden" asp-for="IdContrato" />
                                 
                                 <div class="form-check mb-3">
-                                    <input class="form-check-input" type="checkbox" id="confirmarFinalizacion" required>
-                                    <label class="form-check-label text-danger fw-bold" for="confirmarFinalizacion">
+                                    <input class="form-check-input" type="checkbox" id="checkboxConfirmar" required>
+                                    <label class="form-check-label text-danger fw-bold" for="checkboxConfirmar">
                                         Confirmo que deseo finalizar este contrato definitivamente
                                     </label>
                                 </div>
@@ -228,50 +268,87 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const checkbox = document.getElementById('confirmarFinalizacion');
-            const btnFinalizar = document.getElementById('btnFinalizar');
-            
-            // Habilitar/deshabilitar botón según checkbox
-            checkbox.addEventListener('change', function() {
-                btnFinalizar.disabled = !this.checked;
-                
-                if (this.checked) {
-                    btnFinalizar.classList.remove('btn-danger');
-                    btnFinalizar.classList.add('btn-danger');
-                    btnFinalizar.innerHTML = '<i class="bi bi-flag-fill"></i> Sí, Finalizar Contrato';
+document.addEventListener('DOMContentLoaded', function() {
+    const checkboxConfirmar = document.getElementById('checkboxConfirmar'); 
+    const btnFinalizar = document.getElementById('btnFinalizar');
+    const btnConfirmarModal = document.getElementById('btnConfirmarModal'); 
+    // Habilitar/deshabilitar botón según checkbox
+    checkboxConfirmar.addEventListener('change', function() {
+        btnFinalizar.disabled = !this.checked;
+        console.log('Checkbox cambiado:', this.checked); // Para debug
+    });
+
+    // Al hacer clic en "Finalizar Contrato", mostrar modal
+    btnFinalizar.addEventListener('click', function(e) {
+        e.preventDefault();
+        console.log('Botón finalizar presionado, checkbox:', checkboxConfirmar.checked); // Para debug
+        
+        if (checkboxConfirmar.checked) {
+            $('#modalMultaContrato').modal('show');
+        } else {
+            alert('Debe confirmar la finalización marcando la casilla');
+        }
+    });
+
+    // Mostrar/ocultar campo de multa en el modal
+    $('#aplicarMulta').on('change', function() {
+        $('#divMontoMulta').toggle(this.checked);
+        if (this.checked) {
+            $('#montoMulta').focus();
+        }
+    });
+
+    // Confirmar finalización con o sin multa desde el modal
+    btnConfirmarModal.addEventListener('click', function() { // CAMBIADO
+        const aplicarMulta = $('#aplicarMulta').is(':checked');
+        const montoMulta = aplicarMulta ? parseFloat($('#montoMulta').val()) || 0 : 0;
+
+        // Validar monto si se aplica multa
+        if (aplicarMulta && montoMulta <= 0) {
+            alert('Por favor, ingrese un monto válido para la multa.');
+            $('#montoMulta').focus();
+            return;
+        }
+
+        // Confirmar la acción
+        const mensaje = aplicarMulta 
+            ? `¿Confirma finalizar el contrato con una multa de $${montoMulta.toFixed(2)}?`
+            : '¿Confirma finalizar el contrato sin multa?';
+
+        if (confirm(mensaje)) {
+            // Mostrar loading
+            this.disabled = true;
+            this.innerHTML = '<i class="bi bi-hourglass-split"></i> Finalizando...';
+
+            // Enviar al controller
+            $.post('@Url.Action("FinalizarConMulta", "Contratos")', {
+                id: @Model.IdContrato,
+                multaAplicada: montoMulta,
+                __RequestVerificationToken: $('input[name="__RequestVerificationToken"]').val()
+            })
+            .done(function(response) {
+                if (response.success) {
+                    const mensajeExito = aplicarMulta 
+                        ? `Contrato finalizado exitosamente con multa de $${montoMulta.toFixed(2)}`
+                        : 'Contrato finalizado exitosamente';
+                        
+                    alert(mensajeExito);
+                    window.location.href = '@Url.Action("Index", "Contratos")';
                 } else {
-                    btnFinalizar.innerHTML = '<i class="bi bi-flag-fill"></i> Sí, Finalizar Contrato';
+                    alert('Error: ' + (response.error || 'No se pudo finalizar el contrato'));
+                    btnConfirmarModal.disabled = false;
+                    btnConfirmarModal.innerHTML = 'Finalizar Contrato';
                 }
+            })
+            .fail(function() {
+                alert('Error de conexión. Intente nuevamente.');
+                btnConfirmarModal.disabled = false;
+                btnConfirmarModal.innerHTML = 'Finalizar Contrato';
             });
-            
-            // Confirmación adicional al enviar
-            const form = btnFinalizar.closest('form');
-            form.addEventListener('submit', function(e) {
-                if (!confirm('¿Está ABSOLUTAMENTE SEGURO que desea finalizar este contrato? Esta acción no se puede deshacer.')) {
-                    e.preventDefault();
-                    return false;
-                }
-                
-                // Deshabilitar botón para evitar doble envío
-                btnFinalizar.disabled = true;
-                btnFinalizar.innerHTML = '<i class="bi bi-hourglass-split"></i> Finalizando...';
-            });
-            
-            // Advertencia si el usuario intenta salir
-            let formSubmitted = false;
-            form.addEventListener('submit', function() {
-                formSubmitted = true;
-            });
-            
-            window.addEventListener('beforeunload', function(e) {
-                if (checkbox.checked && !formSubmitted) {
-                    e.preventDefault();
-                    e.returnValue = '¿Está seguro que desea salir? Los cambios no se han guardado.';
-                }
-            });
-        });
-    </script>
+        }
+    });
+});
+</script>
     
     <style>
         .alert-danger {
@@ -298,6 +375,16 @@
         
         .bg-light {
             background-color: #f8f9fa !important;
+        }
+
+        /* Estilos para el modal */
+        .modal-header.bg-warning {
+            border-bottom: 3px solid rgba(0,0,0,0.1);
+        }
+        
+        #montoMulta:focus {
+            border-color: #ffc107;
+            box-shadow: 0 0 0 0.2rem rgba(255, 193, 7, 0.25);
         }
     </style>
 }

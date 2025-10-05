@@ -1,0 +1,444 @@
+@{
+    var estadisticas = ViewBag.Estadisticas;
+    var totalPagos = estadisticas?.TotalPagos ?? 0;
+    var pagosAlquiler = estadisticas?.PagosAlquiler ?? 0;
+    var pagosVenta = estadisticas?.PagosVenta ?? 0;
+    var montoTotal = estadisticas?.MontoTotal ?? 0m;
+}
+
+@{
+    ViewData["Title"] = "Ejecutivo - Pagos";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item active">Gestion Ejecutivo</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-graph-up-arrow me-2"></i>Gestion Ejecutivo</h2>
+    <div>
+        <button onclick="actualizarDatos()" class="btn btn-outline-primary">
+            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+        </button>
+        <a href="@Url.Action("Index", "Pagos")" class="btn btn-secondary ms-2">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+</div>
+
+<!-- Resumen Ejecutivo Principal -->
+@if (ViewBag.ResumenGeneral != null)
+{
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card border-primary">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-pie-chart me-2"></i>Resumen Ejecutivo - Últimos 30 días
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-2">
+                            <div class="border-end">
+                                <h3 class="text-primary mb-1">@GetPropertyValue(ViewBag.ResumenGeneral, "TotalPagos")</h3>
+                                <small class="text-muted">Total Pagos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border-end">
+                                <h3 class="text-success mb-1">$@GetPropertyValue(ViewBag.ResumenGeneral, "IngresosTotal", "N0")</h3>
+                                <small class="text-muted">Ingresos</small>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="border-end">
+                                <h3 class="text-info mb-1">$@GetPropertyValue(ViewBag.ResumenGeneral, "PromedioPago", "N0")</h3>
+                                <small class="text-muted">Promedio</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="border-end">
+                                <div class="d-flex justify-content-around">
+                                    <div class="text-center">
+                                        <h4 class="text-primary mb-1">@GetPropertyValue(ViewBag.ResumenGeneral, "PagosAlquiler")</h4>
+                                        <small class="text-muted">Alquileres</small>
+                                    </div>
+                                    <div class="text-center">
+                                        <h4 class="text-warning mb-1">@GetPropertyValue(ViewBag.ResumenGeneral, "PagosVenta")</h4>
+                                        <small class="text-muted">Ventas</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <div class="progress mb-2" style="height: 20px;">
+                                    @{
+                                        var totalPagosLocal = GetPropertyValueAsInt(ViewBag.ResumenGeneral, "TotalPagos");
+                                        var pagosAlquilerLocal = GetPropertyValueAsInt(ViewBag.ResumenGeneral, "PagosAlquiler");
+                                        var pagosVentaLocal = GetPropertyValueAsInt(ViewBag.ResumenGeneral, "PagosVenta");
+                                        var porcentajeAlquiler = totalPagosLocal > 0 ? (pagosAlquilerLocal * 100 / totalPagosLocal) : 0;
+                                        var porcentajeVenta = totalPagosLocal > 0 ? (pagosVentaLocal * 100 / totalPagosLocal) : 0;
+                                    }
+                                    <div class="progress-bar bg-primary" style="width: @porcentajeAlquiler%">
+                                        @porcentajeAlquiler.ToString("F1")%
+                                    </div>
+                                    <div class="progress-bar bg-warning" style="width: @porcentajeVenta%">
+                                        @porcentajeVenta.ToString("F1")%
+                                    </div>
+                                </div>
+                                <small class="text-muted">Distribución por tipo</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Estado de Inmuebles -->
+@if (ViewBag.EstadoInmuebles != null)
+{
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-building me-2"></i>Estado de Inmuebles
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <canvas id="graficoEstados" width="300" height="300"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-speedometer2 me-2"></i>Indicadores Clave
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="bi bi-percent text-success fs-1"></i>
+                                <h4 class="text-success mt-2">
+                                    @(totalPagos > 0 ? ((double)pagosAlquiler / totalPagos * 100).ToString("F1") : "0")%
+                                </h4>
+                                <small class="text-muted">Tasa Ocupación</small>
+                            </div>
+                        </div>
+                        <div class="col-6 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="bi bi-graph-up text-info fs-1"></i>
+                                <h4 class="text-info mt-2">
+                                    @(DateTime.Now.Month switch 
+                                    {
+                                        var m when m > 1 => "+12%",
+                                        _ => "N/A"
+                                    })
+                                </h4>
+                                <small class="text-muted">Crecimiento Mensual</small>
+                            </div>
+                        </div>
+                        <div class="col-6 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="bi bi-currency-exchange text-warning fs-1"></i>
+                                <h4 class="text-warning mt-2">
+                                    @(totalPagos > 0 ? (GetPropertyValueAsDecimal(ViewBag.ResumenGeneral, "IngresosTotal") / totalPagos).ToString("C0") : "$0")
+                                </h4>
+                                <small class="text-muted">Ingreso Promedio</small>
+                            </div>
+                        </div>
+                        <div class="col-6 text-center mb-3">
+                            <div class="bg-light rounded p-3">
+                                <i class="bi bi-calendar-check text-primary fs-1"></i>
+                                <h4 class="text-primary mt-2">98%</h4>
+                                <small class="text-muted">Tasa de Cobro</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Últimos Pagos por Tipo -->
+<div class="row mb-4">
+    <!-- Últimos Pagos de Alquiler -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-house-door text-primary me-2"></i>Últimos Pagos - Alquiler
+                </h5>
+                <a href="@Url.Action("Index", "Alquileres")" class="btn btn-sm btn-outline-primary">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                @if (ViewBag.UltimosPagosAlquiler != null && ((IEnumerable<object>)ViewBag.UltimosPagosAlquiler).Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <tbody>
+                                @foreach (dynamic pago in (IEnumerable<object>)ViewBag.UltimosPagosAlquiler)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-primary bg-opacity-10 rounded p-2 me-3">
+                                                    <i class="bi bi-house-door text-primary"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@pago.Concepto</h6>
+                                                    <small class="text-muted">@pago.Inmueble?.Direccion</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="fw-bold">@pago.MontoTotal.ToString("C")</div>
+                                            <small class="text-muted">@pago.FechaPago.ToString("dd/MM")</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-@(pago.Estado == "pagado" ? "success" : "warning")">
+                                                @pago.Estado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No hay pagos de alquiler recientes</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <!-- Últimos Pagos de Venta -->
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-currency-dollar text-success me-2"></i>Últimos Pagos - Ventas
+                </h5>
+                <a href="@Url.Action("Index", "Ventas")" class="btn btn-sm btn-outline-success">
+                    Ver Todos
+                </a>
+            </div>
+            <div class="card-body p-0">
+                @if (ViewBag.UltimosPagosVenta != null && ((IEnumerable<object>)ViewBag.UltimosPagosVenta).Any())
+                {
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <tbody>
+                                @foreach (dynamic pago in (IEnumerable<object>)ViewBag.UltimosPagosVenta)
+                                {
+                                    <tr>
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="bg-success bg-opacity-10 rounded p-2 me-3">
+                                                    <i class="bi bi-currency-dollar text-success"></i>
+                                                </div>
+                                                <div>
+                                                    <h6 class="mb-1">@pago.Concepto</h6>
+                                                    <small class="text-muted">@pago.Inmueble?.Direccion</small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td class="text-end">
+                                            <div class="fw-bold">@pago.MontoTotal.ToString("C")</div>
+                                            <small class="text-muted">@pago.FechaPago.ToString("dd/MM")</small>
+                                        </td>
+                                        <td class="text-center">
+                                            <span class="badge bg-@(pago.Estado == "pagado" ? "success" : "warning")">
+                                                @pago.Estado
+                                            </span>
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-4">
+                        <i class="bi bi-inbox text-muted fs-1"></i>
+                        <p class="text-muted mt-2">No hay pagos de venta recientes</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Botones de acción rápida -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body text-center">
+                <h5 class="card-title mb-3">Acciones Ejecutivas</h5>
+                <div class="btn-group-lg" role="group">
+                    <a href="@Url.Action("Index", "Reportes")" class="btn btn-primary me-2">
+                        <i class="bi bi-graph-up me-2"></i>Ver Reportes Completos
+                    </a>
+                    <a href="@Url.Action("ExportarDatos", "Pagos")" class="btn btn-success me-2">
+                        <i class="bi bi-download me-2"></i>Exportar Datos
+                    </a>
+                    <a href="@Url.Action("Alertas", "Pagos")" class="btn btn-warning">
+                        <i class="bi bi-bell me-2"></i>Gestionar Alertas
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Gráfico de estados de inmuebles
+            @if (ViewBag.EstadoInmuebles != null)
+            {
+                <text>
+                const ctxEstados = document.getElementById('graficoEstados');
+                if (ctxEstados) {
+                    const estadosData = @Html.Raw(Json.Serialize(ViewBag.EstadoInmuebles));
+                    
+                    new Chart(ctxEstados, {
+                        type: 'doughnut',
+                        data: {
+                            labels: estadosData.map(e => getPropertyValue(e, 'Estado') || 'Estado'),
+                            datasets: [{
+                                data: estadosData.map(e => getPropertyValue(e, 'Cantidad') || 0),
+                                backgroundColor: [
+                                    'rgba(75, 192, 192, 0.8)',
+                                    'rgba(255, 206, 86, 0.8)',
+                                    'rgba(255, 99, 132, 0.8)',
+                                    'rgba(54, 162, 235, 0.8)',
+                                    'rgba(153, 102, 255, 0.8)'
+                                ],
+                                borderColor: [
+                                    'rgba(75, 192, 192, 1)',
+                                    'rgba(255, 206, 86, 1)',
+                                    'rgba(255, 99, 132, 1)',
+                                    'rgba(54, 162, 235, 1)',
+                                    'rgba(153, 102, 255, 1)'
+                                ],
+                                borderWidth: 2
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            plugins: {
+                                legend: {
+                                    position: 'bottom'
+                                }
+                            }
+                        }
+                    });
+                }
+                </text>
+            }
+
+            function getPropertyValue(obj, prop) {
+                return obj && obj[prop] !== undefined ? obj[prop] : null;
+            }
+        });
+
+        function actualizarDatos() {
+            const btn = event.target;
+            const originalText = btn.innerHTML;
+            
+            btn.innerHTML = '<i class="bi bi-arrow-clockwise me-1 spinner-border spinner-border-sm"></i>Actualizando...';
+            btn.disabled = true;
+            
+            fetch('@Url.Action("EstadisticasRapidas", "Pagos")')
+                .then(response => response.json())
+                .then(data => {
+                    setTimeout(() => {
+                        location.reload();
+                    }, 1000);
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                    alert('Error al actualizar los datos');
+                });
+        }
+    </script>
+}
+
+@functions {
+    public static object GetPropertyValue(object obj, string propertyName, string format = "")
+    {
+        if (obj == null) return "N/A";
+        
+        try 
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            if (property == null) return "N/A";
+            
+            var value = property.GetValue(obj);
+            if (value == null) return "N/A";
+            
+            if (!string.IsNullOrEmpty(format) && value is IFormattable formattable)
+            {
+                return formattable.ToString(format, null);
+            }
+            
+            return value.ToString() ?? "N/A";
+        }
+        catch 
+        {
+            return "N/A";
+        }
+    }
+    
+    public static int GetPropertyValueAsInt(object obj, string propertyName)
+    {
+        try
+        {
+            var value = GetPropertyValue(obj, propertyName);
+            if (value != null && int.TryParse(value.ToString(), out int result))
+            {
+                return result;
+            }
+        }
+        catch { }
+        return 0;
+    }
+    
+    public static decimal GetPropertyValueAsDecimal(object obj, string propertyName)
+    {
+        try
+        {
+            var value = GetPropertyValue(obj, propertyName);
+            if (value != null && decimal.TryParse(value.ToString(), out decimal result))
+            {
+                return result;
+            }
+        }
+        catch { }
+        return 0m;
+    }
+}

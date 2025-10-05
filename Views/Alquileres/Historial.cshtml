@@ -1,0 +1,559 @@
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.Pago>
+@{
+    ViewData["Title"] = "Historial de Pagos";
+    
+    // Datos del ViewBag
+    var contratoId = ViewBag.ContratoId;
+    var datosContrato = ViewBag.ContratoDatos as dynamic;
+    
+    // Título dinámico
+    var titulo = "Historial de Pagos";
+    if (datosContrato != null)
+    {
+        titulo += $" - {datosContrato.InmuebleDireccion}";
+    }
+    else if (contratoId != null)
+    {
+        titulo += $" - Contrato #{contratoId}";
+    }
+    
+    ViewData["Title"] = titulo;
+
+    // Cálculos para evitar errores de lambda
+    var totalCobrado = Model?.Sum(p => p.MontoTotal) ?? 0;
+    var totalMora = Model?.Sum(p => p.RecargoMora) ?? 0;
+    var totalBase = Model?.Sum(p => p.MontoBase) ?? 0;
+    var totalGeneral = Model?.Sum(p => p.MontoTotal) ?? 0;
+    var pagosPagadosList = Model?.Where(p => p.Estado.ToLower() == "pagado").ToList() ?? new List<Inmobiliaria_troncoso_leandro.Models.Pago>();
+    var promedioMensual = pagosPagadosList.Any() ? pagosPagadosList.Average(p => p.MontoTotal) : 0;
+
+    // Cálculo basado en infoPagos desde datosContrato - CORREGIDO
+    var infoPagosContrato = datosContrato?.InfoPagos ?? "0/0";
+    var parts = infoPagosContrato.Split('/');
+    
+    // INICIALIZAR LAS VARIABLES CON VALORES POR DEFECTO
+    int realizados = 0;
+    int total = 0;
+    
+    // Ahora sí usar TryParse
+    if (parts.Length == 2)
+    {
+        int.TryParse(parts[0], out realizados);
+        int.TryParse(parts[1], out total);
+    }
+    
+    int pagosRealizados = realizados;
+    int totalPagos = total;
+    int pagosPendientesContrato = totalPagos - pagosRealizados;
+    double porcentajePagadosContrato = totalPagos > 0 ? (double)pagosRealizados / totalPagos * 100 : 0;
+}
+<h2>@titulo</h2>
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Alquileres")">Alquileres</a></li>
+        <li class="breadcrumb-item active">Historial</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-clock-history me-2"></i>Historial de Pagos</h2>
+        @if (datosContrato != null)
+        {
+            <p class="text-muted mb-0">
+                <strong>Contrato #@contratoId</strong> - 
+                @datosContrato.InquilinoNombreCompleto
+                | <i class="bi bi-house-door me-1"></i>@datosContrato.InmuebleDireccion
+            </p>
+        }
+    </div>
+    <div>
+        <a href="@Url.Action("Create", "Alquileres", new { contratoId = contratoId })" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>Nuevo Pago
+        </a>
+        <a href="@Url.Action("Index", "Alquileres")" class="btn btn-secondary ms-2">
+            <i class="bi bi-arrow-left me-1"></i>Volver a Lista
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (Model != null && Model.Any())
+{
+    <!-- Resumen del contrato -->
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-receipt text-primary fs-2"></i>
+                    <h4 class="card-title text-primary mt-2">@Model.Count()</h4>
+                    <p class="card-text">Total Pagos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-currency-dollar text-success fs-2"></i>
+                    <h4 class="card-title text-success mt-2">@totalCobrado.ToString("C")</h4>
+                    <p class="card-text">Total Cobrado</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-exclamation-triangle text-warning fs-2"></i>
+                    <h4 class="card-title text-warning mt-2">@totalMora.ToString("C")</h4>
+                    <p class="card-text">Total Mora</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Historial completo de pagos -->
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-calendar-month me-2"></i>Historial Completo - @Model.Count() Pagos
+            </h5>
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportarHistorial()">
+                    <i class="bi bi-download me-1"></i>Exportar
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-info" onclick="imprimirHistorial()">
+                    <i class="bi bi-printer me-1"></i>Imprimir
+                </button>
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0" id="historialTable">
+                    <thead class="table-dark">
+                        <tr>
+                            <th><i class="bi bi-hash me-1"></i>Cuota</th>
+                            <th><i class="bi bi-calendar-event me-1"></i>Mes/Período</th>
+                            <th><i class="bi bi-calendar-check me-1"></i>Fecha Pago</th>
+                            <th><i class="bi bi-calendar-x me-1"></i>Vencimiento</th>
+                            <th><i class="bi bi-currency-dollar me-1"></i>Monto Base</th>
+                            <th><i class="bi bi-clock-history me-1"></i>Mora</th>
+                            <th><i class="bi bi-cash me-1"></i>Total</th>
+                            <th><i class="bi bi-check-circle me-1"></i>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @{
+                            int rowIndex = 0;
+                        }
+                        @foreach (var pago in Model.OrderBy(p => p.NumeroPago))
+                        {
+                            rowIndex++;
+                            var tieneMora = pago.DiasMora.HasValue && pago.DiasMora > 0;
+                            var esPagado = pago.Estado.ToLower() == "pagado";
+                            var rowClass = !esPagado ? "table-warning" : (tieneMora ? "table-danger" : "");
+                            
+                            <tr class="@rowClass">
+                                <td class="fw-bold text-center">
+                                    <span class="badge bg-primary fs-6">#@pago.NumeroPago</span>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@pago.Concepto</div>
+                                    <small class="text-muted">
+                                        @if (pago.FechaPago.Month != 0)
+                                        {
+                                            @pago.FechaPago.ToString("MMMM yyyy", new System.Globalization.CultureInfo("es-ES"))
+                                        }
+                                        else
+                                        {
+                                            <text>Período @pago.NumeroPago</text>
+                                        }
+                                    </small>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(esPagado ? "success" : "secondary") text-white">
+                                        @pago.FechaPago.ToString("dd/MM/yyyy")
+                                    </span>
+                                    @if (!esPagado)
+                                    {
+                                        <div class="small text-muted mt-1">Pendiente</div>
+                                    }
+                                </td>
+                                <td>
+                                    @if (pago.FechaVencimiento.HasValue)
+                                    {
+                                        var diasRetraso = esPagado ? 
+                                            (pago.FechaPago.Date - pago.FechaVencimiento.Value.Date).Days :
+                                            (DateTime.Now.Date - pago.FechaVencimiento.Value.Date).Days;
+                                        var badgeClass = diasRetraso > 0 ? "bg-danger" : (diasRetraso >= -3 ? "bg-warning" : "bg-light text-dark");
+                                        
+                                        <span class="badge @badgeClass">
+                                            @pago.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                        </span>
+                                        @if (diasRetraso > 0 && esPagado)
+                                        {
+                                            <div class="small text-danger mt-1">+@diasRetraso días</div>
+                                        }
+                                        else if (diasRetraso > 0 && !esPagado)
+                                        {
+                                            <div class="small text-danger mt-1 fw-bold">¡@diasRetraso días vencido!</div>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No definido</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="fw-semibold">@pago.MontoBase.ToString("C")</div>
+                                </td>
+                                <td class="text-end">
+                                    @if (tieneMora)
+                                    {
+                                        <div class="text-danger fw-bold">+@pago.RecargoMora.ToString("C")</div>
+                                        <small class="text-danger">(@pago.DiasMora días)</small>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-success">$0.00</span>
+                                    }
+                                </td>
+                                <td class="text-end">
+                                    <div class="fw-bold fs-6">@pago.MontoTotal.ToString("C")</div>
+                                </td>
+                                <td class="text-center">
+                                    <span class="badge bg-@(GetEstadoBadgeClass(pago.Estado)) px-3">
+                                        @pago.Estado.ToUpper()
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Details", new { id = pago.IdPago })" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        @if (pago.Estado != "anulado")
+                                        {
+                                            <a href="@Url.Action("Edit", new { id = pago.IdPago })" 
+                                               class="btn btn-sm btn-outline-warning" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <button class="btn btn-sm btn-outline-success" 
+                                                    onclick="marcarComoPagado(@pago.IdPago)" 
+                                                    title="Marcar como Pagado">
+                                                <i class="bi bi-check-circle"></i>
+                                            </button>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                    
+                    <!-- Fila de totales -->
+                    <tfoot class="table-dark">
+                        <tr>
+                            <th colspan="4" class="text-end">TOTALES:</th>
+                            <th class="text-end">@totalBase.ToString("C")</th>
+                            <th class="text-end text-warning">@totalMora.ToString("C")</th>
+                            <th class="text-end fs-5">@totalGeneral.ToString("C")</th>
+                            <th colspan="2"></th>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estadísticas de Pago -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-graph-up me-2"></i>Estadísticas de Pago
+                </h6>
+            </div>
+            <div class="card-body">
+                @{
+                    var stats = ViewBag.Estadisticas as dynamic;
+                    var pagosPagadosStats = stats?.PagosPagados ?? 0;
+                    var pagosPendientesStats = stats?.PagosPendientes ?? 0;
+                    var pagosConMora = stats?.PagosConMora ?? 0;
+                    var pagosAnulados = stats?.PagosAnulados ?? 0;
+                    var porcentajePagadosStats = stats?.PorcentajePagados ?? 0;
+                    var porcentajeConMora = stats?.PorcentajeConMora ?? 0;
+                    var infoPagosStats = stats?.InfoPagos ?? "0/0";
+                }
+                
+                <!-- Estado del contrato -->
+                <div class="alert alert-info mb-3">
+                    <strong>Progreso del contrato:</strong> @infoPagosStats
+                </div>
+
+                <div class="row text-center">
+                    <div class="col-6">
+                        <div class="border-end">
+                            <h4 class="text-success">@pagosRealizados</h4>
+                            <small class="text-muted">Pagados (@porcentajePagadosContrato.ToString("F1")%)</small>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <h4 class="text-warning">@pagosPendientesContrato</h4>
+                        <small class="text-muted">Pendientes</small>
+                    </div>
+                </div>
+                
+                <div class="progress mt-3" style="height: 10px;">
+                    <div class="progress-bar bg-success" style="width: @porcentajePagadosContrato%"></div>
+                    <div class="progress-bar bg-danger" style="width: @porcentajeConMora%"></div>
+                </div>
+                
+                <div class="mt-3">
+                    <div class="d-flex justify-content-between">
+                        <small><i class="bi bi-circle-fill text-success me-1"></i>Pagados</small>
+                        <small><i class="bi bi-circle-fill text-danger me-1"></i>Con Mora</small>
+                        <small><i class="bi bi-circle-fill text-warning me-1"></i>Pendientes</small>
+                        @if (pagosAnulados > 0)
+                        {
+                            <small><i class="bi bi-circle-fill text-secondary me-1"></i>Anulados (@pagosAnulados)</small>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-calendar-range me-2"></i>Información del Contrato
+                    </h6>
+                </div>
+                <div class="card-body">
+                    @if (ViewBag.ContratoDatos != null)
+                    {
+                        <div class="row">
+                            <div class="col-6">
+                                <strong>Fecha Inicio:</strong><br>
+                                <span class="text-muted">@GetPropertyValue(ViewBag.ContratoDatos, "FechaInicio", "dd/MM/yyyy")</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Fecha Fin:</strong><br>
+                                <span class="text-muted">@GetPropertyValue(ViewBag.ContratoDatos, "FechaFin", "dd/MM/yyyy")</span>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-6">
+                                <strong>Monto Mensual:</strong><br>
+                                <span class="fw-bold text-success">@GetPropertyValue(ViewBag.ContratoDatos, "MontoMensual", "C")</span>
+                            </div>
+                            <div class="col-6">
+                                <strong>Estado:</strong><br>
+                                <span class="badge bg-success">Vigente</span>
+                            </div>
+                        </div>
+                    }
+                    
+                    <hr>
+                    
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <strong>Promedio Mensual:</strong><br>
+                            <span class="text-info">
+                                @if (pagosPagadosList.Any())
+                                {
+                                    @promedioMensual.ToString("C")
+                                }
+                                else
+                                {
+                                    <text>N/A</text>
+                                }
+                            </span>
+                        </div>
+                        <div class="text-end">
+                            <strong>Última Actualización:</strong><br>
+                            <small class="text-muted">@DateTime.Now.ToString("dd/MM/yyyy HH:mm")</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-calendar-x text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No hay historial de pagos</h4>
+            <p class="text-muted">
+                @if (contratoId != null)
+                {
+                    <text>El contrato #@contratoId no tiene pagos registrados aún.</text>
+                }
+                else
+                {
+                    <text>No se encontró el contrato especificado.</text>
+                }
+            </p>
+            <div class="mt-3">
+                @if (contratoId != null)
+                {
+                    <a href="@Url.Action("Create", "Alquileres", new { contratoId = contratoId })" class="btn btn-primary me-2">
+                        <i class="bi bi-plus-circle me-1"></i>Crear Primer Pago
+                    </a>
+                }
+                <a href="@Url.Action("Index", "Alquileres")" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left me-1"></i>Volver a Lista
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        function exportarHistorial() {
+            const contratoId = @(contratoId ?? 0);
+            window.open(`@Url.Action("ExportarHistorial", "Alquileres")?contratoId=${contratoId}`, '_blank');
+        }
+
+        function imprimirHistorial() {
+            window.print();
+        }
+
+        function marcarComoPagado(idPago) {
+            if (confirm('¿Confirma que desea marcar este pago como pagado?')) {
+                fetch(`@Url.Action("MarcarComoPagado", "Alquileres")?idPago=${idPago}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error al marcar el pago como pagado');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión');
+                });
+            }
+        }
+
+        // Resaltar fila al hacer hover
+        document.addEventListener('DOMContentLoaded', function() {
+            const filas = document.querySelectorAll('#historialTable tbody tr');
+            filas.forEach(fila => {
+                fila.addEventListener('mouseenter', function() {
+                    this.style.backgroundColor = '#f8f9fa';
+                });
+                
+                fila.addEventListener('mouseleave', function() {
+                    this.style.backgroundColor = '';
+                });
+            });
+        });
+    </script>
+}
+
+<style>
+    @@media print {
+        .btn, .breadcrumb, .card-header .btn-group {
+            display: none !important;
+        }
+        
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        .table {
+            font-size: 12px;
+        }
+        
+        .badge {
+            border: 1px solid #000 !important;
+            background-color: transparent !important;
+            color: #000 !important;
+        }
+    }
+    
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.1) !important;
+    }
+    
+    .progress {
+        border-radius: 10px;
+    }
+</style>
+
+@functions {
+    public string GetEstadoBadgeClass(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "pagado" => "success",
+            "pendiente" => "warning",
+            "anulado" => "secondary",
+            _ => "primary"
+        };
+    }
+    
+    public static object GetPropertyValue(object obj, string propertyName, string format = "")
+    {
+        if (obj == null) return "N/A";
+        
+        try 
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            if (property == null) return "N/A";
+            
+            var value = property.GetValue(obj);
+            if (value == null) return "N/A";
+            
+            if (!string.IsNullOrEmpty(format))
+            {
+                if (value is DateTime dateTime)
+                    return dateTime.ToString(format);
+                if (value is decimal decimalValue)
+                    return decimalValue.ToString(format);
+                if (value is IFormattable formattable)
+                    return formattable.ToString(format, null);
+            }
+            
+            return value.ToString() ?? "N/A";
+        }
+        catch 
+        {
+            return "N/A";
+        }
+    }
+}

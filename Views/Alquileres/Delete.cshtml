@@ -1,0 +1,246 @@
+@model Inmobiliaria_troncoso_leandro.Models.Pago
+@{
+    ViewData["Title"] = "Anular Pago";
+    var datosContrato = ViewBag.DatosContrato as Inmobiliaria_troncoso_leandro.Models.DTOs.DatosContratoParaPago;
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        
+        <!-- Alerta de confirmación -->
+        <div class="alert alert-danger border-danger shadow" role="alert">
+            <div class="d-flex align-items-center">
+                <i class="bi bi-exclamation-triangle-fill" style="font-size: 2rem; margin-right: 1rem;"></i>
+                <div>
+                    <h4 class="alert-heading mb-1">Confirmar Anulación de Pago</h4>
+                    <p class="mb-0">Esta acción anulará el pago #@Model.NumeroPago. El registro se mantendrá pero no se considerará válido.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del pago -->
+        <div class="card shadow">
+            <div class="card-header bg-danger text-white">
+                <h3 class="mb-0">
+                    <i class="bi bi-x-circle-fill"></i> Anular Pago #@Model.NumeroPago
+                </h3>
+            </div>
+            <div class="card-body">
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                <div class="row">
+                    <!-- Información del pago -->
+                    <div class="col-md-6">
+                        <div class="card border-info h-100">
+                            <div class="card-header bg-info text-white">
+                                <h5 class="mb-0"><i class="bi bi-receipt"></i> Datos del Pago</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="mb-3">
+                                    <strong class="text-primary">Concepto:</strong><br>
+                                    <span class="h6">@Model.Concepto</span>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-success">Monto:</strong><br>
+                                    <span class="h5 text-success">
+                                        @Model.MontoTotal.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                    </span>
+                                    <br>
+                                    <small class="text-muted">
+                                        Base: @Model.MontoBase.ToString("C", new System.Globalization.CultureInfo("es-AR")) 
+                                        @(Model.RecargoMora > 0 ? $"+ Mora: {Model.RecargoMora.ToString("C", new System.Globalization.CultureInfo("es-AR"))}" : "")
+                                    </small>
+                                </div>
+
+                                <div class="mb-3">
+                                    <strong class="text-info">Fechas:</strong><br>
+                                    <span class="badge bg-info">Pago: @Model.FechaPago.ToString("dd/MM/yyyy")</span><br>
+                                    @if (Model.FechaVencimiento.HasValue)
+                                    {
+                                        <span class="badge bg-warning text-dark">Vencimiento: @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")</span>
+                                    }
+                                </div>
+
+                                <div class="mb-0">
+                                    <strong class="text-warning">Estado actual:</strong><br>
+                                    <span class="badge bg-success">@Model.Estado.ToUpper()</span>
+                                    @if (Model.DiasMora > 0)
+                                    {
+                                        <span class="badge bg-danger ms-1">@Model.DiasMora días de mora</span>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Información del contrato -->
+                    <div class="col-md-6">
+                        <div class="card border-primary h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0"><i class="bi bi-file-text"></i> Contrato Asociado</h5>
+                            </div>
+                            <div class="card-body">
+                                @if (datosContrato != null)
+                                {
+                                    <div class="mb-3">
+                                        <strong class="text-primary">Inmueble:</strong><br>
+                                        <span class="h6">@datosContrato.InmuebleDireccion</span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <strong class="text-success">Inquilino:</strong><br>
+                                        <span>@datosContrato.InquilinoNombreCompleto</span>
+                                    </div>
+
+                                    <div class="mb-3">
+                                        <strong class="text-info">Estado de pagos:</strong><br>
+                                        <span class="badge bg-info">@datosContrato.InfoPagos</span>
+                                    </div>
+
+                                    <div class="mb-0">
+                                        <strong class="text-warning">Monto mensual:</strong><br>
+                                        <span>@datosContrato.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))</span>
+                                    </div>
+                                }
+                                else
+                                {
+                                    <div class="text-muted">
+                                        <i class="bi bi-exclamation-triangle"></i>
+                                        No se pudo cargar la información del contrato
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Consecuencias de la anulación -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="alert alert-warning">
+                            <h6><i class="bi bi-info-circle"></i> Consecuencias de la anulación:</h6>
+                            <ul class="mb-0">
+                                <li><strong>Estado del pago:</strong> Cambiará a "Anulado"</li>
+                                <li><strong>Disponibilidad:</strong> El número de pago @Model.NumeroPago podrá ser usado nuevamente</li>
+                                <li><strong>Registro:</strong> El pago se mantendrá en el historial pero marcado como anulado</li>
+                                <li><strong>Auditoría:</strong> Se registrará la fecha y usuario que realizó la anulación</li>
+                                <li><strong>Reversible:</strong> Esta acción se puede revertir editando el pago</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Formulario de confirmación -->
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <div class="border border-danger rounded p-3 bg-light">
+                            <h6 class="text-danger">
+                                <i class="bi bi-shield-exclamation"></i> Confirmación requerida
+                            </h6>
+                            
+                            <form asp-action="Delete" method="post" class="d-inline">
+                                <input type="hidden" asp-for="IdPago" />
+                                
+                                <div class="mb-3">
+                                    <label for="motivoAnulacion" class="form-label">
+                                        <strong>Motivo de la anulación (opcional):</strong>
+                                    </label>
+                                    <textarea class="form-control" id="motivoAnulacion" name="motivoAnulacion" 
+                                              rows="3" placeholder="Ej: Pago duplicado, Error en el monto, etc..."></textarea>
+                                    <small class="text-muted">Este motivo quedará registrado en las observaciones del pago.</small>
+                                </div>
+                                
+                                <div class="form-check mb-3">
+                                    <input class="form-check-input" type="checkbox" id="checkboxConfirmar" required>
+                                    <label class="form-check-label text-danger fw-bold" for="checkboxConfirmar">
+                                        Confirmo que deseo anular este pago
+                                    </label>
+                                </div>
+                                
+                                <div class="d-flex gap-2 justify-content-center">
+                                    <button type="submit" 
+                                            class="btn btn-danger btn-lg" 
+                                            id="btnAnular"
+                                            disabled>
+                                        <i class="bi bi-x-circle-fill"></i> Sí, Anular Pago
+                                    </button>
+                                    <a asp-action="Details" asp-route-id="@Model.IdPago" 
+                                       class="btn btn-secondary btn-lg">
+                                        <i class="bi bi-arrow-left"></i> Volver a Detalles
+                                    </a>
+                                    <a asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                                        <i class="bi bi-list-ul"></i> Volver al Listado
+                                    </a>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const checkboxConfirmar = document.getElementById('checkboxConfirmar');
+            const btnAnular = document.getElementById('btnAnular');
+
+            // Habilitar/deshabilitar botón según checkbox
+            checkboxConfirmar.addEventListener('change', function() {
+                btnAnular.disabled = !this.checked;
+            });
+
+            // Validación antes de enviar
+            document.querySelector('form').addEventListener('submit', function(e) {
+                if (!checkboxConfirmar.checked) {
+                    e.preventDefault();
+                    alert('Debe confirmar la anulación marcando la casilla');
+                    return;
+                }
+
+                // Mostrar loading
+                btnAnular.disabled = true;
+                btnAnular.innerHTML = '<i class="bi bi-hourglass-split"></i> Anulando...';
+            });
+        });
+    </script>
+    
+    <style>
+        .alert-danger {
+            border-left: 5px solid #dc3545;
+        }
+        
+        .card-header {
+            border-bottom: 3px solid rgba(255, 255, 255, 0.3);
+        }
+        
+        .border-danger {
+            border-width: 2px !important;
+        }
+        
+        .btn[disabled] {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        
+        .form-check-label {
+            cursor: pointer;
+            user-select: none;
+        }
+        
+        .bg-light {
+            background-color: #f8f9fa !important;
+        }
+    </style>
+}

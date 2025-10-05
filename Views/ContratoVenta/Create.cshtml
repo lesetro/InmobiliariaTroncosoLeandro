@@ -1,0 +1,600 @@
+@model Inmobiliaria_troncoso_leandro.Models.ContratoVenta
+@{
+    ViewData["Title"] = "Crear Contrato de Venta";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-12">
+        <div class="card shadow">
+            <div class="card-header bg-success text-white">
+                <h3 class="mb-0"><i class="bi bi-cash-coin"></i> Crear Nuevo Contrato de Venta</h3>
+            </div>
+            <div class="card-body">
+
+                @if (TempData["ErrorMessage"] != null)
+                {
+                    <div class="alert alert-danger alert-dismissible fade show">
+                        <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (!ViewData.ModelState.IsValid)
+                {
+                    <div class="alert alert-danger">
+                        <h6>Se encontraron los siguientes errores:</h6>
+                        <ul class="mb-0">
+                            @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                            {
+                                <li>@error.ErrorMessage</li>
+                            }
+                        </ul>
+                    </div>
+                }
+
+                <form asp-action="Create" method="post">
+
+                    <!-- FILA 1: Inmueble y Vendedor (Propietario) -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdInmueble" class="form-label fw-bold">
+                                    <i class="bi bi-house"></i> Inmueble a Vender *
+                                </label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="inmuebleSearch" class="form-control" 
+                                           placeholder="Escriba al menos 3 letras para buscar inmueble..." />
+                                    <input asp-for="IdInmueble" type="hidden" id="idInmueble" />
+                                    <div id="inmuebleResults" class="autocomplete-results"></div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Busque por dirección, tipo o características
+                                </small>
+                                <span asp-validation-for="IdInmueble" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdVendedor" class="form-label fw-bold">
+                                    <i class="bi bi-person-badge"></i> Vendedor (Propietario) *
+                                </label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="vendedorSearch" class="form-control" 
+                                           placeholder="Escriba al menos 3 letras para buscar vendedor..." />
+                                    <input asp-for="IdVendedor" type="hidden" id="idVendedor" />
+                                    <div id="vendedorResults" class="autocomplete-results"></div>
+                                </div>
+                                <small class="form-text text-muted" id="vendedor-help">
+                                    Puede buscar por vendedor primero si no recuerda el inmueble
+                                </small>
+                                <span asp-validation-for="IdVendedor" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 2: Comprador y Precio -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdComprador" class="form-label fw-bold">
+                                    <i class="bi bi-person"></i> Comprador *
+                                </label>
+                                <div class="autocomplete-wrapper">
+                                    <input type="text" id="compradorSearch" class="form-control" 
+                                           placeholder="Escriba al menos 3 letras para buscar comprador..." />
+                                    <input asp-for="IdComprador" type="hidden" id="idComprador" />
+                                    <div id="compradorResults" class="autocomplete-results"></div>
+                                </div>
+                                <small class="form-text text-muted">
+                                    Busque por nombre, apellido o DNI del comprador
+                                </small>
+                                <span asp-validation-for="IdComprador" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="PrecioTotal" class="form-label fw-bold">
+                                    <i class="bi bi-currency-dollar"></i> Precio Total de Venta *
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="PrecioTotal" type="number" step="0.01" min="1" class="form-control" required />
+                                </div>
+                                <span asp-validation-for="PrecioTotal" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 3: Fechas -->
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="FechaInicio" class="form-label fw-bold">
+                                    <i class="bi bi-calendar-check"></i> Fecha de Inicio del Proceso *
+                                </label>
+                                <input asp-for="FechaInicio" type="date" class="form-control" required />
+                                <small class="form-text text-muted">Fecha en que inicia el proceso de venta</small>
+                                <span asp-validation-for="FechaInicio" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="FechaEscrituracion" class="form-label fw-bold">
+                                    <i class="bi bi-file-earmark-text"></i> Fecha de Escrituración (Opcional)
+                                </label>
+                                <input asp-for="FechaEscrituracion" type="date" class="form-control" />
+                                <small class="form-text text-muted">Fecha estimada para la escrituración</small>
+                                <span asp-validation-for="FechaEscrituracion" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 4: Montos de Pago -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="MontoSeña" class="form-label fw-bold">
+                                    <i class="bi bi-cash-stack"></i> Seña Inicial
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoSeña" type="number" step="0.01" min="0" class="form-control" />
+                                </div>
+                                <small class="form-text text-muted">Monto de seña para reservar la propiedad</small>
+                                <span asp-validation-for="MontoSeña" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="MontoAnticipos" class="form-label fw-bold">
+                                    <i class="bi bi-wallet2"></i> Anticipos Previstos
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoAnticipos" type="number" step="0.01" min="0" class="form-control" />
+                                </div>
+                                <small class="form-text text-muted">Monto total de anticipos previstos</small>
+                                <span asp-validation-for="MontoAnticipos" class="text-danger"></span>
+                            </div>
+                        </div>
+
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label class="form-label fw-bold">
+                                    <i class="bi bi-percent"></i> Porcentaje Mínimo Seña
+                                </label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" value="10" readonly />
+                                    <span class="input-group-text">%</span>
+                                </div>
+                                <small class="form-text text-muted">Seña mínima recomendada: 10% del precio total</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- FILA 5: Observaciones -->
+                    <div class="row">
+                        <div class="col-12">
+                            <div class="form-group mb-3">
+                                <label asp-for="Observaciones" class="form-label fw-bold">
+                                    <i class="bi bi-chat-text"></i> Observaciones
+                                </label>
+                                <textarea asp-for="Observaciones" class="form-control" rows="3" 
+                                          placeholder="Condiciones especiales, acuerdos, detalles del pago..."></textarea>
+                                <small class="form-text text-muted">Información adicional relevante para el proceso de venta</small>
+                                <span asp-validation-for="Observaciones" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Panel informativo -->
+                    <div class="alert alert-info">
+                        <h6><i class="bi bi-info-circle"></i> Proceso de Venta - Información importante:</h6>
+                        <ul class="mb-0 small">
+                            <li><strong>Relación Inmueble-Vendedor:</strong> Al seleccionar un inmueble, el vendedor se asigna automáticamente</li>
+                            <li><strong>Búsqueda por Vendedor:</strong> También puede buscar primero al vendedor para ver solo sus inmuebles</li>
+                            <li><strong>Solo inmuebles disponibles:</strong> Solo aparecerán inmuebles que puedan ser vendidos</li>
+                            <li><strong>Estado inicial:</strong> El contrato se creará con estado "Seña Pendiente" o "Seña Pagada" según corresponda</li>
+                            <li><strong>Proceso de pago:</strong> La venta puede incluir seña, anticipos y pago final hasta completar el precio total</li>
+                        </ul>
+                        
+                        <div class="alert alert-warning mt-3">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Nota sobre seña:</strong> La seña es un pago inicial que reserva la propiedad. En caso de desistimiento del comprador, 
+                            la seña podrá ser retenida según lo establecido en la ley de contrato de compraventa.
+                        </div>
+                    </div>
+
+                    <!-- Resumen de la operación -->
+                    <div class="card bg-light mb-4">
+                        <div class="card-body">
+                            <h6 class="card-title"><i class="bi bi-calculator"></i> Resumen de la Operación</h6>
+                            <div class="row">
+                                <div class="col-md-4">
+                                    <strong>Precio Total:</strong>
+                                    <span id="resumenPrecioTotal" class="text-success fw-bold">$0.00</span>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Seña:</strong>
+                                    <span id="resumenSena" class="text-info">$0.00</span>
+                                    <small id="resumenPorcentajeSena" class="text-muted">(0%)</small>
+                                </div>
+                                <div class="col-md-4">
+                                    <strong>Saldo Pendiente:</strong>
+                                    <span id="resumenSaldo" class="text-danger">$0.00</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <hr class="my-4">
+
+                    <div class="d-flex gap-2 justify-content-center">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Crear Contrato de Venta
+                        </button>
+                        <a asp-controller="Contratos" asp-action="Index" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Variables globales
+            let inmuebleBloqueado = false;
+            let vendedorBloqueado = false;
+            
+            // Configurar autocompletados
+            setupAutocompletado('inmuebleSearch', 'idInmueble', 'inmuebleResults', '/ContratoVenta/BuscarInmueblesParaVenta', onInmuebleSelected);
+            setupAutocompletado('vendedorSearch', 'idVendedor', 'vendedorResults', '/ContratoVenta/BuscarVendedores', onVendedorSelected);
+            setupAutocompletado('compradorSearch', 'idComprador', 'compradorResults', '/ContratoVenta/BuscarCompradores');
+            
+            // Configurar cálculos de montos
+            const precioTotalInput = document.querySelector('input[name="PrecioTotal"]');
+            const montoSenaInput = document.querySelector('input[name="MontoSeña"]');
+            
+            precioTotalInput.addEventListener('input', actualizarResumen);
+            montoSenaInput.addEventListener('input', actualizarResumen);
+            
+            // Función genérica de autocompletado
+            function setupAutocompletado(inputId, hiddenId, resultsId, url, onSelectCallback = null) {
+                const input = document.getElementById(inputId);
+                const hidden = document.getElementById(hiddenId);
+                const results = document.getElementById(resultsId);
+                let timeoutId;
+                
+                input.addEventListener('input', function() {
+                    clearTimeout(timeoutId);
+                    const termino = this.value.trim();
+                    
+                    if (termino.length < 3) {
+                        results.innerHTML = '';
+                        results.style.display = 'none';
+                        hidden.value = '';
+                        return;
+                    }
+                    
+                    // Debounce de 300ms
+                    timeoutId = setTimeout(() => {
+                        buscarDatos(termino, url, results, hidden, input, onSelectCallback);
+                    }, 300);
+                });
+                
+                // Limpiar resultados al hacer click fuera
+                document.addEventListener('click', function(e) {
+                    if (!input.contains(e.target) && !results.contains(e.target)) {
+                        results.style.display = 'none';
+                    }
+                });
+            }
+            
+            // Función para buscar datos vía AJAX
+           
+async function buscarDatos(termino, url, resultsContainer, hiddenField, inputField, callback) {
+    try {
+        resultsContainer.innerHTML = '<div class="autocomplete-item loading">Buscando...</div>';
+        resultsContainer.style.display = 'block';
+        
+        const response = await fetch(`${url}?termino=${encodeURIComponent(termino)}&limite=10`);
+        const data = await response.json();
+        
+        if (data.error) {
+            resultsContainer.innerHTML = `<div class="autocomplete-item error">${data.error}</div>`;
+            return;
+        }
+        
+        const items = data.data || data;
+        
+        if (!items || items.length === 0) {
+            resultsContainer.innerHTML = '<div class="autocomplete-item no-results">No se encontraron resultados</div>';
+            return;
+        }
+        
+        // Crear elementos de resultados - USANDO SearchResult
+        resultsContainer.innerHTML = '';
+        items.forEach(item => {
+            const div = document.createElement('div');
+            div.className = 'autocomplete-item';
+            
+            
+            div.textContent = item.TextoCompleto || item.Texto; 
+            div.dataset.id = item.Id; 
+            div.dataset.item = JSON.stringify(item);
+            
+            
+            if (item.ContactoInfo) {
+                div.title = item.ContactoInfo;
+            }
+            
+            div.addEventListener('click', function() {
+               
+                inputField.value = item.Texto; 
+                hiddenField.value = item.Id;
+                resultsContainer.style.display = 'none';
+                
+                if (callback) {
+                    callback(item);
+                }
+            });
+            
+            resultsContainer.appendChild(div);
+        });
+        
+    } catch (error) {
+        resultsContainer.innerHTML = `<div class="autocomplete-item error">Error: ${error.message}</div>`;
+    }
+}
+            
+            // Callback cuando se selecciona un inmueble
+            async function onInmuebleSelected(inmueble) {
+    if (propietarioBloqueado) return;
+    
+    try {
+        // Obtener vendedor del inmueble
+        const response = await fetch(`/ContratoVenta/ObtenerVendedorDeInmueble?inmuebleId=${inmueble.Id}`);
+        const data = await response.json();
+        
+        if (data.success && data.data) {
+            const vendedor = data.data;
+            
+            // Llenar vendedor automáticamente - USANDO SearchResult
+            document.getElementById('vendedorSearch').value = vendedor.Texto; // Solo el texto
+            document.getElementById('idVendedor').value = vendedor.Id;
+            
+            // Bloquear vendedor
+            document.getElementById('vendedorSearch').disabled = true;
+            vendedorBloqueado = true;
+            
+            // Actualizar mensaje de ayuda
+            document.getElementById('vendedor-help').textContent = 
+                `Vendedor asignado automáticamente: ${vendedor.Texto}`;
+            document.getElementById('vendedor-help').className = 'form-text text-success';
+        }
+    } catch (error) {
+        console.error('Error al obtener vendedor:', error);
+    }
+}
+
+// Callback cuando se selecciona un vendedor
+async function onVendedorSelected(vendedor) {
+    if (inmuebleBloqueado) return;
+    
+    try {
+        // Obtener inmuebles del vendedor
+        const response = await fetch(`/ContratoVenta/ObtenerInmueblesPorVendedor?vendedorId=${vendedor.Id}&limite=15`);
+        const data = await response.json();
+        
+        if (data.success && data.data && data.data.length > 0) {
+            // Actualizar mensaje de ayuda
+            document.getElementById('vendedor-help').textContent = 
+                `${data.data.length} inmueble(s) disponible(s) de: ${vendedor.Texto}`;
+            document.getElementById('vendedor-help').className = 'form-text text-info';
+            
+            // Mostrar los inmuebles disponibles en el autocompletado
+            const inmuebleResults = document.getElementById('inmuebleResults');
+            inmuebleResults.innerHTML = '';
+            
+            data.data.forEach(inmueble => {
+                const div = document.createElement('div');
+                div.className = 'autocomplete-item';
+                
+                // USAR SearchResult properties
+                div.textContent = inmueble.TextoCompleto || inmueble.Texto;
+                div.dataset.id = inmueble.Id;
+                div.dataset.item = JSON.stringify(inmueble);
+                
+                div.addEventListener('click', function() {
+                    document.getElementById('inmuebleSearch').value = inmueble.Texto; // Solo texto
+                    document.getElementById('idInmueble').value = inmueble.Id;
+                    inmuebleResults.style.display = 'none';
+                });
+                
+                inmuebleResults.appendChild(div);
+            });
+            
+            inmuebleResults.style.display = 'block';
+            
+            // Actualizar placeholder del input de inmuebles
+            document.getElementById('inmuebleSearch').placeholder = 
+                `Seleccione uno de los ${data.data.length} inmuebles disponibles`;
+                
+        } else {
+            // No hay inmuebles disponibles
+            document.getElementById('vendedor-help').textContent = 
+                `${vendedor.Texto} no tiene inmuebles disponibles para vender`;
+            document.getElementById('vendedor-help').className = 'form-text text-warning';
+        }
+    } catch (error) {
+        console.error('Error al obtener inmuebles del vendedor:', error);
+        document.getElementById('vendedor-help').textContent = 
+            'Error al cargar inmuebles del vendedor';
+        document.getElementById('vendedor-help').className = 'form-text text-danger';
+    }
+}
+            // Actualizar resumen de montos
+            function actualizarResumen() {
+                const precioTotal = parseFloat(precioTotalInput.value) || 0;
+                const montoSena = parseFloat(montoSenaInput.value) || 0;
+                const saldoPendiente = precioTotal - montoSena;
+                const porcentajeSena = precioTotal > 0 ? (montoSena / precioTotal) * 100 : 0;
+                
+                // Actualizar displays
+                document.getElementById('resumenPrecioTotal').textContent = `$${precioTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                document.getElementById('resumenSena').textContent = `$${montoSena.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                document.getElementById('resumenPorcentajeSena').textContent = `(${porcentajeSena.toFixed(1)}%)`;
+                document.getElementById('resumenSaldo').textContent = `$${saldoPendiente.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                
+                // Validar que la seña no sea mayor al precio total
+                if (montoSena > precioTotal) {
+                    montoSenaInput.setCustomValidity('La seña no puede ser mayor al precio total');
+                } else {
+                    montoSenaInput.setCustomValidity('');
+                }
+            }
+            
+            // Limpiar selecciones
+            function limpiarInmueble() {
+                document.getElementById('inmuebleSearch').value = '';
+                document.getElementById('idInmueble').value = '';
+                inmuebleBloqueado = false;
+                precioTotalInput.value = '';
+                actualizarResumen();
+            }
+            
+            function limpiarVendedor() {
+                document.getElementById('vendedorSearch').value = '';
+                document.getElementById('idVendedor').value = '';
+                document.getElementById('vendedorSearch').disabled = false;
+                vendedorBloqueado = false;
+                
+                // Restaurar mensaje de ayuda
+                document.getElementById('vendedor-help').textContent = 
+                    'Puede buscar por vendedor primero si no recuerda el inmueble';
+                document.getElementById('vendedor-help').className = 'form-text text-muted';
+            }
+            
+            // Event listeners para limpiar al hacer backspace/delete
+            document.getElementById('inmuebleSearch').addEventListener('keydown', function(e) {
+                if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
+                    limpiarInmueble();
+                    limpiarVendedor();
+                }
+            });
+            
+            document.getElementById('vendedorSearch').addEventListener('keydown', function(e) {
+                if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
+                    limpiarVendedor();
+                }
+            });
+            
+            // Configurar fecha de inicio por defecto
+            const fechaInicio = document.querySelector('input[name="FechaInicio"]');
+            const hoy = new Date().toISOString().split('T')[0];
+            fechaInicio.value = hoy;
+            
+            // Inicializar resumen
+            actualizarResumen();
+        });
+    </script>
+    
+    <style>
+        .autocomplete-wrapper {
+            position: relative;
+        }
+        
+        .autocomplete-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 1px solid #ced4da;
+            border-radius: 0.375rem;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+            z-index: 1000;
+            max-height: 200px;
+            overflow-y: auto;
+            display: none;
+        }
+        
+        .autocomplete-item {
+            padding: 0.5rem 0.75rem;
+            cursor: pointer;
+            border-bottom: 1px solid #f8f9fa;
+        }
+        
+        .autocomplete-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .autocomplete-item:last-child {
+            border-bottom: none;
+        }
+        
+        .autocomplete-item.loading {
+            color: #6c757d;
+            font-style: italic;
+            cursor: default;
+        }
+        
+        .autocomplete-item.error {
+            color: #dc3545;
+            cursor: default;
+        }
+        
+        .autocomplete-item.no-results {
+            color: #6c757d;
+            font-style: italic;
+            cursor: default;
+        }
+        
+        .card-header {
+            border-bottom: 3px solid rgba(40, 167, 69, 0.3);
+        }
+        
+        .form-label.fw-bold {
+            color: #495057;
+            margin-bottom: 0.5rem;
+        }
+        
+        .alert-info {
+            background-color: #e3f2fd;
+            border-color: #90caf9;
+            color: #1565c0;
+        }
+        
+        .input-group-text {
+            background-color: #f8f9fa;
+            border-color: #ced4da;
+        }
+        
+        input:disabled {
+            background-color: #e9ecef;
+            opacity: 0.7;
+        }
+        
+        .text-success {
+            font-weight: 500;
+        }
+        
+        .text-info {
+            font-weight: 500;
+        }
+        
+        .bg-success {
+            background-color: #198754 !important;
+        }
+    </style>
+}

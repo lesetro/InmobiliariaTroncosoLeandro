@@ -1,0 +1,139 @@
+@model IList<Inmobiliaria_troncoso_leandro.Models.InteresInmueble>
+
+@{
+    ViewData["Title"] = "Gestión de Intereses";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Gestión de Intereses</h1>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Filtros -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" asp-action="Intereses">
+                        <div class="row g-3">
+                            <div class="col-md-5">
+                                <label class="form-label">Buscar</label>
+                                <input type="text" name="buscar" value="@ViewBag.Buscar" class="form-control" placeholder="Nombre o email..." />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Estado</label>
+                                <select name="estado" class="form-select">
+                                    <option value="">Todos los estados</option>
+                                    <option value="pendiente" selected="@(ViewBag.EstadoSeleccionado == "pendiente")">Pendiente</option>
+                                    <option value="contactado" selected="@(ViewBag.EstadoSeleccionado == "contactado")">Contactado</option>
+                                </select>
+                            </div>
+                            <div class="col-md-4 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <a asp-action="Intereses" class="btn btn-outline-secondary">Limpiar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla -->
+            <div class="card">
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Email</th>
+                                        <th>Teléfono</th>
+                                        <th>Fecha</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var interes in Model)
+                                    {
+                                        <tr>
+                                            <td><strong>@interes.Nombre</strong></td>
+                                            <td>
+                                                <a href="mailto:@interes.Email">@interes.Email</a>
+                                            </td>
+                                            <td>
+                                                @if (!string.IsNullOrEmpty(interes.Telefono))
+                                                {
+                                                    <a href="tel:@interes.Telefono">@interes.Telefono</a>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">No especificado</span>
+                                                }
+                                            </td>
+                                            <td>@interes.Fecha.ToString("dd/MM/yyyy")</td>
+                                            <td>
+                                                @if (interes.Contactado)
+                                                {
+                                                    <span class="badge bg-success">CONTACTADO</span>
+                                                    @if (interes.FechaContacto.HasValue)
+                                                    {
+                                                        <br><small class="text-muted">@interes.FechaContacto.Value.ToString("dd/MM/yyyy")</small>
+                                                    }
+                                                }
+                                                else
+                                                {
+                                                    <span class="badge bg-warning">PENDIENTE</span>
+                                                }
+                                            </td>
+                                            <td>
+                                                @if (!interes.Contactado)
+                                                {
+                                                    <form asp-action="MarcarContactado" asp-route-id="@interes.IdInteres" method="post" class="d-inline">
+                                                        <button type="submit" class="btn btn-sm btn-success" onclick="return confirm('¿Marcar como contactado?')">
+                                                            <i class="fas fa-check"></i> Marcar Contactado
+                                                        </button>
+                                                    </form>
+                                                }
+                                                else
+                                                {
+                                                    <span class="text-muted">Ya contactado</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No se encontraron intereses</h5>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

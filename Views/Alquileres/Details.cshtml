@@ -1,0 +1,502 @@
+@model Inmobiliaria_troncoso_leandro.Models.Pago
+@{
+    ViewData["Title"] = "Detalles - Pago de Alquiler";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Alquileres")">Alquileres</a></li>
+        <li class="breadcrumb-item active">Detalles</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2><i class="bi bi-eye me-2"></i>Pago de Alquiler #@Model.NumeroPago</h2>
+        <p class="text-muted mb-0">@Model.Concepto</p>
+    </div>
+    <div>
+        @if (Model.Estado != "anulado")
+        {
+            <a href="@Url.Action("Edit", new { id = Model.IdPago })" class="btn btn-warning">
+                <i class="bi bi-pencil me-1"></i>Editar
+            </a>
+        }
+        @if (Model.IdContrato.HasValue)
+        {
+            <a href="@Url.Action("Historial", "Alquileres", new { contratoId = Model.IdContrato })" class="btn btn-outline-info ms-2">
+                <i class="bi bi-clock-history me-1"></i>Ver Historial
+            </a>
+        }
+        <a href="@Url.Action("Index", "Alquileres")" class="btn btn-secondary ms-2">
+            <i class="bi bi-arrow-left me-1"></i>Volver
+        </a>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Estado del pago -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="alert alert-@(GetEstadoAlertClass(Model.Estado)) border-2" role="alert">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <i class="@GetEstadoIcon(Model.Estado) fs-4 me-3"></i>
+                    <div>
+                        <h5 class="alert-heading mb-1">Estado: @Model.Estado.ToUpper()</h5>
+                        <p class="mb-0">
+                            @GetEstadoDescripcion(Model.Estado)
+                        </p>
+                    </div>
+                </div>
+                @if (Model.DiasMora.HasValue && Model.DiasMora > 0)
+                {
+                    <div class="text-end">
+                        <span class="badge bg-danger fs-6">@Model.DiasMora días de mora</span>
+                        <div class="fw-bold text-danger">+@Model.RecargoMora.ToString("C")</div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Información principal -->
+    <div class="col-md-8">
+        <!-- Datos del pago -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-receipt me-2"></i>Información del Pago
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-hash me-2"></i>Número de Pago:</td>
+                                <td><span class="badge bg-primary fs-6">#@Model.NumeroPago</span></td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-calendar me-2"></i>Fecha de Pago:</td>
+                                <td>@Model.FechaPago.ToString("dddd, dd 'de' MMMM 'de' yyyy", new System.Globalization.CultureInfo("es-ES"))</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-calendar-x me-2"></i>Fecha Vencimiento:</td>
+                                <td>
+                                    @if (Model.FechaVencimiento.HasValue)
+                                    {
+                                        @Model.FechaVencimiento.Value.ToString("dd/MM/yyyy")
+                                        
+                                        var diasRetraso = (Model.FechaPago.Date - Model.FechaVencimiento.Value.Date).Days;
+                                        if (diasRetraso > 0)
+                                        {
+                                            <span class="text-danger ms-2">(+@diasRetraso días)</span>
+                                        }
+                                        else if (diasRetraso < 0)
+                                        {
+                                            <span class="text-success ms-2">(@Math.Abs(diasRetraso) días adelantado)</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">No definida</span>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-tag me-2"></i>Tipo de Pago:</td>
+                                <td><span class="badge bg-info">@Model.TipoPago.ToUpper()</span></td>
+                            </tr>
+                        </table>
+                    </div>
+                    <div class="col-md-6">
+                        <table class="table table-borderless">
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-currency-dollar me-2"></i>Monto Base:</td>
+                                <td class="fw-bold">@Model.MontoBase.ToString("C")</td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-clock-history me-2"></i>Recargo Mora:</td>
+                                <td class="fw-bold @(Model.RecargoMora > 0 ? "text-danger" : "text-success")">
+                                    @if (Model.RecargoMora > 0)
+                                    {
+                                        <text>+@Model.RecargoMora.ToString("C")</text>
+                                    }
+                                    else
+                                    {
+                                        <text>$0.00</text>
+                                    }
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="fw-semibold"><i class="bi bi-cash me-2"></i>Total Pagado:</td>
+                                <td class="fw-bold fs-5 text-primary">@Model.MontoTotal.ToString("C")</td>
+                            </tr>
+                            @if (Model.MontoDiarioMora.HasValue)
+                            {
+                                <tr>
+                                    <td class="fw-semibold"><i class="bi bi-percent me-2"></i>Mora Diaria:</td>
+                                    <td>@Model.MontoDiarioMora.Value.ToString("C") por día</td>
+                                </tr>
+                            }
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del contrato e inmueble -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="bi bi-building me-2"></i>Contrato e Inmueble
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-house-door me-2 text-primary"></i>Inmueble</h6>
+                        <p class="mb-3">
+                            <strong>@Model.Inmueble?.Direccion</strong><br>
+                            <small class="text-muted">ID Inmueble: @Model.IdInmueble</small>
+                        </p>
+                        
+                        <h6><i class="bi bi-file-text me-2 text-info"></i>Contrato</h6>
+                        <p class="mb-0">
+                            <strong>Contrato #@Model.IdContrato</strong><br>
+                            @if (ViewBag.ContratoDatos != null)
+                            {
+                                <small class="text-muted">
+                                    Vigencia: @GetPropertyValue(ViewBag.ContratoDatos, "FechaInicio", "dd/MM/yyyy") - 
+                                    @GetPropertyValue(ViewBag.ContratoDatos, "FechaFin", "dd/MM/yyyy")
+                                </small>
+                            }
+                        </p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6><i class="bi bi-person me-2 text-success"></i>Inquilino</h6>
+                        <div class="d-flex align-items-center">
+                            <div class="bg-success bg-opacity-10 rounded-circle p-2 me-3">
+                                <i class="bi bi-person text-success"></i>
+                            </div>
+                            <div>
+                                <strong>@Model.Contrato?.Inquilino?.Usuario?.Nombre @Model.Contrato?.Inquilino?.Usuario?.Apellido</strong><br>
+                                @if (!string.IsNullOrEmpty(Model.Contrato?.Inquilino?.Usuario?.Email))
+                                {
+                                    <small class="text-muted">@Model.Contrato?.Inquilino?.Usuario?.Email</small><br>
+                                }
+                                @if (!string.IsNullOrEmpty(Model.Contrato?.Inquilino?.Usuario?.Telefono))
+                                {
+                                    <small class="text-muted">@Model.Contrato?.Inquilino?.Usuario?.Telefono</small>
+                                }
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Concepto y observaciones -->
+        @if (!string.IsNullOrEmpty(Model.Concepto) || !string.IsNullOrEmpty(Model.Observaciones))
+        {
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-chat-text me-2"></i>Descripción y Notas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    @if (!string.IsNullOrEmpty(Model.Concepto))
+                    {
+                        <div class="mb-3">
+                            <h6>Concepto</h6>
+                            <p class="text-muted">@Model.Concepto</p>
+                        </div>
+                    }
+                    
+                    @if (!string.IsNullOrEmpty(Model.Observaciones))
+                    {
+                        <div>
+                            <h6>Observaciones</h6>
+                            <p class="text-muted">@Model.Observaciones</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+
+    <!-- Sidebar con información adicional -->
+    <div class="col-md-4">
+        <!-- Comprobante -->
+        @if (!string.IsNullOrEmpty(Model.ComprobanteRuta))
+        {
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="card-title mb-0">
+                        <i class="bi bi-file-check me-2"></i>Comprobante
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <i class="bi bi-file-earmark-pdf text-danger fs-1"></i>
+                    <h6 class="mt-2">@Model.ComprobanteNombre</h6>
+                    <div class="d-grid gap-2">
+                        <a href="@Model.ComprobanteRuta" target="_blank" class="btn btn-primary">
+                            <i class="bi bi-eye me-2"></i>Ver Comprobante
+                        </a>
+                        <a href="@Model.ComprobanteRuta" download class="btn btn-outline-primary">
+                            <i class="bi bi-download me-2"></i>Descargar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Historial de cambios -->
+        <div class="card mb-4">
+            <div class="card-header bg-info text-white">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-clock-history me-2"></i>Historial
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="timeline-marker bg-success"></div>
+                        <div class="timeline-content">
+                            <h6 class="timeline-title">Creado</h6>
+                            <p class="timeline-text">
+                                @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")<br>
+                                <small class="text-muted">por @Model.UsuarioCreador?.Nombre @Model.UsuarioCreador?.Apellido</small>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    @if (Model.FechaAnulacion.HasValue)
+                    {
+                        <div class="timeline-item">
+                            <div class="timeline-marker bg-danger"></div>
+                            <div class="timeline-content">
+                                <h6 class="timeline-title">Anulado</h6>
+                                <p class="timeline-text">
+                                    @Model.FechaAnulacion.Value.ToString("dd/MM/yyyy HH:mm")<br>
+                                    <small class="text-muted">por @Model.UsuarioAnulador?.Nombre @Model.UsuarioAnulador?.Apellido</small>
+                                </p>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones rápidas -->
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h6 class="card-title mb-0">
+                    <i class="bi bi-lightning me-2"></i>Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    @if (Model.Estado != "anulado")
+                    {
+                        <a href="@Url.Action("Edit", new { id = Model.IdPago })" class="btn btn-outline-warning">
+                            <i class="bi bi-pencil me-2"></i>Editar Pago
+                        </a>
+                        
+                        <button onclick="imprimirRecibo()" class="btn btn-outline-primary">
+                            <i class="bi bi-printer me-2"></i>Imprimir Recibo
+                        </button>
+                        
+                        @if (Model.Estado == "pendiente")
+                        {
+                            <button onclick="marcarComoPagado(@Model.IdPago)" class="btn btn-outline-success">
+                                <i class="bi bi-check-circle me-2"></i>Marcar como Pagado
+                            </button>
+                        }
+                        
+                        <a href="@Url.Action("Delete", new { id = Model.IdPago })" class="btn btn-outline-danger">
+                            <i class="bi bi-x-circle me-2"></i>Anular Pago
+                        </a>
+                    }
+                    
+                    @if (Model.IdContrato.HasValue)
+                    {
+                        <a href="@Url.Action("Create", "Alquileres", new { contratoId = Model.IdContrato })" 
+                           class="btn btn-outline-success">
+                            <i class="bi bi-plus-circle me-2"></i>Nuevo Pago del Contrato
+                        </a>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function imprimirRecibo() {
+            window.print();
+        }
+
+        function marcarComoPagado(idPago) {
+            if (confirm('¿Confirma que desea marcar este pago como pagado?')) {
+                fetch(`@Url.Action("MarcarComoPagado", "Alquileres")?idPago=${idPago}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]')?.value
+                    }
+                })
+                .then(response => {
+                    if (response.ok) {
+                        location.reload();
+                    } else {
+                        alert('Error al marcar el pago como pagado');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error de conexión');
+                });
+            }
+        }
+        @functions {
+    public string GetEstadoAlertClass(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "pagado" => "success",
+            "pendiente" => "warning",
+            "anulado" => "secondary",
+            _ => "primary"
+        };
+    }
+    
+    public string GetEstadoIcon(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "pagado" => "bi bi-check-circle",
+            "pendiente" => "bi bi-clock",
+            "anulado" => "bi bi-x-circle",
+            _ => "bi bi-info-circle"
+        };
+    }
+    
+    public string GetEstadoDescripcion(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "pagado" => "El pago ha sido procesado y confirmado correctamente.",
+            "pendiente" => "El pago está pendiente de procesamiento o confirmación.",
+            "anulado" => "Este pago ha sido anulado y no tiene validez.",
+            _ => "Estado no definido."
+        };
+    }
+    
+    public static object GetPropertyValue(object obj, string propertyName, string format = "")
+    {
+        if (obj == null) return "N/A";
+        
+        try 
+        {
+            var property = obj.GetType().GetProperty(propertyName);
+            if (property == null) return "N/A";
+            
+            var value = property.GetValue(obj);
+            if (value == null) return "N/A";
+            
+            if (!string.IsNullOrEmpty(format))
+            {
+                if (value is DateTime dateTime)
+                    return dateTime.ToString(format);
+                if (value is decimal decimalValue)
+                    return decimalValue.ToString(format);
+                if (value is IFormattable formattable)
+                    return formattable.ToString(format, null);
+            }
+            
+            return value.ToString() ?? "N/A";
+        }
+        catch 
+        {
+            return "N/A";
+        }
+    }
+}
+</script>
+
+}
+
+<style>
+    @@media print {
+        .btn, .breadcrumb, nav, .card-header .btn-group {
+            display: none !important;
+        }
+        
+        .card {
+            border: none !important;
+            box-shadow: none !important;
+        }
+        
+        .alert {
+            background-color: #f8f9fa !important;
+            color: #212529 !important;
+            border: 1px solid #dee2e6 !important;
+        }
+    }
+
+    .timeline-marker {
+        position: absolute;
+        left: -35px;
+        top: 5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+    }
+
+    .timeline::before {
+        content: '';
+        position: absolute;
+        left: -30px;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background-color: #dee2e6;
+    }
+
+    .timeline-title {
+        font-size: 0.9rem;
+        margin-bottom: 5px;
+    }
+
+    .timeline-text {
+        font-size: 0.8rem;
+        margin-bottom: 0;
+    }
+</style>
+
+ 

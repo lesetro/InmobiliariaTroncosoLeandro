@@ -1,0 +1,690 @@
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.InteresInmueble>
+
+@{
+    ViewData["Title"] = "Gestión de Intereses";
+    var estadisticas = ViewBag.EstadisticasResumen as Dictionary<string, int>;
+}
+
+<div class="container-fluid">
+    <!-- Header con título y estadísticas rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-heart text-danger me-2"></i>
+                        Gestión de Intereses
+                    </h2>
+                    <p class="text-muted">Administra los usuarios interesados en inmuebles</p>
+                </div>
+                <div class="d-flex gap-2">
+                    <a asp-action="Dashboard" class="btn btn-info">
+                        <i class="fas fa-chart-line me-1"></i>
+                        Panel
+                    </a>
+                    <button type="button" class="btn btn-success" onclick="exportarDatos()">
+                        <i class="fas fa-file-excel me-1"></i>
+                        Exportar
+                    </button>
+                </div>
+            </div>
+
+            <!-- Estadísticas rápidas -->
+            @if (estadisticas != null)
+            {
+                <div class="row mb-4">
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card bg-primary text-white text-center">
+                            <div class="card-body py-2">
+                                <div class="h4 mb-0">@estadisticas.GetValueOrDefault("Total", 0)</div>
+                                <small>Total</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card bg-warning text-white text-center">
+                            <div class="card-body py-2">
+                                <div class="h4 mb-0">@estadisticas.GetValueOrDefault("Pendientes", 0)</div>
+                                <small>Pendientes</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card bg-success text-white text-center">
+                            <div class="card-body py-2">
+                                <div class="h4 mb-0">@estadisticas.GetValueOrDefault("Contactados", 0)</div>
+                                <small>Contactados</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card bg-info text-white text-center">
+                            <div class="card-body py-2">
+                                <div class="h4 mb-0">@estadisticas.GetValueOrDefault("Hoy", 0)</div>
+                                <small>Hoy</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card bg-secondary text-white text-center">
+                            <div class="card-body py-2">
+                                <div class="h4 mb-0">@estadisticas.GetValueOrDefault("EstaSemana", 0)</div>
+                                <small>Esta Semana</small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-2 col-sm-4 col-6">
+                        <div class="card bg-danger text-white text-center">
+                            <div class="card-body py-2">
+                                <div class="h4 mb-0" id="urgentesCount">0</div>
+                                <small>Urgentes</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="card mb-4">
+        <div class="card-header">
+            <h6 class="mb-0">
+                <i class="fas fa-filter me-1"></i>
+                Filtros de Búsqueda
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-3">
+                    <label for="buscar" class="form-label">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="buscar" name="buscar" 
+                               value="@ViewBag.Buscar" placeholder="Nombre, email o dirección...">
+                    </div>
+                </div>
+                <div class="col-md-2">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos</option>
+                        <option value="pendiente" selected="@(ViewBag.Estado == "pendiente")">Pendientes</option>
+                        <option value="contactado" selected="@(ViewBag.Estado == "contactado")">Contactados</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="idInmueble" class="form-label">Inmueble</label>
+                    <select class="form-select" id="idInmueble" name="idInmueble">
+                        <option value="">Todos los inmuebles</option>
+                        @foreach (var inmueble in ViewBag.InmueblesConIntereses as SelectList ?? new SelectList(new List<object>()))
+                        {
+                            <option value="@inmueble.Value" selected="@(inmueble.Value == ViewBag.IdInmueble?.ToString())">
+                                @inmueble.Text
+                            </option>
+                        }
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="fechaDesde" class="form-label">Desde</label>
+                    <input type="date" class="form-control" id="fechaDesde" name="fechaDesde" value="@ViewBag.FechaDesde">
+                </div>
+                <div class="col-md-2">
+                    <label for="fechaHasta" class="form-label">Hasta</label>
+                    <input type="date" class="form-control" id="fechaHasta" name="fechaHasta" value="@ViewBag.FechaHasta">
+                </div>
+                <div class="col-md-1">
+                    <label for="itemsPorPagina" class="form-label">Mostrar</label>
+                    <select class="form-select" id="itemsPorPagina" name="itemsPorPagina">
+                        <option value="10" selected="@(ViewBag.ITEMS_POR_PAGINA == 10)">10</option>
+                        <option value="25" selected="@(ViewBag.ITEMS_POR_PAGINA == 25)">25</option>
+                        <option value="50" selected="@(ViewBag.ITEMS_POR_PAGINA == 50)">50</option>
+                    </select>
+                </div>
+                <div class="col-12">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="fas fa-search me-1"></i>
+                        Filtrar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary me-2">
+                        <i class="fas fa-times me-1"></i>
+                        Limpiar
+                    </a>
+                    <button type="button" class="btn btn-outline-info" onclick="verUrgentes()">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Ver Urgentes
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Información de resultados -->
+    @if (ViewBag.TotalRegistros > 0)
+    {
+        <div class="alert alert-info d-flex justify-content-between align-items-center">
+            <div>
+                <i class="fas fa-info-circle me-1"></i>
+                Mostrando <strong>@Model.Count()</strong> de <strong>@ViewBag.TotalRegistros</strong> intereses
+                @if (!string.IsNullOrEmpty(ViewBag.Buscar))
+                {
+                    <span>para la búsqueda: "<strong>@ViewBag.Buscar</strong>"</span>
+                }
+            </div>
+            <div>
+                <label class="form-check-label me-2">
+                    <input type="checkbox" id="seleccionarTodos" class="form-check-input me-1">
+                    Seleccionar todos
+                </label>
+                <button type="button" class="btn btn-sm btn-success" onclick="marcarSeleccionadosContactados()" disabled id="btnMarcarSeleccionados">
+                    <i class="fas fa-check me-1"></i>
+                    Marcar Contactados
+                </button>
+            </div>
+        </div>
+    }
+
+    <!-- Tabla de resultados -->
+    @if (Model.Any())
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th width="30">
+                                    <input type="checkbox" id="selectAllHeader" class="form-check-input">
+                                </th>
+                                <th>Fecha</th>
+                                <th>Persona</th>
+                                <th>Contacto</th>
+                                <th>Inmueble</th>
+                                <th>Estado</th>
+                                <th>Días</th>
+                                <th width="200">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr class="@(item.Contactado ? "table-light" : "")" data-id="@item.IdInteres">
+                                    <td>
+                                        <input type="checkbox" class="form-check-input item-checkbox" value="@item.IdInteres">
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <strong>@item.Fecha.ToString("dd/MM/yyyy")</strong><br>
+                                            <span class="text-muted">@item.Fecha.ToString("HH:mm")</span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div>
+                                            <strong>@item.Nombre</strong>
+                                            @if (!item.Contactado)
+                                            {
+                                                <span class="badge bg-warning ms-1">Nuevo</span>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <a href="@item.EmailFormateado" class="text-decoration-none" title="Enviar email">
+                                                <i class="fas fa-envelope text-primary me-1"></i>
+                                                @item.Email
+                                            </a>
+                                            @if (!string.IsNullOrEmpty(item.Telefono))
+                                            {
+                                                <br>
+                                                <a href="@item.TelefonoFormateado" class="text-decoration-none" title="Llamar">
+                                                    <i class="fas fa-phone text-success me-1"></i>
+                                                    @item.Telefono
+                                                </a>
+                                            }
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <div class="small">
+                                            <strong>@item.Inmueble?.Direccion</strong><br>
+                                            <span class="text-muted">
+                                                @item.Inmueble?.TipoInmueble?.Nombre - 
+                                                @item.Inmueble?.Precio.ToString("C")
+                                            </span>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        @if (item.Contactado)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Contactado
+                                            </span>
+                                            @if (item.FechaContacto.HasValue)
+                                            {
+                                                <br><small class="text-muted">@item.FechaContacto.Value.ToString("dd/MM/yyyy")</small>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">
+                                                <i class="fas fa-clock me-1"></i>
+                                                Pendiente
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        <span class="badge @(item.Contactado ? "bg-secondary" : ((DateTime.Now - item.Fecha).Days > 3 ? "bg-danger" : "bg-info"))">
+                                            @item.DiasDesdeInteres
+                                        </span>
+                                    </td>
+                                    <td>
+                                        <div class="btn-group-vertical btn-group-sm" role="group">
+                                            <div class="btn-group btn-group-sm">
+                                                <a asp-action="Details" asp-route-id="@item.IdInteres" 
+                                                   class="btn btn-outline-info btn-sm" title="Ver detalles">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @if (!item.Contactado)
+                                                {
+                                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                                            onclick="marcarContactado(@item.IdInteres)" title="Marcar como contactado">
+                                                        <i class="fas fa-check"></i>
+                                                    </button>
+                                                }
+                                                else
+                                                {
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                            onclick="desmarcarContactado(@item.IdInteres)" title="Marcar como pendiente">
+                                                        <i class="fas fa-undo"></i>
+                                                    </button>
+                                                }
+                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                        onclick="editarObservaciones(@item.IdInteres)" title="Editar observaciones">
+                                                    <i class="fas fa-edit"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                        @if (!string.IsNullOrEmpty(item.Observaciones))
+                                        {
+                                            <div class="mt-1">
+                                                <small class="text-muted" title="@item.Observaciones">
+                                                    <i class="fas fa-sticky-note me-1"></i>
+                                                    @(item.Observaciones.Length > 30 ? item.Observaciones.Substring(0, 30) + "..." : item.Observaciones)
+                                                </small>
+                                            </div>
+                                        }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        @if (ViewBag.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <!-- Botón Anterior -->
+                    @if (ViewBag.PaginaActual > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pagina="@(ViewBag.PaginaActual - 1)"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-idInmueble="@ViewBag.IdInmueble"
+                               asp-route-fechaDesde="@ViewBag.FechaDesde"
+                               asp-route-fechaHasta="@ViewBag.FechaHasta"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+
+                    <!-- Números de página -->
+                    @{
+                        int inicio = Math.Max(1, ViewBag.PaginaActual - 2);
+                        int fin = Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2);
+                    }
+
+                    @for (int i = inicio; i <= fin; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@i"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-idInmueble="@ViewBag.IdInmueble"
+                               asp-route-fechaDesde="@ViewBag.FechaDesde"
+                               asp-route-fechaHasta="@ViewBag.FechaHasta"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">@i</a>
+                        </li>
+                    }
+
+                    <!-- Botón Siguiente -->
+                    @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pagina="@(ViewBag.PaginaActual + 1)"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-idInmueble="@ViewBag.IdInmueble"
+                               asp-route-fechaDesde="@ViewBag.FechaDesde"
+                               asp-route-fechaHasta="@ViewBag.FechaHasta"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-heart fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron intereses</h4>
+                <p class="text-muted">
+                    @if (!string.IsNullOrEmpty(ViewBag.Buscar))
+                    {
+                        <span>No hay resultados para "<strong>@ViewBag.Buscar</strong>"</span>
+                    }
+                    else
+                    {
+                        <span>Aún no hay intereses registrados</span>
+                    }
+                </p>
+                <a asp-action="Index" class="btn btn-primary">
+                    <i class="fas fa-refresh me-1"></i>
+                    Actualizar Lista
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+<!-- Modal para editar observaciones -->
+<div class="modal fade" id="modalObservaciones" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">
+                    <i class="fas fa-edit me-2"></i>
+                    Editar Observaciones
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label for="observacionesTexto" class="form-label">Observaciones</label>
+                    <textarea class="form-control" id="observacionesTexto" rows="4" 
+                              placeholder="Escribe las observaciones sobre el contacto..."></textarea>
+                    <div class="form-text">Máximo 500 caracteres</div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarObservaciones()">
+                    <i class="fas fa-save me-1"></i>
+                    Guardar
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        let interesSeleccionado = 0;
+        
+        $(document).ready(function() {
+            // Cargar urgentes al inicio
+            cargarUrgentes();
+            
+            // Auto-submit en cambios de filtros
+            $('#itemsPorPagina, #estado').on('change', function() {
+                this.form.submit();
+            });
+
+            // Manejar selección múltiple
+            $('#selectAllHeader, #seleccionarTodos').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                $('.item-checkbox').prop('checked', isChecked);
+                toggleBotonMarcarSeleccionados();
+            });
+
+            $('.item-checkbox').on('change', function() {
+                toggleBotonMarcarSeleccionados();
+                
+                // Actualizar estado del checkbox "seleccionar todos"
+                const totalCheckboxes = $('.item-checkbox').length;
+                const checkedCheckboxes = $('.item-checkbox:checked').length;
+                $('#selectAllHeader, #seleccionarTodos').prop('checked', totalCheckboxes === checkedCheckboxes);
+            });
+        });
+
+        function toggleBotonMarcarSeleccionados() {
+            const seleccionados = $('.item-checkbox:checked').length;
+            $('#btnMarcarSeleccionados').prop('disabled', seleccionados === 0);
+            
+            if (seleccionados > 0) {
+                $('#btnMarcarSeleccionados').html(`<i class="fas fa-check me-1"></i>Marcar ${seleccionados} Contactados`);
+            } else {
+                $('#btnMarcarSeleccionados').html('<i class="fas fa-check me-1"></i>Marcar Contactados');
+            }
+        }
+
+        function marcarContactado(id) {
+            if (confirm('¿Marcar este interés como contactado?')) {
+                fetch('@Url.Action("MarcarContactado", "InteresInmueble")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: `id=${id}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarMensaje(data.message, 'success');
+                        location.reload();
+                    } else {
+                        mostrarMensaje(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarMensaje('Error al marcar como contactado', 'error');
+                });
+            }
+        }
+
+        function desmarcarContactado(id) {
+            if (confirm('¿Marcar este interés como pendiente?')) {
+                fetch('@Url.Action("DesmarcarContactado", "InteresInmueble")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: `id=${id}`
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarMensaje(data.message, 'success');
+                        location.reload();
+                    } else {
+                        mostrarMensaje(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarMensaje('Error al desmarcar contactado', 'error');
+                });
+            }
+        }
+
+        function editarObservaciones(id) {
+            interesSeleccionado = id;
+            
+            // Cargar observaciones actuales
+            fetch(`@Url.Action("ObtenerInfoRapida", "InteresInmueble")?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        $('#observacionesTexto').val(data.data.observaciones || '');
+                        $('#modalObservaciones').modal('show');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarMensaje('Error al cargar observaciones', 'error');
+                });
+        }
+
+        function guardarObservaciones() {
+            const observaciones = $('#observacionesTexto').val();
+            
+            fetch('@Url.Action("ActualizarObservaciones", "InteresInmueble")', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                },
+                body: `id=${interesSeleccionado}&observaciones=${encodeURIComponent(observaciones)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    mostrarMensaje(data.message, 'success');
+                    $('#modalObservaciones').modal('hide');
+                    location.reload();
+                } else {
+                    mostrarMensaje(data.message, 'error');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                mostrarMensaje('Error al guardar observaciones', 'error');
+            });
+        }
+
+        function marcarSeleccionadosContactados() {
+            const seleccionados = $('.item-checkbox:checked').map(function() {
+                return parseInt($(this).val());
+            }).get();
+
+            if (seleccionados.length === 0) {
+                mostrarMensaje('No hay elementos seleccionados', 'warning');
+                return;
+            }
+
+            if (confirm(`¿Marcar ${seleccionados.length} intereses como contactados?`)) {
+                fetch('@Url.Action("MarcarMultiplesContactados", "InteresInmueble")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify(seleccionados)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        mostrarMensaje(data.message, 'success');
+                        location.reload();
+                    } else {
+                        mostrarMensaje(data.message, 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarMensaje('Error al marcar intereses', 'error');
+                });
+            }
+        }
+
+        function verUrgentes() {
+            fetch('@Url.Action("ObtenerInteresesUrgentes", "InteresInmueble")')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.data.length > 0) {
+                        // Mostrar intereses urgentes en una modal o redireccionar con filtro
+                        window.location.href = '@Url.Action("Index")?estado=pendiente&fechaHasta=' + 
+                            new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+                    } else {
+                        mostrarMensaje('No hay intereses urgentes en este momento', 'info');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    mostrarMensaje('Error al cargar intereses urgentes', 'error');
+                });
+        }
+
+        function cargarUrgentes() {
+            fetch('@Url.Action("ObtenerInteresesUrgentes", "InteresInmueble")')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        $('#urgentesCount').text(data.data.length);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al cargar urgentes:', error);
+                });
+        }
+
+        function exportarDatos() {
+            const params = new URLSearchParams({
+                buscar: '@ViewBag.Buscar' || '',
+                estado: '@ViewBag.Estado' || '',
+                idInmueble: '@ViewBag.IdInmueble' || '',
+                fechaDesde: '@ViewBag.FechaDesde' || '',
+                fechaHasta: '@ViewBag.FechaHasta' || ''
+            });
+
+            window.location.href = '@Url.Action("ExportarExcel", "InteresInmueble")?' + params.toString();
+        }
+
+        function mostrarMensaje(mensaje, tipo) {
+            // Crear toast notification
+            const toast = $(`
+                <div class="toast align-items-center text-white bg-${tipo === 'success' ? 'success' : tipo === 'error' ? 'danger' : tipo === 'warning' ? 'warning' : 'info'} border-0" role="alert">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="fas fa-${tipo === 'success' ? 'check-circle' : tipo === 'error' ? 'exclamation-circle' : tipo === 'warning' ? 'exclamation-triangle' : 'info-circle'} me-2"></i>
+                            ${mensaje}
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast"></button>
+                    </div>
+                </div>
+            `);
+
+            // Agregar al container de toasts
+            if ($('#toast-container').length === 0) {
+                $('body').append('<div id="toast-container" class="toast-container position-fixed top-0 end-0 p-3"></div>');
+            }
+            
+            $('#toast-container').append(toast);
+            const bsToast = new bootstrap.Toast(toast[0]);
+            bsToast.show();
+
+            // Remover después de que se oculte
+            toast.on('hidden.bs.toast', function() {
+                $(this).remove();
+            });
+        }
+
+        // Tooltip para elementos truncados
+        $('[title]').tooltip();
+    </script>
+}

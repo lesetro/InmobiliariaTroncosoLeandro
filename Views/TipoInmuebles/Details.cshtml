@@ -1,0 +1,287 @@
+@model Inmobiliaria_troncoso_leandro.Models.TipoInmueble
+
+@{
+    ViewData["Title"] = "Detalles del Tipo de Inmueble";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" class="text-decoration-none">
+                            <i class="fas fa-building me-1"></i>
+                            Tipos de Inmueble
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Detalles</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-info-circle text-info me-2"></i>
+                        @Model.Nombre
+                    </h2>
+                    <p class="text-muted mb-0">Información detallada del tipo de inmueble</p>
+                </div>
+                <div>
+                    <a asp-action="Edit" asp-route-id="@Model.IdTipoInmueble" class="btn btn-warning me-2">
+                        <i class="fas fa-edit me-1"></i>
+                        Editar
+                    </a>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Volver al Listado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información Principal -->
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Información General
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-hashtag text-primary me-1"></i> ID:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <span class="badge bg-secondary">#@Model.IdTipoInmueble</span>
+                        </div>
+                    </div>
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-tag text-primary me-1"></i> Nombre:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            <h5 class="mb-0 text-primary">@Model.Nombre</h5>
+                        </div>
+                    </div>
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-align-left text-primary me-1"></i> Descripción:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            @if (!string.IsNullOrEmpty(Model.Descripcion))
+                            {
+                                <p class="mb-0">@Model.Descripcion</p>
+                            }
+                            else
+                            {
+                                <span class="text-muted fst-italic">Sin descripción</span>
+                            }
+                        </div>
+                    </div>
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-toggle-on text-primary me-1"></i> Estado:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            @if (Model.Estado)
+                            {
+                                <span class="badge bg-success fs-6">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    Activo
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger fs-6">
+                                    <i class="fas fa-times-circle me-1"></i>
+                                    Inactivo
+                                </span>
+                            }
+                        </div>
+                    </div>
+                    <hr>
+                    
+                    <div class="row">
+                        <div class="col-sm-4">
+                            <strong><i class="fas fa-calendar-plus text-primary me-1"></i> Fecha de Creación:</strong>
+                        </div>
+                        <div class="col-sm-8">
+                            @Model.FechaCreacion.ToString("dddd, dd 'de' MMMM 'de' yyyy 'a las' HH:mm", new System.Globalization.CultureInfo("es-ES"))
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Estadísticas y Acciones -->
+        <div class="col-md-4">
+            <!-- Estadísticas -->
+            <div class="card shadow mb-3">
+                <div class="card-header bg-primary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-bar me-2"></i>
+                        Estadísticas
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    @{
+                        var cantidadInmuebles = ViewBag.CantidadInmuebles ?? 0;
+                    }
+                    <div class="display-4 text-primary mb-2">@cantidadInmuebles</div>
+                    <p class="text-muted mb-0">
+                        <i class="fas fa-home me-1"></i>
+                        Inmueble@(cantidadInmuebles != 1 ? "s" : "") asociado@(cantidadInmuebles != 1 ? "s" : "")
+                    </p>
+                </div>
+            </div>
+
+            <!-- Acciones Rápidas -->
+            <div class="card shadow">
+                <div class="card-header bg-secondary text-white">
+                    <h6 class="mb-0">
+                        <i class="fas fa-bolt me-2"></i>
+                        Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="Edit" asp-route-id="@Model.IdTipoInmueble" class="btn btn-warning">
+                            <i class="fas fa-edit me-1"></i>
+                            Editar Información
+                        </a>
+                        
+                        @if (cantidadInmuebles == 0)
+                        {
+                            <a asp-action="Delete" asp-route-id="@Model.IdTipoInmueble" class="btn btn-outline-danger">
+                                <i class="fas fa-trash me-1"></i>
+                                Eliminar Tipo
+                            </a>
+                        }
+                        else
+                        {
+                            <button type="button" class="btn btn-outline-danger" disabled title="No se puede eliminar porque tiene inmuebles asociados">
+                                <i class="fas fa-trash me-1"></i>
+                                Eliminar Tipo
+                            </button>
+                        }
+                        
+                        <button type="button" class="btn btn-outline-secondary" 
+                                onclick="cambiarEstado(@Model.IdTipoInmueble, @Model.Estado.ToString().ToLower())">
+                            <i class="fas fa-@(Model.Estado ? "toggle-off" : "toggle-on") me-1"></i>
+                            @(Model.Estado ? "Desactivar" : "Activar")
+                        </button>
+                        
+                        <a asp-controller="Inmuebles" asp-action="Index" asp-route-tipoInmueble="@Model.IdTipoInmueble" 
+                           class="btn btn-outline-info">
+                            <i class="fas fa-search me-1"></i>
+                            Ver Inmuebles de este Tipo
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información Adicional -->
+    @if (cantidadInmuebles > 0)
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-info">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Inmuebles Asociados
+                    </h6>
+                    <p class="mb-2">
+                        Este tipo de inmueble está siendo utilizado por <strong>@cantidadInmuebles</strong> 
+                        inmueble@(cantidadInmuebles != 1 ? "s" : "") en el sistema.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a asp-controller="Inmuebles" asp-action="Index" asp-route-tipoInmueble="@Model.IdTipoInmueble" 
+                           class="btn btn-info btn-sm">
+                            <i class="fas fa-eye me-1"></i>
+                            Ver Todos los Inmuebles
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+    else
+    {
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle me-1"></i>
+                        Sin Inmuebles Asociados
+                    </h6>
+                    <p class="mb-2">
+                        Este tipo de inmueble aún no tiene inmuebles asociados en el sistema.
+                    </p>
+                    <div class="d-flex gap-2">
+                        <a asp-controller="Inmuebles" asp-action="Create" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus me-1"></i>
+                            Crear Primer Inmueble
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function cambiarEstado(id, estadoActual) {
+            const accion = estadoActual ? 'desactivar' : 'activar';
+            let mensaje = `¿Estás seguro de ${accion} este tipo de inmueble?`;
+            
+            @if (cantidadInmuebles > 0)
+            {
+                <text>
+                if (!estadoActual) {
+                    mensaje += '\n\nEste tipo tiene @cantidadInmuebles inmueble(s) asociado(s).';
+                } else {
+                    mensaje += '\n\nAl desactivarlo, ya no estará disponible para nuevos inmuebles.';
+                }
+                </text>
+            }
+            
+            if (confirm(mensaje)) {
+                fetch('@Url.Action("CambiarEstado", "TipoInmuebles")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cambiar el estado');
+                });
+            }
+        }
+    </script>
+}

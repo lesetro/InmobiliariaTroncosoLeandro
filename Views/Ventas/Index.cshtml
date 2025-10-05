@@ -1,0 +1,445 @@
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.Pago>
+@{
+    ViewData["Title"] = "Pagos de Venta";
+}
+
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Home")">Inicio</a></li>
+        <li class="breadcrumb-item"><a href="@Url.Action("Index", "Pagos")">Pagos</a></li>
+        <li class="breadcrumb-item active">Ventas</li>
+    </ol>
+</nav>
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2><i class="bi bi-currency-dollar me-2"></i>Pagos de Venta</h2>
+    <div>
+        <div class="btn-group">
+            <a href="@Url.Action("Create", "Ventas")" class="btn btn-primary">
+                <i class="bi bi-plus-circle me-1"></i>Nuevo Pago
+            </a>
+        </div>
+        
+        <div class="btn-group ms-2">
+            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+                <i class="bi bi-funnel me-1"></i>Filtros
+            </button>
+            <ul class="dropdown-menu">
+                <li><a class="dropdown-item" href="@Url.Action("Index", new { estado = "" })">
+                    <i class="bi bi-list me-2"></i>Todos
+                </a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", new { estado = "pagado" })">
+                    <i class="bi bi-check-circle me-2 text-success"></i>Pagados
+                </a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", new { estado = "pendiente" })">
+                    <i class="bi bi-clock me-2 text-warning"></i>Pendientes
+                </a></li>
+                <li><hr class="dropdown-divider"></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", new { buscar = "seña" })">
+                    <i class="bi bi-piggy-bank me-2 text-warning"></i>Solo Señas
+                </a></li>
+                <li><a class="dropdown-item" href="@Url.Action("Index", new { buscar = "anticipo" })">
+                    <i class="bi bi-cash me-2 text-info"></i>Solo Anticipos
+                </a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+@if (TempData["ErrorMessage"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle me-2"></i>
+        @TempData["ErrorMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (TempData["SuccessMessage"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle me-2"></i>
+        @TempData["SuccessMessage"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+<!-- Estadísticas rápidas -->
+@if (Model != null && Model.Any())
+{
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card border-success">
+                <div class="card-body text-center">
+                    <i class="bi bi-cash-stack text-success fs-2"></i>
+                    <h4 class="card-title text-success mt-2">@Model.Count()</h4>
+                    <p class="card-text">Total Pagos</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-currency-dollar text-primary fs-2"></i>
+                    <h4 class="card-title text-primary mt-2">@Model.Sum(p => p.MontoTotal).ToString("C0")</h4>
+                    <p class="card-text">Total Vendido</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-warning">
+                <div class="card-body text-center">
+                    <i class="bi bi-piggy-bank text-warning fs-2"></i>
+                    <h4 class="card-title text-warning mt-2">@Model.Count(p => p.Concepto.Contains("seña") || p.Concepto.Contains("Seña"))</h4>
+                    <p class="card-text">Señas</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card border-info">
+                <div class="card-body text-center">
+                    <i class="bi bi-building text-info fs-2"></i>
+                    <h4 class="card-title text-info mt-2">@Model.GroupBy(p => p.IdInmueble).Count()</h4>
+                    <p class="card-text">Inmuebles</p>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<!-- Barra de búsqueda y filtros -->
+<div class="card mb-4">
+    <div class="card-body">
+        <form method="get" id="filtrosForm">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="buscar" class="form-label">
+                        <i class="bi bi-search me-1"></i>Buscar
+                    </label>
+                    <input type="text" class="form-control" id="buscar" name="buscar" 
+                           value="@ViewBag.Buscar" placeholder="Dirección, concepto, cliente...">
+                </div>
+                <div class="col-md-3">
+                    <label for="estado" class="form-label">
+                        <i class="bi bi-filter me-1"></i>Estado
+                    </label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        <option value="pagado" @@(ViewBag.Estado == "pagado" ? "selected" : "")>Pagado</option>
+                        <option value="pendiente" @@(ViewBag.Estado == "pendiente" ? "selected" : "")>Pendiente</option>
+                        <option value="anulado" @@(ViewBag.Estado == "anulado" ? "selected" : "")>Anulado</option>
+                    </select>
+                </div>
+                <div class="col-md-3 d-flex align-items-end">
+                    <button type="submit" class="btn btn-primary me-2">
+                        <i class="bi bi-search me-1"></i>Buscar
+                    </button>
+                    <a href="@Url.Action("Index")" class="btn btn-outline-secondary">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar
+                    </a>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Resultados -->
+@if (Model != null && Model.Any())
+{
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-table me-2"></i>Pagos de Venta 
+                <span class="badge bg-success ms-2">@ViewBag.TotalRegistros registros</span>
+            </h5>
+            <div class="text-muted">
+                Página @ViewBag.PaginaActual de @ViewBag.TotalPaginas
+            </div>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-success">
+                        <tr>
+                            <th><i class="bi bi-hash me-1"></i>Pago</th>
+                            <th><i class="bi bi-house-door me-1"></i>Inmueble</th>
+                            <th><i class="bi bi-chat-text me-1"></i>Concepto</th>
+                            <th><i class="bi bi-calendar me-1"></i>Fecha</th>
+                            <th><i class="bi bi-currency-dollar me-1"></i>Monto</th>
+                            <th><i class="bi bi-tag me-1"></i>Tipo</th>
+                            <th><i class="bi bi-check-circle me-1"></i>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pago in Model)
+                        {
+                            <tr class="pago-row" data-inmueble-id="@pago.IdInmueble" style="cursor: pointer;">
+                                <td class="fw-semibold text-primary">#@pago.IdPago</td>
+                                <td>
+                                    <div class="fw-semibold">@pago.Inmueble?.Direccion</div>
+                                    <small class="text-muted">ID: @pago.IdInmueble</small>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">@pago.Concepto</div>
+                                    @if (!string.IsNullOrEmpty(pago.Observaciones))
+                                    {
+                                        <small class="text-muted">@pago.Observaciones.Substring(0, Math.Min(50, pago.Observaciones.Length))@(pago.Observaciones.Length > 50 ? "..." : "")</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge bg-light text-dark">
+                                        @pago.FechaPago.ToString("dd/MM/yyyy")
+                                    </span>
+                                    <div class="small text-muted">@pago.FechaPago.ToString("HH:mm")</div>
+                                </td>
+                                <td>
+                                    <div class="fw-bold fs-6">@pago.MontoTotal.ToString("C")</div>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(GetTipoPagoBadgeClass(pago.Concepto))">
+                                        @GetTipoPagoFromConcepto(pago.Concepto)
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge bg-@(GetEstadoBadgeClass(pago.Estado))">
+                                        @pago.Estado.ToUpper()
+                                    </span>
+                                </td>
+                                <td>
+                                    <div class="btn-group" role="group">
+                                        <a href="@Url.Action("Details", new { id = pago.IdPago })" 
+                                           class="btn btn-sm btn-outline-primary" title="Ver Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a href="@Url.Action("Edit", new { id = pago.IdPago })" 
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="verPagosInmueble(@pago.IdInmueble)" 
+                                                title="Ver Todos los Pagos del Inmueble">
+                                            <i class="bi bi-building"></i>
+                                        </button>
+                                        @if (pago.Estado != "anulado")
+                                        {
+                                            <a href="@Url.Action("Delete", new { id = pago.IdPago })" 
+                                               class="btn btn-sm btn-outline-danger" title="Anular">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                        }
+                                    </div>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        @if (ViewBag.TotalPaginas > 1)
+        {
+            <div class="card-footer">
+                <nav aria-label="Navegación de páginas">
+                    <ul class="pagination justify-content-center mb-0">
+                        <!-- Primera página -->
+                        @if (ViewBag.PaginaActual > 1)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@GenerarUrlPaginacion(1)">
+                                    <i class="bi bi-chevron-double-left"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="@GenerarUrlPaginacion(ViewBag.PaginaActual - 1)">
+                                    <i class="bi bi-chevron-left"></i>
+                                </a>
+                            </li>
+                        }
+
+                        <!-- Páginas numeradas -->
+                        @for (int i = Math.Max(1, ViewBag.PaginaActual - 2); i <= Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2); i++)
+                        {
+                            <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                                <a class="page-link" href="@GenerarUrlPaginacion(i)">@i</a>
+                            </li>
+                        }
+
+                        <!-- Última página -->
+                        @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                        {
+                            <li class="page-item">
+                                <a class="page-link" href="@GenerarUrlPaginacion(ViewBag.PaginaActual + 1)">
+                                    <i class="bi bi-chevron-right"></i>
+                                </a>
+                            </li>
+                            <li class="page-item">
+                                <a class="page-link" href="@GenerarUrlPaginacion(ViewBag.TotalPaginas)">
+                                    <i class="bi bi-chevron-double-right"></i>
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                </nav>
+                
+                <div class="text-center mt-2">
+                    <small class="text-muted">
+                        Mostrando @((ViewBag.PaginaActual - 1) * ViewBag.ITEMS_POR_PAGINA + 1) a 
+                        @Math.Min(ViewBag.PaginaActual * ViewBag.ITEMS_POR_PAGINA, ViewBag.TotalRegistros) 
+                        de @ViewBag.TotalRegistros registros
+                    </small>
+                </div>
+            </div>
+        }
+    </div>
+}
+else
+{
+    <div class="card">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-currency-dollar text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No hay pagos de venta</h4>
+            <p class="text-muted">
+                @if (!string.IsNullOrEmpty(ViewBag.Buscar) || !string.IsNullOrEmpty(ViewBag.Estado))
+                {
+                    <text>No se encontraron pagos con los filtros aplicados.</text>
+                }
+                else
+                {
+                    <text>Aún no se han registrado pagos de venta.</text>
+                }
+            </p>
+            <div class="mt-3">
+                @if (!string.IsNullOrEmpty(ViewBag.Buscar) || !string.IsNullOrEmpty(ViewBag.Estado))
+                {
+                    <a href="@Url.Action("Index")" class="btn btn-outline-primary me-2">
+                        <i class="bi bi-x-circle me-1"></i>Limpiar Filtros
+                    </a>
+                }
+                <a href="@Url.Action("Create")" class="btn btn-success">
+                    <i class="bi bi-plus-circle me-1"></i>Registrar Primera Venta
+                </a>
+            </div>
+        </div>
+    </div>
+}
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Hacer filas clickeables para ver detalles
+            const filas = document.querySelectorAll('.pago-row');
+            filas.forEach(fila => {
+                fila.addEventListener('click', function(e) {
+                    // No redirigir si se clickea en botones de acción
+                    if (e.target.closest('.btn-group')) return;
+                    
+                    const pagoId = this.querySelector('.text-primary').textContent.replace('#', '');
+                    if (pagoId) {
+                        window.location.href = '@Url.Action("Details")?id=' + pagoId;
+                    }
+                });
+                
+                // Efecto hover
+                fila.addEventListener('mouseenter', function() {
+                    this.classList.add('table-active');
+                });
+                
+                fila.addEventListener('mouseleave', function() {
+                    this.classList.remove('table-active');
+                });
+            });
+        });
+
+        function verPagosInmueble(inmuebleId) {
+            if (inmuebleId) {
+                window.location.href = '@Url.Action("PorInmueble", "Ventas")?inmuebleId=' + inmuebleId;
+            }
+        }
+
+        // Auto-submit del formulario de búsqueda con delay
+        let searchTimeout;
+        document.getElementById('buscar').addEventListener('input', function() {
+            clearTimeout(searchTimeout);
+            searchTimeout = setTimeout(() => {
+                document.getElementById('filtrosForm').submit();
+            }, 500);
+        });
+
+        // Submit inmediato al cambiar el select de estado
+        document.getElementById('estado').addEventListener('change', function() {
+            document.getElementById('filtrosForm').submit();
+        });
+    </script>
+}
+
+<style>
+    .table-hover tbody tr:hover {
+        background-color: rgba(25, 135, 84, 0.1) !important;
+    }
+    
+    .pago-row {
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .table-success th {
+        background-color: #d1e7dd !important;
+        color: #0f5132 !important;
+        border-color: #a3cfbb !important;
+    }
+</style>
+
+@functions {
+    public string GetEstadoBadgeClass(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "pagado" => "success",
+            "pendiente" => "warning",
+            "anulado" => "secondary",
+            _ => "primary"
+        };
+    }
+    
+    public string GetTipoPagoBadgeClass(string concepto)
+    {
+        var conceptoLower = concepto?.ToLower() ?? "";
+        
+        if (conceptoLower.Contains("seña")) return "warning";
+        if (conceptoLower.Contains("anticipo")) return "info";
+        if (conceptoLower.Contains("total") || conceptoLower.Contains("completo")) return "success";
+        if (conceptoLower.Contains("reserva")) return "secondary";
+        
+        return "primary";
+    }
+    
+    public string GetTipoPagoFromConcepto(string concepto)
+    {
+        var conceptoLower = concepto?.ToLower() ?? "";
+        
+        if (conceptoLower.Contains("seña")) return "SEÑA";
+        if (conceptoLower.Contains("anticipo")) return "ANTICIPO";
+        if (conceptoLower.Contains("total") || conceptoLower.Contains("completo")) return "TOTAL";
+        if (conceptoLower.Contains("reserva")) return "RESERVA";
+        
+        return "VENTA";
+    }
+    
+    public string GenerarUrlPaginacion(int pagina)
+    {
+        var routeValues = new RouteValueDictionary
+        {
+            { "pagina", pagina }
+        };
+        
+        if (!string.IsNullOrEmpty(ViewBag.Buscar))
+            routeValues.Add("buscar", ViewBag.Buscar);
+            
+        if (!string.IsNullOrEmpty(ViewBag.Estado))
+            routeValues.Add("estado", ViewBag.Estado);
+        
+        return Url.Action("Index", routeValues) ?? "#";
+    }
+}

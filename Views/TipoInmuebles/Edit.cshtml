@@ -1,0 +1,318 @@
+@model Inmobiliaria_troncoso_leandro.Models.TipoInmueble
+
+@{
+    ViewData["Title"] = "Editar Tipo de Inmueble";
+}
+
+<div class="container">
+    <!-- Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item">
+                        <a asp-action="Index" class="text-decoration-none">
+                            <i class="fas fa-building me-1"></i>
+                            Tipos de Inmueble
+                        </a>
+                    </li>
+                    <li class="breadcrumb-item active" aria-current="page">Editar</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-0">
+                        <i class="fas fa-edit text-warning me-2"></i>
+                        Editar Tipo de Inmueble
+                    </h2>
+                    <p class="text-muted mb-0">Modifica los datos del tipo de inmueble: <strong>@Model.Nombre</strong></p>
+                </div>
+                <div>
+                    <a asp-action="Details" asp-route-id="@Model.IdTipoInmueble" class="btn btn-outline-info me-2">
+                        <i class="fas fa-eye me-1"></i>
+                        Ver Detalles
+                    </a>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-1"></i>
+                        Volver al Listado
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulario -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card shadow">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0">
+                        <i class="fas fa-edit me-2"></i>
+                        Modificar Información
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form asp-action="Edit" method="post" novalidate>
+                        @Html.AntiForgeryToken()
+                        @Html.HiddenFor(model => model.IdTipoInmueble)
+                        @Html.HiddenFor(model => model.FechaCreacion)
+                        
+                        <!-- Info de creación -->
+                        <div class="alert alert-light border">
+                            <small class="text-muted">
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>ID:</strong> @Model.IdTipoInmueble |
+                                <strong>Creado:</strong> @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
+                            </small>
+                        </div>
+
+                        <!-- Nombre -->
+                        <div class="mb-3">
+                            <label asp-for="Nombre" class="form-label required">
+                                <i class="fas fa-tag text-primary me-1"></i>
+                                Nombre del Tipo
+                            </label>
+                            <input asp-for="Nombre" class="form-control" placeholder="Ej: Casa, Departamento, Local Comercial..." 
+                                   maxlength="50" autocomplete="off">
+                            <span asp-validation-for="Nombre" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Máximo 50 caracteres. Debe ser único.
+                            </div>
+                        </div>
+
+                        <!-- Descripción -->
+                        <div class="mb-3">
+                            <label asp-for="Descripcion" class="form-label">
+                                <i class="fas fa-align-left text-primary me-1"></i>
+                                Descripción
+                            </label>
+                            <textarea asp-for="Descripcion" class="form-control" rows="4" 
+                                      placeholder="Descripción detallada del tipo de inmueble (opcional)..."
+                                      maxlength="255"></textarea>
+                            <span asp-validation-for="Descripcion" class="text-danger small"></span>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Máximo 255 caracteres. Campo opcional.
+                            </div>
+                        </div>
+
+                        <!-- Estado -->
+                        <div class="mb-4">
+                            <div class="form-check form-switch">
+                                <input asp-for="Estado" class="form-check-input" type="checkbox" role="switch">
+                                <label asp-for="Estado" class="form-check-label">
+                                    <span id="estadoLabel">
+                                        <i class="fas fa-toggle-@(Model.Estado ? "on text-success" : "off text-danger") me-1"></i>
+                                        Tipo de inmueble @(Model.Estado ? "activo" : "inactivo")
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="form-text">
+                                <i class="fas fa-info-circle me-1"></i>
+                                Los tipos activos estarán disponibles para asignar a inmuebles.
+                            </div>
+                        </div>
+
+                        <!-- Botones -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a asp-action="Index" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>
+                                Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save me-1"></i>
+                                Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de uso -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="alert alert-warning">
+                <h6 class="alert-heading">
+                    <i class="fas fa-exclamation-triangle me-1"></i>
+                    Consideraciones importantes
+                </h6>
+                <ul class="mb-0">
+                    <li>Si cambias el <strong>nombre</strong>, asegúrate de que sea descriptivo y único</li>
+                    <li>Si <strong>desactivas</strong> este tipo, ya no estará disponible para nuevos inmuebles</li>
+                    <li>Los inmuebles existentes con este tipo <strong>no se verán afectados</strong> por los cambios</li>
+                    <li>Verifica que el nombre no coincida con otros tipos existentes</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- Información de uso actual -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h6 class="mb-0">
+                        <i class="fas fa-chart-pie text-info me-1"></i>
+                        Uso Actual del Tipo
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <div class="border-end">
+                                <div class="h4 text-primary mb-1">
+                                    <i class="fas fa-home"></i>
+                                </div>
+                                <div class="h5 mb-1" id="cantidadInmuebles">-</div>
+                                <small class="text-muted">Inmuebles</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="border-end">
+                                <div class="h4 text-success mb-1">
+                                    <i class="fas fa-check-circle"></i>
+                                </div>
+                                <div class="h5 mb-1">@(Model.Estado ? "Activo" : "Inactivo")</div>
+                                <small class="text-muted">Estado</small>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="h4 text-info mb-1">
+                                <i class="fas fa-calendar"></i>
+                            </div>
+                            <div class="h5 mb-1">@Model.FechaCreacion.ToString("dd/MM/yyyy")</div>
+                            <small class="text-muted">Fecha Creación</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Cargar estadísticas del tipo de inmueble
+            cargarEstadisticas();
+
+            // Actualizar etiqueta del estado cuando cambia
+            $('#Estado').on('change', function() {
+                const isChecked = $(this).is(':checked');
+                const icon = isChecked ? 'fa-toggle-on text-success' : 'fa-toggle-off text-danger';
+                const text = isChecked ? 'activo' : 'inactivo';
+                
+                $('#estadoLabel').html(`<i class="fas ${icon} me-1"></i>Tipo de inmueble ${text}`);
+            });
+
+            // Contador de caracteres para nombre
+            $('#Nombre').on('input', function() {
+                const maxLength = 50;
+                const currentLength = $(this).val().length;
+                const remaining = maxLength - currentLength;
+                
+                $(this).parent().find('.text-warning').remove();
+                if (remaining <= 10) {
+                    $(this).next('.text-danger').after(`<small class="text-warning">Quedan ${remaining} caracteres</small>`);
+                }
+            });
+
+            // Contador de caracteres para descripción
+            $('#Descripcion').on('input', function() {
+                const maxLength = 255;
+                const currentLength = $(this).val().length;
+                
+                $(this).parent().find('small:contains("Caracteres:")').remove();
+                $(this).next('.text-danger').next('.form-text').after(`<small class="text-muted">Caracteres: ${currentLength}/${maxLength}</small>`);
+            });
+
+            // Validación en tiempo real del nombre
+            $('#Nombre').on('blur', function() {
+                const nombre = $(this).val().trim();
+                if (nombre.length > 0) {
+                    if (nombre.length < 2) {
+                        $(this).addClass('is-invalid');
+                        $(this).next('.text-danger').text('El nombre debe tener al menos 2 caracteres');
+                    } else {
+                        $(this).removeClass('is-invalid').addClass('is-valid');
+                        $(this).next('.text-danger').empty();
+                    }
+                }
+            });
+
+            // Confirmar antes de desactivar si tiene inmuebles asociados
+            $('#Estado').on('change', function() {
+                if (!$(this).is(':checked')) {
+                    // Verificar si tiene inmuebles asociados
+                    verificarInmueblesAntes Desactivar();
+                }
+            });
+
+            // Enfocar el primer campo
+            $('#Nombre').focus().select();
+        });
+
+        function cargarEstadisticas() {
+            // Simulación de carga de estadísticas
+            // En un caso real, harías una llamada AJAX al servidor
+            $('#cantidadInmuebles').text('Cargando...');
+            
+            // Simular delay de carga
+            setTimeout(function() {
+                $('#cantidadInmuebles').text('0'); // Valor placeholder
+            }, 500);
+        }
+
+        function verificarInmueblesAntesDesactivar() {
+            // Hacer llamada AJAX para verificar inmuebles asociados
+            fetch(`@Url.Action("ContarInmueblesAsociados", "TipoInmuebles")?id=@Model.IdTipoInmueble`)
+                .then(response => response.json())
+                .then(data => {
+                    let mensaje = '¿Estás seguro de desactivar este tipo de inmueble?';
+                    
+                    if (data.cantidad > 0) {
+                        mensaje += `\n\nEste tipo tiene ${data.cantidad} inmueble(s) asociado(s). `;
+                        mensaje += 'Al desactivarlo, ya no estará disponible para nuevos inmuebles.';
+                    }
+                    
+                    if (!confirm(mensaje)) {
+                        $('#Estado').prop('checked', true);
+                        $('#estadoLabel').html('<i class="fas fa-toggle-on text-success me-1"></i>Tipo de inmueble activo');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error al verificar inmuebles:', error);
+                    if (!confirm('¿Estás seguro de desactivar este tipo de inmueble?')) {
+                        $('#Estado').prop('checked', true);
+                        $('#estadoLabel').html('<i class="fas fa-toggle-on text-success me-1"></i>Tipo de inmueble activo');
+                    }
+                });
+        }
+
+        // Validación antes de enviar el formulario
+        $('form').on('submit', function(e) {
+            let isValid = true;
+            
+            // Validar nombre
+            const nombre = $('#Nombre').val().trim();
+            if (nombre.length < 2) {
+                $('#Nombre').addClass('is-invalid');
+                $('#Nombre').next('.text-danger').text('El nombre debe tener al menos 2 caracteres');
+                isValid = false;
+            }
+            
+            if (!isValid) {
+                e.preventDefault();
+                $('html, body').animate({
+                    scrollTop: $('.is-invalid').first().offset().top - 100
+                }, 500);
+            }
+        });
+    </script>
+}

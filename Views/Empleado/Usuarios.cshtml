@@ -1,0 +1,160 @@
+@model IList<Inmobiliaria_troncoso_leandro.Models.Usuario>
+
+@{
+    ViewData["Title"] = "Gestión de Usuarios";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h1 class="h3">Gestión de Usuarios</h1>
+                <div>
+                    <a asp-action="CrearPropietario" class="btn btn-primary me-2">
+                        <i class="fas fa-plus"></i> Crear Propietario
+                    </a>
+                    <a asp-action="CrearInquilino" class="btn btn-success">
+                        <i class="fas fa-plus"></i> Crear Inquilino
+                    </a>
+                </div>
+            </div>
+
+            @if (TempData["SuccessMessage"] != null)
+            {
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    @TempData["SuccessMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            @if (TempData["ErrorMessage"] != null)
+            {
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    @TempData["ErrorMessage"]
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            }
+
+            <!-- Filtros de búsqueda -->
+            <div class="card mb-3">
+                <div class="card-body">
+                    <form method="get" asp-action="Usuarios">
+                        <div class="row g-3">
+                            <div class="col-md-4">
+                                <label class="form-label">Buscar</label>
+                                <input type="text" name="buscar" value="@ViewBag.Buscar" class="form-control" placeholder="Nombre, email, DNI..." />
+                            </div>
+                            <div class="col-md-3">
+                                <label class="form-label">Rol</label>
+                                <select name="rol" class="form-select">
+                                    <option value="">Todos los roles</option>
+                                    <option value="propietario" selected="@(ViewBag.RolSeleccionado == "propietario")">Propietarios</option>
+                                    <option value="inquilino" selected="@(ViewBag.RolSeleccionado == "inquilino")">Inquilinos</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary me-2">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <a asp-action="Usuarios" class="btn btn-outline-secondary">Limpiar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Tabla de usuarios -->
+            <div class="card">
+                <div class="card-body">
+                    @if (Model != null && Model.Any())
+                    {
+                        <div class="table-responsive">
+                            <table class="table table-striped table-hover">
+                                <thead class="table-dark">
+                                    <tr>
+                                        <th>Nombre Completo</th>
+                                        <th>Email</th>
+                                        <th>DNI</th>
+                                        <th>Teléfono</th>
+                                        <th>Rol</th>
+                                        <th>Estado</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @foreach (var usuario in Model)
+                                    {
+                                        <tr>
+                                            <td>
+                                                <strong>@usuario.NombreCompleto</strong>
+                                            </td>
+                                            <td>@usuario.Email</td>
+                                            <td>@usuario.Dni</td>
+                                            <td>@usuario.Telefono</td>
+                                            <td>
+                                                <span class="badge @(usuario.Rol == "propietario" ? "bg-primary" : "bg-success")">
+                                                    @usuario.Rol.ToUpper()
+                                                </span>
+                                            </td>
+                                            <td>
+                                                <span class="badge @(usuario.Estado == "activo" ? "bg-success" : "bg-secondary")">
+                                                    @usuario.Estado.ToUpper()
+                                                </span>
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <!-- Paginación -->
+                        @if (ViewBag.TotalPaginas > 1)
+                        {
+                            <nav aria-label="Navegación de páginas">
+                                <ul class="pagination justify-content-center">
+                                    @if (ViewBag.PaginaActual > 1)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="Usuarios" asp-route-pagina="@(ViewBag.PaginaActual - 1)" asp-route-buscar="@ViewBag.Buscar" asp-route-rol="@ViewBag.RolSeleccionado">
+                                                Anterior
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @for (int i = Math.Max(1, ViewBag.PaginaActual - 2); i <= Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2); i++)
+                                    {
+                                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                                            <a class="page-link" asp-action="Usuarios" asp-route-pagina="@i" asp-route-buscar="@ViewBag.Buscar" asp-route-rol="@ViewBag.RolSeleccionado">
+                                                @i
+                                            </a>
+                                        </li>
+                                    }
+
+                                    @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                                    {
+                                        <li class="page-item">
+                                            <a class="page-link" asp-action="Usuarios" asp-route-pagina="@(ViewBag.PaginaActual + 1)" asp-route-buscar="@ViewBag.Buscar" asp-route-rol="@ViewBag.RolSeleccionado">
+                                                Siguiente
+                                            </a>
+                                        </li>
+                                    }
+                                </ul>
+                            </nav>
+
+                            <div class="text-center text-muted">
+                                Mostrando página @ViewBag.PaginaActual de @ViewBag.TotalPaginas (@ViewBag.TotalRegistros usuarios en total)
+                            </div>
+                        }
+                    }
+                    else
+                    {
+                        <div class="text-center py-4">
+                            <i class="fas fa-users fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No se encontraron usuarios</h5>
+                            <p class="text-muted">Intenta cambiar los filtros de búsqueda o crea un nuevo usuario.</p>
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

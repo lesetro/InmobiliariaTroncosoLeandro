@@ -19,7 +19,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         // ========================================
 
         Task<(IList<Contrato> contratos, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
-            int pagina, string buscar, string estado, int itemsPorPagina);
+            int pagina, string buscar, string estado,string tipoContrato, int itemsPorPagina);
 
         // ========================================
         // MÉTODOS DE VALIDACIÓN ESPECÍFICOS DE NEGOCIO

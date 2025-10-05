@@ -96,28 +96,281 @@
     </div>
 </div>
 
-@section Scripts {
-    <partial name="_ValidationScriptsPartial" />
+section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
     <script>
-        // Validación personalizada en el cliente
-        (function() {
-            'use strict';
-            window.addEventListener('load', function() {
-                var forms = document.getElementsByClassName('needs-validation');
-                var validation = Array.prototype.filter.call(forms, function(form) {
-                    form.addEventListener('submit', function(event) {
-                        if (form.checkValidity() === false) {
-                            event.preventDefault();
-                            event.stopPropagation();
-                        }
-                        form.classList.add('was-validated');
-                    }, false);
-                });
-            }, false);
-        })();
+        $(document).ready(function() {
+            // Variables para debounce
+            let dniTimeout;
+            let emailTimeout;
+            let telefonoTimeout;
 
-        // Auto-focus en el primer campo
-        document.addEventListener('DOMContentLoaded', function() {
+            // ==========================================
+            // VALIDACIÓN DNI CON AJAX
+            // ==========================================
+            $('#Usuario_Dni').on('input', function() {
+                const dni = $(this).val().trim();
+                const $input = $(this);
+                let $feedback = $input.siblings('.text-danger');
+                
+                if ($feedback.length === 0) {
+                    $input.after('<div class="text-danger small"></div>');
+                    $feedback = $input.siblings('.text-danger');
+                }
+                
+                clearTimeout(dniTimeout);
+                
+                if (dni.length === 0) {
+                    $input.removeClass('is-valid is-invalid');
+                    $feedback.text('');
+                    return;
+                }
+                
+                if (!/^\d{7,8}$/.test(dni)) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $feedback.text('El DNI debe contener entre 7 y 8 números');
+                    return;
+                }
+                
+                dniTimeout = setTimeout(function() {
+                    verificarDniExistente(dni);
+                }, 500);
+            });
+            
+            function verificarDniExistente(dni) {
+                const $input = $('#Usuario_Dni');
+                let $feedback = $input.siblings('.text-danger');
+                
+                $input.prop('disabled', true);
+                
+                $.ajax({
+                    url: '/Usuario/VerificarDni',
+                    method: 'GET',
+                    data: { dni: dni },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('DNI - Respuesta:', response);
+                        
+                        if (response.existe) {
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                            $feedback.text(response.mensaje || 'Este DNI ya está registrado en el sistema');
+                        } else {
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                            $feedback.text('');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error verificando DNI:', error);
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                        $feedback.text('');
+                    },
+                    complete: function() {
+                        $input.prop('disabled', false);
+                    }
+                });
+            }
+            
+            // ==========================================
+            // VALIDACIÓN EMAIL CON AJAX
+            // ==========================================
+            $('#Usuario_Email').on('input', function() {
+                const email = $(this).val().trim();
+                const $input = $(this);
+                const emailRegex = /^[a-zA-Z0-9._%+-]+@@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
+                let $feedback = $input.siblings('.text-danger');
+                
+                if ($feedback.length === 0) {
+                    $input.after('<div class="text-danger small"></div>');
+                    $feedback = $input.siblings('.text-danger');
+                }
+                
+                clearTimeout(emailTimeout);
+                
+                if (email.length === 0) {
+                    $input.removeClass('is-valid is-invalid');
+                    $feedback.text('');
+                    return;
+                }
+                
+                if (!emailRegex.test(email)) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $feedback.text('Por favor ingrese un email válido');
+                    return;
+                }
+                
+                emailTimeout = setTimeout(function() {
+                    verificarEmailExistente(email);
+                }, 500);
+            });
+            
+            function verificarEmailExistente(email) {
+                const $input = $('#Usuario_Email');
+                let $feedback = $input.siblings('.text-danger');
+                
+                $.ajax({
+                    url: '/Usuario/VerificarEmail',
+                    method: 'GET',
+                    data: { email: email },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Email - Respuesta:', response);
+                        
+                        if (response.existe) {
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                            $feedback.text(response.mensaje || 'Este email ya está registrado en el sistema');
+                        } else {
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                            $feedback.text('');
+                        }
+                    },
+                    error: function(xhr, status, error) {
+                        console.error('Error verificando email:', error);
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                        $feedback.text('');
+                    }
+                });
+            }
+            
+            // ==========================================
+            // VALIDACIÓN TELÉFONO CON AJAX
+            // ==========================================
+            $('#Usuario_Telefono').on('input', function() {
+                const telefono = $(this).val().trim();
+                const $input = $(this);
+                const telefonoRegex = /^[\+]?[0-9]{8,15}$/;
+                let $feedback = $input.siblings('.text-danger');
+                
+                if ($feedback.length === 0) {
+                    $input.after('<div class="text-danger small"></div>');
+                    $feedback = $input.siblings('.text-danger');
+                }
+                
+                clearTimeout(telefonoTimeout);
+                
+                if (telefono.length === 0) {
+                    $input.removeClass('is-valid is-invalid');
+                    $feedback.text('');
+                    return;
+                }
+                
+                if (!telefonoRegex.test(telefono)) {
+                    $input.removeClass('is-valid').addClass('is-invalid');
+                    $feedback.text('Ingrese un teléfono válido (8-15 dígitos)');
+                    return;
+                }
+                
+                telefonoTimeout = setTimeout(function() {
+                    verificarTelefonoExistente(telefono);
+                }, 500);
+            });
+            
+            function verificarTelefonoExistente(telefono) {
+                const $input = $('#Usuario_Telefono');
+                let $feedback = $input.siblings('.text-danger');
+                
+                $.ajax({
+                    url: '/Usuario/VerificarTelefono',
+                    method: 'GET',
+                    data: { telefono: telefono },
+                    dataType: 'json',
+                    success: function(response) {
+                        console.log('Teléfono - Respuesta:', response);
+                        
+                        if (response.existe) {
+                            $input.removeClass('is-valid').addClass('is-invalid');
+                            $feedback.text(response.mensaje || 'Este teléfono ya está registrado');
+                        } else {
+                            $input.removeClass('is-invalid').addClass('is-valid');
+                            $feedback.text('');
+                        }
+                    },
+                    error: function() {
+                        console.error('Error verificando teléfono');
+                        $input.removeClass('is-invalid').addClass('is-valid');
+                        $feedback.text('');
+                    }
+                });
+            }
+
+            // ==========================================
+            // VALIDACIÓN DEL FORMULARIO ANTES DE ENVIAR
+            // ==========================================
+            $('form').on('submit', function(e) {
+                let isValid = true;
+                let camposInvalidos = [];
+                
+                console.log('🔍 Validando formulario antes de enviar...');
+                
+                // Verificar campos con clase is-invalid
+                if ($('#Usuario_Dni').hasClass('is-invalid')) {
+                    isValid = false;
+                    camposInvalidos.push('DNI');
+                    console.log(' DNI inválido');
+                }
+                
+                if ($('#Usuario_Email').hasClass('is-invalid')) {
+                    isValid = false;
+                    camposInvalidos.push('Email');
+                    console.log('Email inválido');
+                }
+                
+                if ($('#Usuario_Telefono').hasClass('is-invalid')) {
+                    isValid = false;
+                    camposInvalidos.push('Teléfono');
+                    console.log(' Teléfono inválido');
+                }
+                
+                // Verificar campos requeridos específicos
+                const camposRequeridos = [
+                    { selector: '#Usuario_Nombre', nombre: 'Nombre' },
+                    { selector: '#Usuario_Apellido', nombre: 'Apellido' },
+                    { selector: '#Usuario_Dni', nombre: 'DNI' },
+                    { selector: '#Usuario_Email', nombre: 'Email' }
+                ];
+                
+                camposRequeridos.forEach(function(campo) {
+                    const $campo = $(campo.selector);
+                    const valor = $campo.val();
+                    
+                    if (!valor || !valor.trim()) {
+                        isValid = false;
+                        $campo.addClass('is-invalid');
+                        camposInvalidos.push(campo.nombre);
+                        console.log(' Campo vacío:', campo.nombre);
+                    }
+                });
+                
+                if (!isValid) {
+                    e.preventDefault();
+                    console.log(' Formulario NO válido. Campos con error:', camposInvalidos);
+                    
+                    // Crear o actualizar alerta
+                    let $alert = $('.alert-danger');
+                    if ($alert.length === 0) {
+                        $('form').prepend(
+                            '<div class="alert alert-danger alert-dismissible fade show">' +
+                            '<strong>Error:</strong> <span class="mensaje-error"></span>' +
+                            '<button type="button" class="btn-close" data-bs-dismiss="alert"></button>' +
+                            '</div>'
+                        );
+                        $alert = $('.alert-danger');
+                    }
+                    
+                    $alert.find('.mensaje-error').text('Por favor corrija los siguientes campos: ' + camposInvalidos.join(', '));
+                    $alert.show();
+                    
+                    // Scroll al primer campo inválido
+                    $('html, body').animate({
+                        scrollTop: $('.is-invalid').first().offset().top - 100
+                    }, 500);
+                    
+                    return false;
+                }
+                
+                console.log('Formulario válido, enviando...');
+            });
+
+            // Auto-focus en el primer campo
             const firstInput = document.querySelector('input[name="Usuario.Nombre"]');
             if (firstInput) {
                 firstInput.focus();

@@ -1,10 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using Inmobiliaria_troncoso_leandro.Models;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Services;
 
+
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
+    [Authorize(Policy = "AdminOEmpleado")]
     public class ContratosController : Controller
     {
         private readonly IRepositorioContrato _repositorioContrato;
@@ -16,13 +19,13 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Contratos - Index con paginación
-        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", string estado = "")
+        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", string estado = "",string tipoContrato = "")
         {
             try
             {
                 // repositorio directamente para paginación y búsqueda
                 var (contratos, totalRegistros) = await _repositorioContrato
-                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, estado, ITEMS_POR_PAGINA);
+                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, estado,tipoContrato, ITEMS_POR_PAGINA);
 
                 // Calcular información de paginación
                 var totalPaginas = (int)Math.Ceiling((double)totalRegistros / ITEMS_POR_PAGINA);
@@ -32,6 +35,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 ViewBag.TotalRegistros = totalRegistros;
                 ViewBag.Buscar = buscar;
                 ViewBag.Estado = estado;
+                ViewBag.TipoContrato = tipoContrato;
 
                 return View(contratos);
             }
@@ -275,31 +279,63 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // POST: Contratos/Delete/5
-        [HttpPost, ActionName("Delete")]
+
+
+        [HttpPost]
         [ValidateAntiForgeryToken]
-        public async Task<IActionResult> DeleteConfirmed(int id)
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> FinalizarConMulta(int id, decimal multaAplicada = 0)
         {
             try
             {
-                var resultado = await _repositorioContrato.EliminarContratoAsync(id);
+                var contrato = await _repositorioContrato.ObtenerContratoPorIdAsync(id);
+                if (contrato == null)
+                {
+                    return Json(new { success = false, error = "Contrato no encontrado" });
+                }
+
+                if (contrato.Estado != "vigente")
+                {
+                    return Json(new { success = false, error = "Solo se pueden finalizar contratos vigentes" });
+                }
+
+                // Validar multa
+                if (multaAplicada < 0)
+                {
+                    return Json(new { success = false, error = "La multa no puede ser un valor negativo" });
+                }
+
+                // Actualizar contrato
+                contrato.MultaAplicada = multaAplicada;
+                contrato.Estado = "finalizado";
+                contrato.FechaFinAnticipada = DateTime.Now;
+                contrato.IdUsuarioTerminador = 1; // Usuario admin por defecto
+                contrato.FechaModificacion = DateTime.Now;
+
+                var resultado = await _repositorioContrato.ActualizarContratoAsync(contrato);
 
                 if (resultado)
                 {
-                    TempData["SuccessMessage"] = "Contrato finalizado exitosamente";
+                    string mensaje = multaAplicada > 0
+                        ? $"Contrato finalizado exitosamente con multa de ${multaAplicada:N2}"
+                        : "Contrato finalizado exitosamente";
+
+                    return Json(new { success = true, message = mensaje });
                 }
                 else
                 {
-                    TempData["ErrorMessage"] = "Error al finalizar el contrato";
+                    return Json(new { success = false, error = "Error al actualizar el contrato" });
                 }
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error al finalizar contrato: {ex.Message}";
+                return Json(new
+                {
+                    success = false,
+                    error = $"Error: {ex.Message}"
+                });
             }
-
-            return RedirectToAction(nameof(Index));
         }
-
         // MÉTODOS AUXILIARES PARA LLENAR LOS DROPDOWNS
 
         private async Task PopulateViewDataAsync()

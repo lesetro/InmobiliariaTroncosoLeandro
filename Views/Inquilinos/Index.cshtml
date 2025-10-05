@@ -34,28 +34,48 @@
 <div class="card mb-4">
     <div class="card-body">
         <form method="get" asp-action="Index">
-            <div class="row g-3 align-items-end">
-                <div class="col-md-6">
-                    <label for="buscar" class="form-label">Buscar Inquilino</label>
-                    <input type="text" 
-                           id="buscar" 
-                           name="buscar" 
-                           class="form-control" 
-                           placeholder="Nombre, apellido, DNI, email, teléfono..."
-                           value="@ViewBag.Buscar">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" asp-action="Index">
+                        <div class="row g-3 align-items-end">
+                            <div class="col-md-6">
+                                <label for="buscar" class="form-label">Buscar Inquilino</label>
+                                <input type="text" id="buscar" name="buscar" class="form-control"
+                                    placeholder="Nombre, apellido, DNI, email, teléfono..." value="@ViewBag.Buscar">
+                            </div>
+                            <div class="col-md-4">
+                                <button type="submit" class="btn btn-outline-primary me-2">
+                                    <i class="bi bi-search"></i> Buscar
+                                </button>
+                                <a asp-action="Index" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle"></i> Limpiar
+                                </a>
+                            </div>
+                            <div class="col-md-2 text-end">
+                                <small class="text-muted d-block mb-2">
+                                    Total: @ViewBag.TotalRegistros inquilinos
+                                </small>
+                            </div>
+                        </div>
+                    </form>
                 </div>
-                <div class="col-md-4">
-                    <button type="submit" class="btn btn-outline-primary me-2">
-                        <i class="bi bi-search"></i> Buscar
-                    </button>
-                    <a asp-action="Index" class="btn btn-outline-secondary">
-                        <i class="bi bi-x-circle"></i> Limpiar
+            </div>
+
+            <!-- Filtros de estado -->
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <div class="btn-group" role="group" aria-label="Filtros de estado">
+                    <a asp-action="Index" asp-route-estado="activos" asp-route-buscar="@ViewBag.Buscar"
+                        class="btn btn-outline-success @(ViewBag.EstadoFiltro == "activos" ? "active" : "")">
+                        <i class="bi bi-check-circle"></i> Activos
                     </a>
-                </div>
-                <div class="col-md-2 text-end">
-                    <small class="text-muted">
-                        Total: @ViewBag.TotalRegistros inquilinos
-                    </small>
+                    <a asp-action="Index" asp-route-estado="inactivos" asp-route-buscar="@ViewBag.Buscar"
+                        class="btn btn-outline-danger @(ViewBag.EstadoFiltro == "inactivos" ? "active" : "")">
+                        <i class="bi bi-x-circle"></i> Inactivos
+                    </a>
+                    <a asp-action="Index" asp-route-estado="todos" asp-route-buscar="@ViewBag.Buscar"
+                        class="btn btn-outline-primary @(ViewBag.EstadoFiltro == "todos" ? "active" : "")">
+                        <i class="bi bi-list"></i> Todos
+                    </a>
                 </div>
             </div>
         </form>
@@ -88,19 +108,20 @@ else
         <table class="table table-striped table-hover">
             <thead class="table-dark">
                 <tr>
-                    <th style="width: 8%;">Código</th>
-                    <th style="width: 20%;">Nombre Completo</th>
-                    <th style="width: 12%;">DNI</th>
-                    <th style="width: 20%;">Dirección</th>
-                    <th style="width: 15%;">Teléfono</th>
+                    <th style="width: 7%;">Código</th>
+                    <th style="width: 18%;">Nombre Completo</th>
+                    <th style="width: 10%;">DNI</th>
+                    <th style="width: 18%;">Dirección</th>
+                    <th style="width: 12%;">Teléfono</th>
                     <th style="width: 15%;">Email</th>
+                    <th style="width: 10%;">Estado</th>
                     <th style="width: 10%;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
                 @foreach (var item in Model)
                 {
-                    <tr>
+                    <tr class="@(!item.Estado ? "table-secondary" : "")">
                         <td>
                             <span class="badge bg-secondary">#@item.IdInquilino</span>
                         </td>
@@ -112,14 +133,48 @@ else
                         <td>@(item.Usuario?.Telefono ?? "N/A")</td>
                         <td>@(item.Usuario?.Email ?? "N/A")</td>
                         <td>
+                            @if (item.Estado)
+                            {
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-circle"></i> Activo
+                                </span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-danger">
+                                    <i class="bi bi-x-circle"></i> Inactivo
+                                </span>
+                            }
+                        </td>
+                        <td>
                             <div class="btn-group" role="group">
-                                <a asp-action="Edit" asp-route-id="@item.IdInquilino" 
-                                   class="btn btn-warning btn-sm" title="Editar">
+                                <a asp-action="Edit" asp-route-id="@item.IdInquilino" class="btn btn-warning btn-sm"
+                                    title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-                                <a asp-action="Delete" asp-route-id="@item.IdInquilino" 
-                                   class="btn btn-danger btn-sm" title="Eliminar">
-                                    <i class="bi bi-trash"></i>
+
+                                @* Botón de Toggle Estado *@
+                                <form asp-action="ToggleEstado" asp-route-id="@item.IdInquilino" method="post"
+                                    style="display:inline;">
+                                    @if (item.Estado)
+                                    {
+                                        <button type="submit" class="btn btn-secondary btn-sm" title="Desactivar"
+                                            onclick="return confirm('¿Desactivar este inquilino?');">
+                                            <i class="bi bi-pause-circle"></i>
+                                        </button>
+                                    }
+                                    else
+                                    {
+                                        <button type="submit" class="btn btn-success btn-sm" title="Activar"
+                                            onclick="return confirm('¿Activar este inquilino?');">
+                                            <i class="bi bi-play-circle"></i>
+                                        </button>
+                                    }
+                                </form>
+
+                                <a asp-action="Delete" asp-route-id="@item.IdInquilino" class="btn btn-danger btn-sm"
+                                    title="Ver Detalles">
+                                    <i class="bi bi-info-circle"></i>
                                 </a>
                             </div>
                         </td>
@@ -138,9 +193,8 @@ else
                 @if (ViewBag.PaginaActual > 1)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-action="Index" 
-                           asp-route-pagina="@(ViewBag.PaginaActual - 1)"
-                           asp-route-buscar="@ViewBag.Buscar">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual - 1)"
+                            asp-route-buscar="@ViewBag.Buscar" asp-route-estado="@ViewBag.EstadoFiltro">
                             Anterior
                         </a>
                     </li>
@@ -155,8 +209,8 @@ else
                 @if (inicioRango > 1)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-action="Index" asp-route-pagina="1"
-                           asp-route-buscar="@ViewBag.Buscar">1</a>
+                        <a class="page-link" asp-action="Index" asp-route-pagina="1" asp-route-buscar="@ViewBag.Buscar"
+                            asp-route-estado="@ViewBag.EstadoFiltro">1</a>
                     </li>
                     @if (inicioRango > 2)
                     {
@@ -169,8 +223,7 @@ else
                 @for (int i = inicioRango; i <= finRango; i++)
                 {
                     <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
-                        <a class="page-link" asp-action="Index" asp-route-pagina="@i"
-                           asp-route-buscar="@ViewBag.Buscar">@i</a>
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@i" asp-route-buscar="@ViewBag.Buscar">@i</a>
                     </li>
                 }
 
@@ -184,7 +237,7 @@ else
                     }
                     <li class="page-item">
                         <a class="page-link" asp-action="Index" asp-route-pagina="@ViewBag.TotalPaginas"
-                           asp-route-buscar="@ViewBag.Buscar">@ViewBag.TotalPaginas</a>
+                            asp-route-buscar="@ViewBag.Buscar">@ViewBag.TotalPaginas</a>
                     </li>
                 }
 
@@ -192,9 +245,8 @@ else
                 @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
                 {
                     <li class="page-item">
-                        <a class="page-link" asp-action="Index" 
-                           asp-route-pagina="@(ViewBag.PaginaActual + 1)"
-                           asp-route-buscar="@ViewBag.Buscar">
+                        <a class="page-link" asp-action="Index" asp-route-pagina="@(ViewBag.PaginaActual + 1)"
+                            asp-route-buscar="@ViewBag.Buscar">
                             Siguiente
                         </a>
                     </li>
@@ -205,8 +257,8 @@ else
         <!-- Información de paginación -->
         <div class="text-center text-muted mt-3">
             <small>
-                Mostrando @((ViewBag.PaginaActual - 1) * ViewBag.ITEMS_POR_PAGINA + 1) - 
-                @(Math.Min(ViewBag.PaginaActual * ViewBag.ITEMS_POR_PAGINA, ViewBag.TotalRegistros)) 
+                Mostrando @((ViewBag.PaginaActual - 1) * ViewBag.ITEMS_POR_PAGINA + 1) -
+                @(Math.Min(ViewBag.PaginaActual * ViewBag.ITEMS_POR_PAGINA, ViewBag.TotalRegistros))
                 de @ViewBag.TotalRegistros inquilinos
             </small>
         </div>
@@ -215,7 +267,7 @@ else
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
+        document.addEventListener('DOMContentLoaded', function () {
             // Auto-focus en el campo de búsqueda si está vacío
             const buscarInput = document.getElementById('buscar');
             if (buscarInput && !buscarInput.value) {

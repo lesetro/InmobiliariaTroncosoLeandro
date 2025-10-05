@@ -64,13 +64,27 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                         }
                     }
 
-                    Console.WriteLine("=== CREANDO USUARIO ===");
+                    Console.WriteLine("=== CREANDO USUARIO CON MÉTODO ESTÁTICO ===");
 
-                    // Crear usuario
+                    // ✅ CREAR USUARIO USANDO MÉTODO ESTÁTICO (esto es lo clave)
+                    var usuarioCompleto = Usuario.CrearPropietario(
+                        propietario.Usuario.Nombre,
+                        propietario.Usuario.Apellido,
+                        propietario.Usuario.Dni,
+                        propietario.Usuario.Email,
+                        propietario.Usuario.Telefono,
+                        propietario.Usuario.Direccion
+                    );
+
+                    Console.WriteLine($"Usuario creado con rol: {usuarioCompleto.Rol}"); // Debería mostrar "propietario"
+                    Console.WriteLine($"Usuario creado con avatar: {usuarioCompleto.Avatar}"); // Avatar con iniciales
+                    Console.WriteLine($"Password ya hasheado: {!string.IsNullOrEmpty(usuarioCompleto.Password)}");
+
+                    // Query actualizada con avatar
                     string queryUsuario = @"
                         INSERT INTO usuario 
-                        (dni, nombre, apellido, telefono, email, direccion, password, rol, estado) 
-                        VALUES (@dni, @nombre, @apellido, @telefono, @email, @direccion, @password, @rol, @estado);
+                        (dni, nombre, apellido, telefono, email, direccion, password, rol, estado, avatar) 
+                        VALUES (@dni, @nombre, @apellido, @telefono, @email, @direccion, @password, @rol, @estado, @avatar);
                         SELECT LAST_INSERT_ID();";
 
                     Console.WriteLine($"Query usuario: {queryUsuario}");
@@ -78,17 +92,21 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                     int idUsuario;
                     using (var commandUsuario = new MySqlCommand(queryUsuario, connection, transaction))
                     {
-                        commandUsuario.Parameters.AddWithValue("@dni", propietario.Usuario.Dni);
-                        commandUsuario.Parameters.AddWithValue("@nombre", propietario.Usuario.Nombre);
-                        commandUsuario.Parameters.AddWithValue("@apellido", propietario.Usuario.Apellido);
-                        commandUsuario.Parameters.AddWithValue("@telefono", propietario.Usuario.Telefono ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@email", propietario.Usuario.Email ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@direccion", propietario.Usuario.Direccion ?? (object)DBNull.Value);
-                        commandUsuario.Parameters.AddWithValue("@password", BCrypt.Net.BCrypt.HashPassword("passwordtemporal"));
-                        commandUsuario.Parameters.AddWithValue("@rol", "propietario");
-                        commandUsuario.Parameters.AddWithValue("@estado", "activo");
+                        // ✅ USAR LOS DATOS DEL USUARIO CREADO POR EL MÉTODO ESTÁTICO
+                        commandUsuario.Parameters.AddWithValue("@dni", usuarioCompleto.Dni);
+                        commandUsuario.Parameters.AddWithValue("@nombre", usuarioCompleto.Nombre);
+                        commandUsuario.Parameters.AddWithValue("@apellido", usuarioCompleto.Apellido);
+                        commandUsuario.Parameters.AddWithValue("@telefono", usuarioCompleto.Telefono ?? (object)DBNull.Value);
+                        commandUsuario.Parameters.AddWithValue("@email", usuarioCompleto.Email ?? (object)DBNull.Value);
+                        commandUsuario.Parameters.AddWithValue("@direccion", usuarioCompleto.Direccion ?? (object)DBNull.Value);
+                        commandUsuario.Parameters.AddWithValue("@password", usuarioCompleto.Password); // Ya viene hasheado del método estático
+                        commandUsuario.Parameters.AddWithValue("@rol", usuarioCompleto.Rol); //  Será "propietario"
+                        commandUsuario.Parameters.AddWithValue("@estado", usuarioCompleto.Estado); // "activo"
+                        commandUsuario.Parameters.AddWithValue("@avatar", usuarioCompleto.Avatar ?? (object)DBNull.Value); // Avatar con iniciales
 
-                        Console.WriteLine("Ejecutando INSERT usuario...");
+                        Console.WriteLine($"Insertando usuario con rol: {usuarioCompleto.Rol}");
+                        Console.WriteLine($"Insertando usuario con avatar: {usuarioCompleto.Avatar}");
+
                         var result = await commandUsuario.ExecuteScalarAsync();
                         Console.WriteLine($"Resultado ExecuteScalar: {result}");
 
@@ -104,11 +122,11 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
                     Console.WriteLine("=== CREANDO PROPIETARIO ===");
 
-                    // Crear propietario
+                    // Crear propietario (esta parte no cambia)
                     string queryPropietario = @"
-                INSERT INTO propietario 
-                (id_usuario, fecha_alta, estado) 
-                VALUES (@id_usuario, @fecha_alta, @estado)";
+                        INSERT INTO propietario 
+                        (id_usuario, fecha_alta, estado) 
+                        VALUES (@id_usuario, @fecha_alta, @estado)";
 
                     Console.WriteLine($"Query propietario: {queryPropietario}");
 
@@ -367,18 +385,23 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
         }
         public async Task<(IList<Propietario> propietarios, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
-    int pagina, string buscar, int itemsPorPagina)
+     int pagina, string buscar, int itemsPorPagina, string estadoFiltro = "activos")
         {
             try
             {
                 using var connection = new MySqlConnection(_connectionString);
                 await connection.OpenAsync();
 
-                // Construir la consulta base con JOIN
+                // Construir la consulta base con JOIN y WHERE inicial
                 string baseQuery = @"
             FROM propietario p 
             INNER JOIN usuario u ON p.id_usuario = u.id_usuario 
-            WHERE p.estado = true";
+            WHERE 1=1 ";  
+
+                if (estadoFiltro == "activos")
+                    baseQuery += " AND p.estado = true";
+                else if (estadoFiltro == "inactivos")
+                    baseQuery += " AND p.estado = false";
 
                 // Agregar filtro de búsqueda si se proporciona
                 string whereClause = baseQuery;
@@ -426,19 +449,19 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                     {
                         propietarios.Add(new Propietario
                         {
-                            IdPropietario = reader.GetInt32(0),  // p.id_propietario
-                            IdUsuario = reader.GetInt32(1),      // p.id_usuario
-                            FechaAlta = reader.IsDBNull(2) ? null : reader.GetDateTime(2), // p.fecha_alta
-                            Estado = reader.GetBoolean(3),       // p.estado
+                            IdPropietario = reader.GetInt32(0),
+                            IdUsuario = reader.GetInt32(1),
+                            FechaAlta = reader.IsDBNull(2) ? null : reader.GetDateTime(2),
+                            Estado = reader.GetBoolean(3),
                             Usuario = new Usuario
                             {
-                                IdUsuario = reader.GetInt32(4),  // u.id_usuario
-                                Dni = reader.IsDBNull(5) ? null : reader.GetString(5),       // u.dni
-                                Nombre = reader.IsDBNull(6) ? null : reader.GetString(6),    // u.nombre
-                                Apellido = reader.IsDBNull(7) ? null : reader.GetString(7),  // u.apellido
-                                Telefono = reader.IsDBNull(8) ? null : reader.GetString(8),  // u.telefono
-                                Email = reader.IsDBNull(9) ? null : reader.GetString(9),     // u.email
-                                Direccion = reader.IsDBNull(10) ? null : reader.GetString(10) // u.direccion
+                                IdUsuario = reader.GetInt32(4),
+                                Dni = reader.IsDBNull(5) ? null : reader.GetString(5),
+                                Nombre = reader.IsDBNull(6) ? null : reader.GetString(6),
+                                Apellido = reader.IsDBNull(7) ? null : reader.GetString(7),
+                                Telefono = reader.IsDBNull(8) ? null : reader.GetString(8),
+                                Email = reader.IsDBNull(9) ? null : reader.GetString(9),
+                                Direccion = reader.IsDBNull(10) ? null : reader.GetString(10)
                             }
                         });
                     }
@@ -451,6 +474,50 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 throw new Exception($"Error al obtener propietarios con paginación: {ex.Message}", ex);
             }
         }
+        // PAra el contrato VEnta
+
+        public async Task<IEnumerable<Propietario>> ObtenerTodosAsync()
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    string query = @"
+        SELECT p.id_propietario, p.id_usuario, p.fecha_alta, p.estado,
+               u.nombre, u.apellido, u.dni, u.email, u.telefono, u.direccion, u.avatar
+        FROM propietario p
+        INNER JOIN usuario u ON p.id_usuario = u.id_usuario
+        WHERE p.estado = true AND u.estado = 'activo'
+        ORDER BY u.nombre, u.apellido";
+
+    using var command = new MySqlCommand(query, connection);
+    
+    var propietarios = new List<Propietario>();
+    using var reader = await command.ExecuteReaderAsync();
+    
+    while (await reader.ReadAsync())
+    {
+        propietarios.Add(new Propietario
+        {
+            IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+            IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
+            FechaAlta = reader.GetDateTime(reader.GetOrdinal("fecha_alta")),
+            Estado = reader.GetBoolean(reader.GetOrdinal("estado")),
+            Usuario = new Usuario
+            {
+                IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
+                Nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                Apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                Dni = reader.GetString(reader.GetOrdinal("dni")),
+                Email = reader.GetString(reader.GetOrdinal("email")),
+                Telefono = reader.GetString(reader.GetOrdinal("telefono")),
+                Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar"))
+            }
+        });
+    }
+
+    return propietarios;
+}
     }
 
 }

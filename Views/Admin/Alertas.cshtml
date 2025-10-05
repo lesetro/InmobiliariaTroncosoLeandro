@@ -1,0 +1,315 @@
+@{
+    ViewData["Title"] = "Alertas del Sistema";
+    var alertas = ViewBag.Alertas;
+}
+
+<div class="container-fluid">
+    <!-- Header -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="bi bi-exclamation-triangle me-2"></i>Alertas del Sistema
+        </h1>
+        <div>
+            <button class="btn btn-primary btn-sm me-2" onclick="location.reload()">
+                <i class="bi bi-arrow-clockwise me-1"></i>Actualizar
+            </button>
+            <a href="@Url.Action("Index", "Admin")" class="btn btn-secondary btn-sm">
+                <i class="bi bi-arrow-left me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Resumen de Alertas -->
+    <div class="row mb-4">
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Contratos por Vencer</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">5</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-calendar-x fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-danger shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                                Pagos Vencidos</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">3</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Intereses Pendientes</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">12</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-envelope-heart fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Sistema</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">OK</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alertas Detalladas -->
+    <div class="row">
+        <!-- Contratos por Vencer -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="bi bi-calendar-x me-2"></i>Contratos por Vencer (30 días)
+                    </h6>
+                    <span class="badge bg-warning">5</span>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Contrato #001</h6>
+                                <small class="text-muted">Juan Pérez - Av. Principal 123</small>
+                            </div>
+                            <small class="text-warning">Vence: 15/02/2024</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Contrato #045</h6>
+                                <small class="text-muted">María García - Calle Central 456</small>
+                            </div>
+                            <small class="text-warning">Vence: 20/02/2024</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Contrato #078</h6>
+                                <small class="text-muted">Carlos López - Barrio Norte 789</small>
+                            </div>
+                            <small class="text-warning">Vence: 25/02/2024</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="@Url.Action("Index", "Contratos")" class="btn btn-outline-warning btn-sm">
+                            <i class="bi bi-eye me-1"></i>Ver Todos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pagos Vencidos -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-danger">
+                        <i class="bi bi-currency-dollar me-2"></i>Pagos Vencidos
+                    </h6>
+                    <span class="badge bg-danger">3</span>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Pago Enero - Contrato #001</h6>
+                                <small class="text-muted">Juan Pérez - $25,000</small>
+                            </div>
+                            <small class="text-danger">5 días vencido</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Pago Diciembre - Contrato #023</h6>
+                                <small class="text-muted">Ana Rodríguez - $30,000</small>
+                            </div>
+                            <small class="text-danger">12 días vencido</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Pago Enero - Contrato #056</h6>
+                                <small class="text-muted">Roberto Silva - $22,000</small>
+                            </div>
+                            <small class="text-danger">8 días vencido</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="@Url.Action("Index", "Pagos")" class="btn btn-outline-danger btn-sm">
+                            <i class="bi bi-eye me-1"></i>Ver Todos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Intereses Pendientes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="bi bi-envelope-heart me-2"></i>Intereses Pendientes
+                    </h6>
+                    <span class="badge bg-info">12</span>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Consulta - Departamento Centro</h6>
+                                <small class="text-muted">cliente1@email.com</small>
+                            </div>
+                            <small class="text-info">Hace 2 horas</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Interés - Casa Barrio Norte</h6>
+                                <small class="text-muted">cliente2@email.com</small>
+                            </div>
+                            <small class="text-info">Hace 5 horas</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1">Consulta - Oficina Comercial</h6>
+                                <small class="text-muted">cliente3@email.com</small>
+                            </div>
+                            <small class="text-info">Hace 1 día</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="@Url.Action("Index", "InteresInmueble")" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-eye me-1"></i>Ver Todos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alertas del Sistema -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="bi bi-gear me-2"></i>Estado del Sistema
+                    </h6>
+                    <span class="badge bg-success">OK</span>
+                </div>
+                <div class="card-body">
+                    <div class="list-group list-group-flush">
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 text-success">
+                                    <i class="bi bi-check-circle me-1"></i>Base de Datos
+                                </h6>
+                                <small class="text-muted">Conexión estable</small>
+                            </div>
+                            <small class="text-success">Online</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 text-success">
+                                    <i class="bi bi-check-circle me-1"></i>Servidor Web
+                                </h6>
+                                <small class="text-muted">Funcionando correctamente</small>
+                            </div>
+                            <small class="text-success">Online</small>
+                        </div>
+                        <div class="list-group-item d-flex justify-content-between align-items-center">
+                            <div>
+                                <h6 class="mb-1 text-warning">
+                                    <i class="bi bi-exclamation-triangle me-1"></i>Cache
+                                </h6>
+                                <small class="text-muted">Uso elevado de memoria</small>
+                            </div>
+                            <small class="text-warning">85%</small>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a href="@Url.Action("SistemaInfo", "Admin")" class="btn btn-outline-success btn-sm">
+                            <i class="bi bi-info-circle me-1"></i>Ver Detalles
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Acciones Rápidas -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-lightning me-2"></i>Acciones Rápidas
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-flex gap-2 flex-wrap">
+                        <a href="@Url.Action("Index", "Contratos")" class="btn btn-warning btn-sm">
+                            <i class="bi bi-file-earmark-text me-1"></i>Revisar Contratos
+                        </a>
+                        <a href="@Url.Action("Index", "Pagos")" class="btn btn-danger btn-sm">
+                            <i class="bi bi-currency-dollar me-1"></i>Gestionar Pagos
+                        </a>
+                        <a href="@Url.Action("Index", "InteresInmueble")" class="btn btn-info btn-sm">
+                            <i class="bi bi-envelope-heart me-1"></i>Atender Intereses
+                        </a>
+                        <a href="@Url.Action("Metricas", "Admin")" class="btn btn-secondary btn-sm">
+                            <i class="bi bi-graph-up me-1"></i>Ver Métricas
+                        </a>
+                        <button class="btn btn-outline-primary btn-sm" onclick="location.reload()">
+                            <i class="bi bi-arrow-clockwise me-1"></i>Actualizar Todo
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.border-left-warning {
+    border-left: 0.25rem solid #f6c23e !important;
+}
+.border-left-danger {
+    border-left: 0.25rem solid #e74a3b !important;
+}
+.border-left-info {
+    border-left: 0.25rem solid #36b9cc !important;
+}
+.border-left-success {
+    border-left: 0.25rem solid #1cc88a !important;
+}

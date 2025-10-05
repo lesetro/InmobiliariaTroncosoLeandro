@@ -6,6 +6,11 @@ namespace Inmobiliaria_troncoso_leandro.Models
     [Table("contrato")]
     public class Contrato
     {
+        /// <summary>
+        /// Contrato de ALQUILER de inmuebles.
+        /// Nota: Esta tabla se llama "contrato" en BD pero representa específicamente alquileres.
+        /// para evitar refactorizar todo, dejo esta aclaracion Contrato = ContratoAlquiler
+        /// </summary>
         [Key]
         [Column("id_contrato")]
         public int IdContrato { get; set; }
@@ -66,6 +71,11 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Display(Name = "Usuario Terminador")]
         [Column("id_usuario_terminador")]
         public int? IdUsuarioTerminador { get; set; }
+    
+        [Required]
+        [Display(Name = "Tipo de Contrato")]
+        [Column("tipo_contrato")]
+        public string TipoContrato { get; set; } = "alquiler"; // alquiler, venta, comodato, otros
 
         [Display(Name = "Fecha de Creación")]
         [Column("fecha_creacion")]
@@ -89,5 +99,81 @@ namespace Inmobiliaria_troncoso_leandro.Models
 
         [NotMapped]
         public virtual Usuario? UsuarioTerminador { get; set; }
+        //datos que serviran para llenar historial crear pago 
+
+        [NotMapped]
+        public int TotalMeses 
+        { 
+            get 
+            {
+                var fechaFinReal = FechaFinAnticipada ?? FechaFin;
+                
+                if (FechaInicio >= fechaFinReal) return 0;
+                
+                int meses = (fechaFinReal.Year - FechaInicio.Year) * 12 + 
+                           (fechaFinReal.Month - FechaInicio.Month);
+                
+                // Ajuste para casos donde el día de fin es menor al día de inicio
+                if (fechaFinReal.Day < FechaInicio.Day)
+                {
+                    meses--;
+                }
+                
+                return Math.Max(1, meses); // Mínimo 1 mes
+            }
+        }
+
+        [NotMapped]
+        public bool FechasValidas 
+        { 
+            get 
+            {
+                var fechaFinReal = FechaFinAnticipada ?? FechaFin;
+                return FechaInicio < fechaFinReal;
+            }
+        }
+
+        [NotMapped]
+        public string EstadoContrato
+        {
+            get
+            {
+                var fechaFinReal = FechaFinAnticipada ?? FechaFin;
+                var hoy = DateTime.Today;
+
+                if (Estado == "finalizado") return "finalizado";
+                if (hoy < FechaInicio) return "pendiente";
+                if (hoy > fechaFinReal) return "vencido";
+                return "vigente";
+            }
+        }
+
+        [NotMapped]
+        public int DiasRestantes
+        {
+            get
+            {
+                var fechaFinReal = FechaFinAnticipada ?? FechaFin;
+                return (fechaFinReal - DateTime.Today).Days;
+            }
+        }
+
+        // Validación personalizada para el modelo
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!FechasValidas)
+            {
+                yield return new ValidationResult(
+                    "La fecha de fin debe ser posterior a la fecha de inicio", 
+                    new[] { nameof(FechaFin) });
+            }
+
+            if (FechaInicio < DateTime.Today.AddDays(-1))
+            {
+                yield return new ValidationResult(
+                    "La fecha de inicio no puede ser anterior a hoy", 
+                    new[] { nameof(FechaInicio) });
+            }
+        }
     }
 }

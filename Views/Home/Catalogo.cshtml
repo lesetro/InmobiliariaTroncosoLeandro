@@ -1,0 +1,719 @@
+@model List<dynamic>
+
+@{
+    ViewData["Title"] = "Catálogo de Propiedades";
+    Layout = "~/Views/Shared/_LayoutPublic.cshtml";
+}
+
+<div class="catalog-hero">
+    <div class="container">
+        <div class="row">
+            <div class="col-12 text-center text-white">
+                <h1 class="display-4 mb-3">Catálogo de Propiedades</h1>
+                <p class="lead">Encuentra la propiedad perfecta para ti</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="container-fluid py-5">
+    <div class="row">
+        <!-- Sidebar de filtros -->
+        <div class="col-lg-3 col-md-4 mb-4">
+            <div class="filters-sidebar">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">
+                            <i class="fas fa-filter"></i> Filtros de Búsqueda
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="get" asp-action="Catalogo" id="filtersForm">
+                            <!-- Búsqueda por texto -->
+                            <div class="form-group">
+                                <label for="buscar" class="font-weight-bold">Buscar</label>
+                                <div class="input-group">
+                                    <input type="text" 
+                                           class="form-control" 
+                                           id="buscar" 
+                                           name="buscar" 
+                                           value="@ViewBag.FiltroBuscar"
+                                           placeholder="Dirección, título...">
+                                    <div class="input-group-append">
+                                        <span class="input-group-text">
+                                            <i class="fas fa-search"></i>
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Tipo de propiedad -->
+                           <div class="form-group">
+                            <label for="tipo" class="font-weight-bold">Tipo de Propiedad</label>
+                            <select class="form-control" id="tipo" name="tipo">
+                             @{
+                                var filtroTipo = ViewBag.FiltroTipo as string;
+                            }
+                                <option value="todos" selected="@(filtroTipo == "todos" || string.IsNullOrEmpty(filtroTipo))">Todos los tipos</option>
+                                <option value="casa" selected="@(filtroTipo == "casa")">Casa</option>
+                                <option value="departamento" selected="@(filtroTipo == "departamento")">Departamento</option>
+                                <option value="local" selected="@(filtroTipo == "local")">Local Comercial</option>
+                                <option value="oficina" selected="@(filtroTipo == "oficina")">Oficina</option>
+                            </select>
+                            </div>
+
+                           <!-- Rango de precio -->
+<div class="form-group">
+    <label for="precio" class="font-weight-bold">Rango de Precio</label>
+    <select class="form-control" id="precio" name="precio">
+        @{
+            var filtroPrecio = ViewBag.FiltroPrecio as string;
+        }
+        <option value="" selected="@(string.IsNullOrEmpty(filtroPrecio))">Todos los precios</option>
+        <option value="0-50000" selected="@(filtroPrecio == "0-50000")">Hasta $50.000</option>
+        <option value="50000-100000" selected="@(filtroPrecio == "50000-100000")">$50.000 - $100.000</option>
+        <option value="100000+" selected="@(filtroPrecio == "100000+")">Más de $100.000</option>
+    </select>
+</div>
+
+<!-- Cantidad de ambientes -->
+<div class="form-group">
+    <label for="ambientes" class="font-weight-bold">Ambientes</label>
+    <select class="form-control" id="ambientes" name="ambientes">
+        @{
+            var filtroAmbientes = ViewBag.FiltroAmbientes as string;
+        }
+        <option value="todos" selected="@(filtroAmbientes == "todos" || string.IsNullOrEmpty(filtroAmbientes))">Cualquier cantidad</option>
+        <option value="1" selected="@(filtroAmbientes == "1")">1 ambiente</option>
+        <option value="2" selected="@(filtroAmbientes == "2")">2 ambientes</option>
+        <option value="3" selected="@(filtroAmbientes == "3")">3 ambientes</option>
+        <option value="4" selected="@(filtroAmbientes == "4")">4 ambientes</option>
+        <option value="5" selected="@(filtroAmbientes == "5")">5+ ambientes</option>
+    </select>
+</div>
+
+                            <!-- Botones -->
+                            <div class="form-group">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-search"></i> Buscar
+                                </button>
+                                <a asp-action="Catalogo" class="btn btn-outline-secondary btn-block mt-2">
+                                    <i class="fas fa-undo"></i> Limpiar Filtros
+                                </a>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Información de ayuda -->
+                <div class="card shadow mt-4">
+                    <div class="card-header bg-info text-white">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle"></i> ¿Necesitas ayuda?
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <p class="small text-muted mb-3">
+                            ¿No encuentras lo que buscas? Nuestro equipo puede ayudarte a encontrar la propiedad perfecta.
+                        </p>
+                        <div class="contact-options">
+                            <a href="tel:+5492664123456" class="btn btn-outline-success btn-sm btn-block mb-2">
+                                <i class="fas fa-phone"></i> Llamar
+                            </a>
+                            <a href="mailto:info@inmobiliaria.com" class="btn btn-outline-primary btn-sm btn-block mb-2">
+                                <i class="fas fa-envelope"></i> Email
+                            </a>
+                            <a asp-action="Contacto" class="btn btn-outline-info btn-sm btn-block">
+                                <i class="fas fa-comments"></i> Contacto
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Listado de propiedades -->
+        <div class="col-lg-9 col-md-8">
+            <!-- Header de resultados -->
+            <div class="results-header mb-4">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1">Propiedades Disponibles</h4>
+                        <p class="text-muted mb-0">
+                            @ViewBag.TotalResultados resultado@(ViewBag.TotalResultados != 1 ? "s" : "") encontrado@(ViewBag.TotalResultados != 1 ? "s" : "")
+                        </p>
+                    </div>
+                    <div class="view-options">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-primary active" id="gridView">
+                                <i class="fas fa-th"></i>
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" id="listView">
+                                <i class="fas fa-list"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Filtros activos -->
+            @if (!string.IsNullOrEmpty(ViewBag.FiltroBuscar) || 
+                 (!string.IsNullOrEmpty(ViewBag.FiltroTipo) && ViewBag.FiltroTipo != "todos") ||
+                 !string.IsNullOrEmpty(ViewBag.FiltroPrecio) ||
+                 (!string.IsNullOrEmpty(ViewBag.FiltroAmbientes) && ViewBag.FiltroAmbientes != "todos"))
+            {
+                <div class="active-filters mb-4">
+                    <h6>Filtros activos:</h6>
+                    <div class="filter-tags">
+                        @if (!string.IsNullOrEmpty(ViewBag.FiltroBuscar))
+                        {
+                            <span class="badge badge-primary badge-pill">
+                                Búsqueda: "@ViewBag.FiltroBuscar"
+                                <a href="@Url.Action("Catalogo", new { tipo = ViewBag.FiltroTipo, precio = ViewBag.FiltroPrecio, ambientes = ViewBag.FiltroAmbientes })" class="text-white ml-1">×</a>
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(ViewBag.FiltroTipo) && ViewBag.FiltroTipo != "todos")
+                        {
+                            <span class="badge badge-success badge-pill">
+                                Tipo: @ViewBag.FiltroTipo.ToUpper()
+                                <a href="@Url.Action("Catalogo", new { buscar = ViewBag.FiltroBuscar, precio = ViewBag.FiltroPrecio, ambientes = ViewBag.FiltroAmbientes })" class="text-white ml-1">×</a>
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(ViewBag.FiltroPrecio))
+                        {
+                            <span class="badge badge-warning badge-pill">
+                                Precio: @ViewBag.FiltroPrecio
+                                <a href="@Url.Action("Catalogo", new { buscar = ViewBag.FiltroBuscar, tipo = ViewBag.FiltroTipo, ambientes = ViewBag.FiltroAmbientes })" class="text-white ml-1">×</a>
+                            </span>
+                        }
+                        @if (!string.IsNullOrEmpty(ViewBag.FiltroAmbientes) && ViewBag.FiltroAmbientes != "todos")
+                        {
+                            <span class="badge badge-info badge-pill">
+                                @ViewBag.FiltroAmbientes ambiente@(ViewBag.FiltroAmbientes != "1" ? "s" : "")
+                                <a href="@Url.Action("Catalogo", new { buscar = ViewBag.FiltroBuscar, tipo = ViewBag.FiltroTipo, precio = ViewBag.FiltroPrecio })" class="text-white ml-1">×</a>
+                            </span>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Resultados -->
+            @if (Model.Any())
+            {
+                <div id="propertiesGrid" class="row">
+                    @foreach (var propiedad in Model)
+                    {
+                        <div class="col-lg-4 col-md-6 mb-4 property-item">
+                            <div class="property-card h-100">
+                                <div class="property-image">
+                                    <img src="@propiedad.Imagen" alt="@propiedad.Titulo" class="img-fluid">
+                                    <div class="property-overlay">
+                                        <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id" class="btn btn-light btn-sm">
+                                            <i class="fas fa-eye"></i> Ver Detalles
+                                        </a>
+                                    </div>
+                                    <div class="property-badges">
+                                        <span class="badge badge-success">@propiedad.Estado</span>
+                                        <span class="badge badge-primary">@propiedad.Tipo</span>
+                                    </div>
+                                </div>
+                                <div class="property-content">
+                                    <div class="property-price">
+                                        <h4 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h4>
+                                    </div>
+                                    <h5 class="property-title">@propiedad.Titulo</h5>
+                                    <p class="property-location">
+                                        <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
+                                    </p>
+                                    <div class="property-features">
+                                        <span class="feature">
+                                            <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
+                                        </span>
+                                        <span class="feature">
+                                            <i class="fas fa-bath"></i> @propiedad.Baños baños
+                                        </span>
+                                        <span class="feature">
+                                            <i class="fas fa-ruler-combined"></i> @propiedad.Superficie m²
+                                        </span>
+                                    </div>
+                                    <div class="property-actions mt-3">
+                                        <div class="row">
+                                            <div class="col-8">
+                                                <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id" class="btn btn-primary btn-block">
+                                                    <i class="fas fa-eye"></i> Ver Detalles
+                                                </a>
+                                            </div>
+                                            <div class="col-4">
+                                                <button type="button" class="btn btn-outline-success btn-block" 
+                                                        onclick="expresarInteres(@propiedad.Id, '@propiedad.Titulo')"
+                                                        title="Expresar interés">
+                                                    <i class="fas fa-heart"></i>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Vista de lista (oculta por defecto) -->
+                <div id="propertiesList" class="d-none">
+                    @foreach (var propiedad in Model)
+                    {
+                        <div class="property-list-item mb-4">
+                            <div class="card">
+                                <div class="row no-gutters">
+                                    <div class="col-md-4">
+                                        <div class="property-image-list">
+                                            <img src="@propiedad.Imagen" alt="@propiedad.Titulo" class="img-fluid h-100">
+                                            <div class="property-badges-list">
+                                                <span class="badge badge-success">@propiedad.Estado</span>
+                                                <span class="badge badge-primary">@propiedad.Tipo</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between align-items-start">
+                                                <div>
+                                                    <h5 class="card-title">@propiedad.Titulo</h5>
+                                                    <p class="card-text text-muted">
+                                                        <i class="fas fa-map-marker-alt"></i> @propiedad.Direccion
+                                                    </p>
+                                                    <div class="property-features-list">
+                                                        <span class="feature">
+                                                            <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
+                                                        </span>
+                                                        <span class="feature">
+                                                            <i class="fas fa-bath"></i> @propiedad.Baños baños
+                                                        </span>
+                                                        <span class="feature">
+                                                            <i class="fas fa-ruler-combined"></i> @propiedad.Superficie m²
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="text-right">
+                                                    <h4 class="text-primary font-weight-bold mb-3">$@propiedad.Precio.ToString("N0")</h4>
+                                                    <div class="property-actions-list">
+                                                        <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id" class="btn btn-primary mr-2">
+                                                            <i class="fas fa-eye"></i> Ver Detalles
+                                                        </a>
+                                                        <button type="button" class="btn btn-outline-success" 
+                                                                onclick="expresarInteres(@propiedad.Id, '@propiedad.Titulo')"
+                                                                title="Expresar interés">
+                                                            <i class="fas fa-heart"></i>
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+            else
+            {
+                <!-- Sin resultados -->
+                <div class="no-results text-center py-5">
+                    <i class="fas fa-search fa-5x text-muted mb-4"></i>
+                    <h3 class="text-muted">No se encontraron propiedades</h3>
+                    <p class="text-muted mb-4">
+                        Intenta ajustar los filtros de búsqueda o 
+                        <a asp-action="Catalogo" class="text-primary">ver todas las propiedades</a>
+                    </p>
+                    <div class="suggestions">
+                        <h5>Sugerencias:</h5>
+                        <ul class="list-unstyled">
+                            <li><i class="fas fa-check text-success"></i> Verifica la ortografía de los términos de búsqueda</li>
+                            <li><i class="fas fa-check text-success"></i> Intenta con términos de búsqueda más generales</li>
+                            <li><i class="fas fa-check text-success"></i> Reduce el número de filtros aplicados</li>
+                        </ul>
+                    </div>
+                    <a asp-action="Contacto" class="btn btn-primary mt-3">
+                        <i class="fas fa-phone"></i> Contactar para Ayuda Personalizada
+                    </a>
+                </div>
+            }
+        </div>
+    </div>
+</div>
+
+<!-- Modal para expresar interés -->
+<div class="modal fade" id="interestModal" tabindex="-1" role="dialog" aria-labelledby="interestModalLabel" aria-hidden="true">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="interestModalLabel">
+                    <i class="fas fa-heart text-danger"></i> Expresar Interés
+                </h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <form method="post" asp-action="ExpresarInteres" id="interestForm">
+                <div class="modal-body">
+                    <input type="hidden" id="propiedadId" name="propiedadId" />
+                    
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Propiedad:</strong> <span id="propiedadTitulo"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="nombre" class="font-weight-bold">Nombre Completo *</label>
+                        <input type="text" class="form-control" id="nombre" name="nombre" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="email" class="font-weight-bold">Email *</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="telefono" class="font-weight-bold">Teléfono</label>
+                        <input type="tel" class="form-control" id="telefono" name="telefono">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="mensaje" class="font-weight-bold">Mensaje</label>
+                        <textarea class="form-control" id="mensaje" name="mensaje" rows="3" 
+                                  placeholder="Cuéntanos qué te interesa de esta propiedad..."></textarea>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-paper-plane"></i> Enviar Consulta
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Cambio de vista grid/list
+            $('#gridView').click(function() {
+                $(this).addClass('active');
+                $('#listView').removeClass('active');
+                $('#propertiesGrid').removeClass('d-none');
+                $('#propertiesList').addClass('d-none');
+                localStorage.setItem('catalogView', 'grid');
+            });
+
+            $('#listView').click(function() {
+                $(this).addClass('active');
+                $('#gridView').removeClass('active');
+                $('#propertiesGrid').addClass('d-none');
+                $('#propertiesList').removeClass('d-none');
+                localStorage.setItem('catalogView', 'list');
+            });
+
+            // Restaurar vista preferida
+            const savedView = localStorage.getItem('catalogView');
+            if (savedView === 'list') {
+                $('#listView').click();
+            }
+
+            // Auto-submit del formulario de filtros cuando cambia un select
+            $('#filtersForm select').change(function() {
+                $('#filtersForm').submit();
+            });
+
+            // Efectos hover para las tarjetas
+            $('.property-card').hover(function() {
+                $(this).addClass('shadow-lg').css('transform', 'translateY(-5px)');
+            }, function() {
+                $(this).removeClass('shadow-lg').css('transform', 'translateY(0)');
+            });
+
+            // Lazy loading para imágenes
+            if ('IntersectionObserver' in window) {
+                const imageObserver = new IntersectionObserver((entries, observer) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const img = entry.target;
+                            img.src = img.dataset.src;
+                            img.classList.remove('lazy');
+                            observer.unobserve(img);
+                        }
+                    });
+                });
+
+                document.querySelectorAll('img[data-src]').forEach(img => {
+                    imageObserver.observe(img);
+                });
+            }
+
+            // Validación del formulario de interés
+            $('#interestForm').submit(function(e) {
+                const nombre = $('#nombre').val().trim();
+                const email = $('#email').val().trim();
+                
+                if (!nombre || !email) {
+                    e.preventDefault();
+                    showAlert('danger', 'Por favor completa los campos obligatorios.');
+                    return false;
+                }
+                
+                if (!isValidEmail(email)) {
+                    e.preventDefault();
+                    showAlert('danger', 'Por favor ingresa un email válido.');
+                    return false;
+                }
+            });
+        });
+
+        function expresarInteres(propiedadId, titulo) {
+            $('#propiedadId').val(propiedadId);
+            $('#propiedadTitulo').text(titulo);
+            $('#interestModal').modal('show');
+        }
+
+        function isValidEmail(email) {
+            const emailRegex = /^[^\s]+[^\s]+\.[^\s]+$/;
+            return emailRegex.test(email);
+        }
+
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show position-fixed" 
+                     style="top: 20px; right: 20px; z-index: 9999; max-width: 300px;" role="alert">
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            
+            $('body').append(alertHtml);
+            
+            setTimeout(() => {
+                $('.alert').fadeOut();
+            }, 5000);
+        }
+    </script>
+}
+
+<style>
+    .catalog-hero {
+        background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
+        padding: 4rem 0;
+    }
+    
+    .filters-sidebar .card {
+        position: sticky;
+        top: 20px;
+    }
+    
+    .results-header {
+        background: white;
+        padding: 1.5rem;
+        border-radius: 10px;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    
+    .active-filters .filter-tags .badge {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-size: 0.8rem;
+    }
+    
+    .property-card {
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        position: relative;
+    }
+    
+    .property-image {
+        position: relative;
+        overflow: hidden;
+        height: 250px;
+    }
+    
+    .property-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .property-card:hover .property-image img {
+        transform: scale(1.05);
+    }
+    
+    .property-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.7);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .property-card:hover .property-overlay {
+        opacity: 1;
+    }
+    
+    .property-badges {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+        z-index: 2;
+    }
+    
+    .property-badges .badge {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .property-content {
+        padding: 1.5rem;
+    }
+    
+    .property-price {
+        margin-bottom: 1rem;
+    }
+    
+    .property-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+        color: #333;
+    }
+    
+    .property-location {
+        color: #666;
+        margin-bottom: 1rem;
+    }
+    
+    .property-features {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .feature {
+        color: #666;
+        font-size: 0.9rem;
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+    }
+    
+    .feature i {
+        color: #4e73df;
+    }
+    
+    /* Vista de lista */
+    .property-image-list {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+    
+    .property-image-list img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+    }
+    
+    .property-badges-list {
+        position: absolute;
+        top: 15px;
+        left: 15px;
+    }
+    
+    .property-badges-list .badge {
+        margin-right: 0.5rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .property-features-list {
+        display: flex;
+        gap: 1rem;
+        margin-bottom: 1rem;
+        flex-wrap: wrap;
+    }
+    
+    .property-actions-list .btn {
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Sin resultados */
+    .no-results {
+        background: white;
+        border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .suggestions ul li {
+        text-align: left;
+        margin-bottom: 0.5rem;
+    }
+    
+    /* Responsive */
+    @@media (max-width: 768px) {
+        .filters-sidebar .card {
+            position: static;
+        }
+        
+        .property-features {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .property-features-list {
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+        
+        .view-options {
+            margin-top: 1rem;
+        }
+        
+        .results-header .d-flex {
+            flex-direction: column;
+            align-items: flex-start !important;
+        }
+    }
+    
+    /* Animaciones */
+    .property-item {
+        animation: fadeInUp 0.6s ease forwards;
+    }
+    
+    .property-item:nth-child(1) { animation-delay: 0.1s; }
+    .property-item:nth-child(2) { animation-delay: 0.2s; }
+    .property-item:nth-child(3) { animation-delay: 0.3s; }
+    .property-item:nth-child(4) { animation-delay: 0.4s; }
+    .property-item:nth-child(5) { animation-delay: 0.5s; }
+    .property-item:nth-child(6) { animation-delay: 0.6s; }
+    
+    @@keyframes fadeInUp {
+        from {
+            opacity: 0;
+            transform: translateY(30px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+</style>

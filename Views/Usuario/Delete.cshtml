@@ -1,0 +1,341 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Eliminar Usuario";
+    Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-times text-danger"></i> Eliminar Usuario
+        </h1>
+        <a asp-action="Index" class="btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver a Lista
+        </a>
+    </div>
+
+    <!-- Mostrar si tiene relaciones que impiden la eliminación -->
+    @if (TempData["MostrarDesactivar"] != null && (bool)TempData["MostrarDesactivar"])
+    {
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">
+                <i class="fas fa-ban"></i> Eliminación No Permitida
+            </h4>
+            <p>@TempData["Warning"]</p>
+            <hr>
+            <div class="row">
+                <div class="col-md-6">
+                    <form asp-action="CambiarEstado" method="post" class="d-inline">
+                        @Html.AntiForgeryToken()
+                        <input type="hidden" name="id" value="@TempData["UsuarioId"]" />
+                        <input type="hidden" name="nuevoEstado" value="inactivo" />
+                        <button type="submit" class="btn btn-warning">
+                            <i class="fas fa-ban"></i> Desactivar Usuario
+                        </button>
+                    </form>
+                </div>
+                <div class="col-md-6">
+                    <a asp-action="Details" asp-route-id="@TempData["UsuarioId"]" class="btn btn-info">
+                        <i class="fas fa-eye"></i> Ver Detalles
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- No mostrar el resto del contenido si hay relaciones -->
+    }
+    else
+    {
+        <!-- Alerta de advertencia para eliminación permitida -->
+        <div class="alert alert-danger" role="alert">
+            <h4 class="alert-heading">
+                <i class="fas fa-exclamation-triangle"></i> ¡Atención!
+            </h4>
+            <p>Está a punto de eliminar permanentemente este usuario del sistema.</p>
+            <hr>
+            <p class="mb-0">Esta acción <strong>NO se puede deshacer</strong>. Por favor, confirme que desea continuar.</p>
+        </div>
+
+        <div class="row">
+            <!-- Información del usuario a eliminar -->
+            <div class="col-lg-8">
+                <div class="card shadow mb-4 border-danger">
+                    <div class="card-header py-3 bg-danger">
+                        <h6 class="m-0 font-weight-bold text-white">
+                            <i class="fas fa-user"></i> Usuario a Eliminar
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row align-items-center mb-4">
+                            <div class="col-auto">
+                                @if (!string.IsNullOrEmpty(Model.Avatar))
+                                {
+                                    <img src="@Model.Avatar" alt="Avatar de @Model.NombreCompleto" class="rounded-circle" width="80" height="80">
+                                }
+                                else
+                                {
+                                    <div class="bg-gradient-secondary rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                         style="width: 80px; height: 80px;">
+                                        <span class="text-white font-weight-bold h4 mb-0">
+                                            @(Model.Nombre.Substring(0, 1))@(Model.Apellido.Substring(0, 1))
+                                        </span>
+                                    </div>
+                                }
+                            </div>
+                            <div class="col">
+                                <h4 class="mb-1">@Model.NombreCompleto</h4>
+                                <p class="mb-2">
+                                    @switch (Model.Rol.ToLower())
+                                    {
+                                        case "administrador":
+                                            <span class="badge badge-danger badge-lg">@Model.Rol.ToUpper()</span>
+                                            break;
+                                        case "empleado":
+                                            <span class="badge badge-warning badge-lg">@Model.Rol.ToUpper()</span>
+                                            break;
+                                        case "propietario":
+                                            <span class="badge badge-primary badge-lg">@Model.Rol.ToUpper()</span>
+                                            break;
+                                        case "inquilino":
+                                            <span class="badge badge-success badge-lg">@Model.Rol.ToUpper()</span>
+                                            break;
+                                        default:
+                                            <span class="badge badge-secondary badge-lg">@Model.Rol.ToUpper()</span>
+                                            break;
+                                    }
+                                </p>
+                                <p class="mb-0 text-muted">@Model.Email • DNI: @Model.Dni</p>
+                            </div>
+                        </div>
+
+                        <!-- Mensaje de confirmación de que no tiene relaciones -->
+                        <div class="alert alert-success mb-4">
+                            <h6 class="alert-heading">
+                                <i class="fas fa-check-circle"></i> Usuario Sin Relaciones Críticas
+                            </h6>
+                            <p class="mb-0">Este usuario no tiene contratos activos, propiedades asociadas ni otras relaciones que impidan su eliminación.</p>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6">
+                                <h6 class="text-danger mb-3">
+                                    <i class="fas fa-user"></i> Información Personal
+                                </h6>
+                                
+                                <div class="mb-2">
+                                    <strong>Nombre:</strong> @Model.Nombre
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Apellido:</strong> @Model.Apellido
+                                </div>
+                                <div class="mb-2">
+                                    <strong>DNI:</strong> @Model.Dni
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Teléfono:</strong> @Model.Telefono
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <h6 class="text-danger mb-3">
+                                    <i class="fas fa-cog"></i> Información del Sistema
+                                </h6>
+                                
+                                <div class="mb-2">
+                                    <strong>Email:</strong> @Model.Email
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Rol:</strong> @Model.Rol.ToUpper()
+                                </div>
+                                <div class="mb-2">
+                                    <strong>Estado:</strong> 
+                                    @if (Model.Estado == "activo")
+                                    {
+                                        <span class="badge badge-success">ACTIVO</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge badge-secondary">INACTIVO</span>
+                                    }
+                                </div>
+                                <div class="mb-2">
+                                    <strong>ID del Usuario:</strong> #@Model.IdUsuario
+                                </div>
+                            </div>
+                        </div>
+
+                        @if (!string.IsNullOrEmpty(Model.Direccion) && Model.Direccion != "Sin dirección especificada")
+                        {
+                            <hr>
+                            <div class="row">
+                                <div class="col-12">
+                                    <h6 class="text-danger mb-3">
+                                        <i class="fas fa-map-marker-alt"></i> Dirección
+                                    </h6>
+                                    <p class="mb-0">@Model.Direccion</p>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+
+                <!-- Formulario de confirmación -->
+                <div class="card shadow mb-4">
+                    <div class="card-body">
+                        <form asp-action="Delete" method="post">
+                            <input asp-for="IdUsuario" type="hidden" />
+                            
+                            <div class="form-group">
+                                <div class="custom-control custom-checkbox">
+                                    <input type="checkbox" class="custom-control-input" id="confirmDelete" required>
+                                    <label class="custom-control-label" for="confirmDelete">
+                                        <strong>Confirmo que deseo eliminar permanentemente este usuario</strong>
+                                    </label>
+                                </div>
+                                <small class="text-muted">
+                                    Esta casilla debe estar marcada para proceder con la eliminación.
+                                </small>
+                            </div>
+
+                            <hr>
+
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <button type="submit" class="btn btn-danger btn-block" id="deleteButton" disabled>
+                                        <i class="fas fa-trash"></i> Confirmar Eliminación
+                                    </button>
+                                </div>
+                                <div class="col-md-6">
+                                    <a asp-action="Index" class="btn btn-secondary btn-block">
+                                        <i class="fas fa-times"></i> Cancelar
+                                    </a>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sidebar de información y advertencias -->
+            <div class="col-lg-4">
+                <!-- Consecuencias de la eliminación -->
+                <div class="card shadow mb-4 border-warning">
+                    <div class="card-header py-3 bg-warning">
+                        <h6 class="m-0 font-weight-bold text-dark">
+                            <i class="fas fa-exclamation-triangle"></i> Consecuencias
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-danger">Al eliminar este usuario:</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-times text-danger"></i>
+                                Ya no podrá acceder al sistema
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-times text-danger"></i>
+                                Se perderá toda su información personal
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-times text-danger"></i>
+                                Los datos no se podrán recuperar
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-check text-success"></i>
+                                No tiene relaciones que generen problemas
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Alternativas recomendadas -->
+                <div class="card shadow mb-4 border-info">
+                    <div class="card-header py-3 bg-info">
+                        <h6 class="m-0 font-weight-bold text-white">
+                            <i class="fas fa-lightbulb"></i> Alternativas Recomendadas
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <h6 class="font-weight-bold text-primary">¿Consideró estas opciones?</h6>
+                        <ul class="list-unstyled">
+                            <li class="mb-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-ban text-warning mt-1 mr-2"></i>
+                                    <div>
+                                        <strong>Desactivar usuario</strong><br>
+                                        <small class="text-muted">Mantiene los datos pero impide el acceso</small>
+                                        <br>
+                                        <form asp-action="CambiarEstado" method="post" class="mt-2">
+                                            @Html.AntiForgeryToken()
+                                            <input type="hidden" name="id" value="@Model.IdUsuario" />
+                                            <input type="hidden" name="nuevoEstado" value="inactivo" />
+                                            <button type="submit" class="btn btn-warning btn-sm">
+                                                <i class="fas fa-ban"></i> Desactivar
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </li>
+                            <li class="mb-3">
+                                <div class="d-flex align-items-start">
+                                    <i class="fas fa-edit text-info mt-1 mr-2"></i>
+                                    <div>
+                                        <strong>Editar información</strong><br>
+                                        <small class="text-muted">Corrige datos incorrectos sin eliminar</small>
+                                        <br>
+                                        <a asp-action="Edit" asp-route-id="@Model.IdUsuario" class="btn btn-info btn-sm mt-2">
+                                            <i class="fas fa-edit"></i> Editar
+                                        </a>
+                                    </div>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Información de seguridad -->
+                @if (Model.Rol.ToLower() == "administrador")
+                {
+                    <div class="card shadow mb-4 border-danger">
+                        <div class="card-header py-3 bg-danger">
+                            <h6 class="m-0 font-weight-bold text-white">
+                                <i class="fas fa-shield-alt"></i> Advertencia Especial
+                            </h6>
+                        </div>
+                        <div class="card-body">
+                            <p class="text-danger font-weight-bold">
+                                <i class="fas fa-crown"></i> USUARIO ADMINISTRADOR
+                            </p>
+                            <p class="small text-muted">
+                                Este usuario tiene privilegios administrativos completos. 
+                                Asegúrese de que exista al menos otro administrador activo 
+                                antes de proceder con la eliminación.
+                            </p>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Habilitar/deshabilitar botón según checkbox
+            $('#confirmDelete').change(function() {
+                $('#deleteButton').prop('disabled', !this.checked);
+            });
+
+            // Confirmación adicional al enviar el formulario
+            $('form[asp-action="Delete"]').submit(function(e) {
+                if (!confirm('ÚLTIMA CONFIRMACIÓN: ¿Está absolutamente seguro que desea eliminar este usuario? Esta acción NO se puede deshacer.')) {
+                    e.preventDefault();
+                    return false;
+                }
+            });
+        });
+    </script>
+}

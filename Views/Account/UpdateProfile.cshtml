@@ -1,0 +1,535 @@
+@model Inmobiliaria_troncoso_leandro.Models.Usuario
+
+@{
+    ViewData["Title"] = "Actualizar Perfil";
+    // Layout dinámico según el rol del usuario
+    switch (User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value?.ToLower())
+    
+    { 
+        case "administrador":
+            Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
+            break;
+        case "empleado":
+            Layout = "~/Views/Shared/_LayoutEmpleado.cshtml";
+            break;
+        case "propietario":
+            Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+            break;
+        case "inquilino":
+            Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+            break;
+        default:
+            Layout = "~/Views/Shared/_Layout.cshtml";
+            break;
+    }
+}
+
+<div class="container-fluid">
+    <!-- Header de la página -->
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0 text-gray-800">
+            <i class="fas fa-user-edit"></i> Actualizar Mi Perfil
+        </h1>
+        <a asp-controller="Usuario" asp-action="Perfil" class="btn btn-secondary shadow-sm">
+            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Perfil
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Formulario principal -->
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="fas fa-user"></i> Información Personal
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <!-- Mostrar errores de validación -->
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <strong>Por favor corrige los siguientes errores:</strong>
+                            <ul class="mb-0 mt-2">
+                                @foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+                                {
+                                    <li>@error.ErrorMessage</li>
+                                }
+                            </ul>
+                        </div>
+                    }
+
+                    <!-- Mostrar mensajes de TempData -->
+                    @if (TempData["Error"] != null)
+                    {
+                        <div class="alert alert-danger" role="alert">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            @TempData["Error"]
+                        </div>
+                    }
+
+                    @if (TempData["Success"] != null)
+                    {
+                        <div class="alert alert-success" role="alert">
+                            <i class="fas fa-check-circle"></i>
+                            @TempData["Success"]
+                        </div>
+                    }
+
+                    <form method="post" asp-action="UpdateProfile" id="updateProfileForm">
+                        <input asp-for="IdUsuario" type="hidden" />
+                        
+                        <div class="row">
+                            <!-- Información Personal -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-user"></i> Datos Personales
+                                </h6>
+                                
+                                <div class="form-group">
+                                    <label asp-for="Nombre" class="form-label font-weight-bold">Nombre *</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <input asp-for="Nombre" class="form-control" placeholder="Ingrese su nombre" />
+                                    </div>
+                                    <span asp-validation-for="Nombre" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Apellido" class="form-label font-weight-bold">Apellido *</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-user text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <input asp-for="Apellido" class="form-control" placeholder="Ingrese su apellido" />
+                                    </div>
+                                    <span asp-validation-for="Apellido" class="text-danger small"></span>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Telefono" class="form-label font-weight-bold">Teléfono</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-phone text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <input asp-for="Telefono" class="form-control" placeholder="Ingrese su teléfono" />
+                                    </div>
+                                    <span asp-validation-for="Telefono" class="text-danger small"></span>
+                                    <small class="text-muted">Ejemplo: +54 9 2664 123456</small>
+                                </div>
+                            </div>
+
+                            <!-- Información de Contacto -->
+                            <div class="col-md-6">
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-envelope"></i> Información de Contacto
+                                </h6>
+                                
+                                <div class="form-group">
+                                    <label class="form-label font-weight-bold">Email</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-envelope text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <input type="email" class="form-control" value="@Model.Email" readonly />
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-lock"></i> El email no se puede modificar. 
+                                        Contacta al administrador si necesitas cambiarlo.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label class="form-label font-weight-bold">DNI</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-id-card text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <input type="text" class="form-control" value="@Model.Dni" readonly />
+                                    </div>
+                                    <small class="text-muted">
+                                        <i class="fas fa-lock"></i> El DNI no se puede modificar por razones de seguridad.
+                                    </small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label asp-for="Direccion" class="form-label font-weight-bold">Dirección</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-map-marker-alt text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <textarea asp-for="Direccion" class="form-control" rows="3" placeholder="Ingrese su dirección completa"></textarea>
+                                    </div>
+                                    <span asp-validation-for="Direccion" class="text-danger small"></span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Avatar -->
+                        <div class="row">
+                            <div class="col-12">
+                                <hr>
+                                <h6 class="text-primary mb-3">
+                                    <i class="fas fa-image"></i> Avatar
+                                </h6>
+                                
+                                <div class="form-group">
+                                    <label asp-for="Avatar" class="form-label font-weight-bold">URL del Avatar (opcional)</label>
+                                    <div class="input-group">
+                                        <div class="input-group-prepend">
+                                            <div class="input-group-text">
+                                                <i class="fas fa-image text-gray-500"></i>
+                                            </div>
+                                        </div>
+                                        <input asp-for="Avatar" class="form-control" placeholder="https://ejemplo.com/mi-foto.jpg" />
+                                        <div class="input-group-append">
+                                            <button type="button" class="btn btn-outline-secondary" onclick="regenerarAvatar()">
+                                                <i class="fas fa-redo"></i> Automático
+                                            </button>
+                                        </div>
+                                    </div>
+                                    <span asp-validation-for="Avatar" class="text-danger small"></span>
+                                    <small class="text-muted">
+                                        Puedes ingresar la URL de una imagen o dejar vacío para usar el avatar automático con tus iniciales.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Información del rol (solo lectura) -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6 class="text-secondary mb-3">
+                                    <i class="fas fa-cog"></i> Información del Sistema
+                                </h6>
+                                
+                                <div class="row">
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label font-weight-bold">Rol en el Sistema</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <div class="input-group-text">
+                                                        <i class="fas fa-user-tag text-gray-500"></i>
+                                                    </div>
+                                                </div>
+                                                <input type="text" class="form-control" value="@Model.Rol.ToUpper()" readonly />
+                                            </div>
+                                            <small class="text-muted">
+                                                <i class="fas fa-lock"></i> Tu rol determina tus permisos en el sistema.
+                                            </small>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="form-group">
+                                            <label class="form-label font-weight-bold">Estado de la Cuenta</label>
+                                            <div class="input-group">
+                                                <div class="input-group-prepend">
+                                                    <div class="input-group-text">
+                                                        <i class="fas fa-circle text-success"></i>
+                                                    </div>
+                                                </div>
+                                                <input type="text" class="form-control" value="@Model.Estado.ToUpper()" readonly />
+                                            </div>
+                                            <small class="text-muted">Tu cuenta está activa y funcional.</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <hr>
+
+                        <!-- Botones de acción -->
+                        <div class="form-group text-center">
+                            <button type="submit" class="btn btn-primary btn-lg" id="submitButton">
+                                <i class="fas fa-save"></i> Guardar Cambios
+                            </button>
+                            <a asp-controller="Usuario" asp-action="Perfil" class="btn btn-secondary btn-lg ml-2">
+                                <i class="fas fa-times"></i> Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Sidebar -->
+        <div class="col-lg-4">
+            <!-- Vista previa del perfil -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="fas fa-eye"></i> Vista Previa
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <div class="preview-avatar mb-3">
+                        <img id="previewAvatar" src="@Model.Avatar" alt="Vista previa" class="rounded-circle" width="100" height="100">
+                    </div>
+                    <h5 id="previewNombre" class="mb-1">@Model.NombreCompleto</h5>
+                    <p class="text-muted small mb-2" id="previewEmail">@Model.Email</p>
+                    @switch (Model.Rol.ToLower())
+                    {
+                        case "administrador":
+                            <span class="badge badge-danger badge-lg">@Model.Rol.ToUpper()</span>
+                            break;
+                        case "empleado":
+                            <span class="badge badge-warning badge-lg">@Model.Rol.ToUpper()</span>
+                            break;
+                        case "propietario":
+                            <span class="badge badge-primary badge-lg">@Model.Rol.ToUpper()</span>
+                            break;
+                        case "inquilino":
+                            <span class="badge badge-success badge-lg">@Model.Rol.ToUpper()</span>
+                            break;
+                        default:
+                            <span class="badge badge-secondary badge-lg">@Model.Rol.ToUpper()</span>
+                            break;
+                    }
+                    
+                    <hr>
+                    
+                    <div class="text-left small text-muted">
+                        <p class="mb-1" id="previewTelefono">
+                            <i class="fas fa-phone fa-fw"></i> 
+                            <span>@Model.Telefono</span>
+                        </p>
+                        <p class="mb-0" id="previewDireccion">
+                            <i class="fas fa-map-marker-alt fa-fw"></i> 
+                            <span>@Model.Direccion</span>
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Información de ayuda -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">
+                        <i class="fas fa-lightbulb"></i> Consejos
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="tip-item mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-check-circle text-success mt-1 mr-2"></i>
+                            <div>
+                                <strong>Mantén tu información actualizada</strong><br>
+                                <small class="text-muted">Esto facilita la comunicación y mejora tu experiencia</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-shield-alt text-info mt-1 mr-2"></i>
+                            <div>
+                                <strong>Protege tu privacidad</strong><br>
+                                <small class="text-muted">Solo comparte información necesaria</small>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="tip-item mb-3">
+                        <div class="d-flex align-items-start">
+                            <i class="fas fa-image text-warning mt-1 mr-2"></i>
+                            <div>
+                                <strong>Avatar personalizado</strong><br>
+                                <small class="text-muted">Puedes usar una URL de imagen o generar uno automático</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones adicionales -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-warning">
+                        <i class="fas fa-cogs"></i> Otras Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-controller="Account" asp-action="ChangePassword" class="btn btn-outline-primary btn-sm mb-2">
+                            <i class="fas fa-key"></i> Cambiar Contraseña
+                        </a>
+                        <button type="button" class="btn btn-outline-secondary btn-sm mb-2" onclick="refreshAvatar()">
+                            <i class="fas fa-redo"></i> Generar Nuevo Avatar
+                        </button>
+                        <a href="mailto:admin@inmobiliaria.com?subject=Actualización de Datos" class="btn btn-outline-info btn-sm">
+                            <i class="fas fa-envelope"></i> Solicitar Ayuda
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        $(document).ready(function() {
+            // Actualizar vista previa cuando cambian los campos
+            $('#Nombre, #Apellido, #Telefono, #Direccion, #Avatar').on('input', function() {
+                updatePreview();
+            });
+
+            // Validación del formulario al enviar
+            $('#updateProfileForm').submit(function(e) {
+                if (!validateForm()) {
+                    e.preventDefault();
+                    return false;
+                }
+                
+                // Mostrar loading
+                $('#submitButton').html('<i class="fas fa-spinner fa-spin"></i> Guardando...').prop('disabled', true);
+            });
+
+            // Inicializar vista previa
+            updatePreview();
+        });
+
+        function updatePreview() {
+            const nombre = $('#Nombre').val();
+            const apellido = $('#Apellido').val();
+            const telefono = $('#Telefono').val() || 'Sin especificar';
+            const direccion = $('#Direccion').val() || 'Sin dirección especificada';
+            const avatar = $('#Avatar').val();
+
+            $('#previewNombre').text(`${nombre} ${apellido}`);
+            $('#previewTelefono span').text(telefono);
+            $('#previewDireccion span').text(direccion);
+
+            if (avatar && avatar.trim() !== '') {
+                $('#previewAvatar').attr('src', avatar);
+            } else {
+                // Generar avatar automático
+                const iniciales = nombre.charAt(0).toUpperCase() + apellido.charAt(0).toUpperCase();
+                const rol = '@Model.Rol.ToLower()';
+                const colores = {
+                    'administrador': { bg: 'dc3545', text: 'ffffff' },
+                    'empleado': { bg: 'ffc107', text: '000000' },
+                    'propietario': { bg: '007bff', text: 'ffffff' },
+                    'inquilino': { bg: '28a745', text: 'ffffff' }
+                };
+                const color = colores[rol] || { bg: '6c757d', text: 'ffffff' };
+                const avatarUrl = `https://via.placeholder.com/150/${color.bg}/${color.text}?text=${iniciales}`;
+                $('#previewAvatar').attr('src', avatarUrl);
+            }
+        }
+
+        function regenerarAvatar() {
+            $('#Avatar').val('');
+            updatePreview();
+        }
+
+        function refreshAvatar() {
+            regenerarAvatar();
+            showAlert('info', 'Avatar regenerado automáticamente con tus iniciales.');
+        }
+
+        function validateForm() {
+            const nombre = $('#Nombre').val().trim();
+            const apellido = $('#Apellido').val().trim();
+            
+            if (!nombre || !apellido) {
+                showAlert('danger', 'El nombre y apellido son obligatorios.');
+                return false;
+            }
+            
+            if (nombre.length < 2 || apellido.length < 2) {
+                showAlert('danger', 'El nombre y apellido deben tener al menos 2 caracteres.');
+                return false;
+            }
+            
+            // Validar URL del avatar si se proporciona
+            const avatar = $('#Avatar').val().trim();
+            if (avatar && !isValidUrl(avatar)) {
+                showAlert('warning', 'La URL del avatar no parece ser válida. Se usará el avatar automático.');
+                $('#Avatar').val('');
+            }
+            
+            return true;
+        }
+
+        function isValidUrl(string) {
+            try {
+                new URL(string);
+                return true;
+            } catch (_) {
+                return false;
+            }
+        }
+
+        function showAlert(type, message) {
+            const alertHtml = `
+                <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+                    <i class="fas fa-${type === 'danger' ? 'exclamation-triangle' : type === 'warning' ? 'exclamation-triangle' : 'info-circle'}"></i>
+                    ${message}
+                    <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+            `;
+            
+            $('.alert').remove();
+            $('.card-body').first().prepend(alertHtml);
+        }
+    </script>
+}
+
+<style>
+    .preview-avatar {
+        transition: transform 0.3s ease;
+    }
+    
+    .preview-avatar:hover {
+        transform: scale(1.05);
+    }
+    
+    .tip-item {
+        border-left: 3px solid #28a745;
+        padding-left: 10px;
+        margin-left: 5px;
+    }
+    
+    .form-control[readonly] {
+        background-color: #f8f9fc;
+        opacity: 1;
+    }
+    
+    .input-group-text {
+        background-color: #f8f9fc;
+        border-color: #d1d3e2;
+    }
+    
+    #previewAvatar {
+        border: 3px solid #e3e6f0;
+        transition: all 0.3s ease;
+    }
+    
+    #previewAvatar:hover {
+        border-color: #4e73df;
+    }
+</style>

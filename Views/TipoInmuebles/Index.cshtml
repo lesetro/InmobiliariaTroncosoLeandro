@@ -1,0 +1,308 @@
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.TipoInmueble>
+
+@{
+    ViewData["Title"] = "Tipos de Inmueble";
+}
+
+<div class="container-fluid">
+    <!-- Header con título y botón crear -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="mb-0">
+                <i class="fas fa-building text-primary me-2"></i>
+                Tipos de Inmueble
+            </h2>
+            <p class="text-muted">Gestiona los tipos de inmuebles disponibles</p>
+        </div>
+        <a asp-action="Create" class="btn btn-primary">
+            <i class="fas fa-plus me-1"></i>
+            Nuevo Tipo
+        </a>
+    </div>
+
+    <!-- Filtros y búsqueda -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <form method="get" asp-action="Index" class="row g-3">
+                <div class="col-md-4">
+                    <label for="buscar" class="form-label">Buscar</label>
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="fas fa-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="buscar" name="buscar" 
+                               value="@ViewBag.Buscar" placeholder="Nombre o descripción...">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <label for="estado" class="form-label">Estado</label>
+                    <select class="form-select" id="estado" name="estado">
+                        <option value="">Todos los estados</option>
+                        <option value="activo" selected="@(ViewBag.Estado == "activo")">Activos</option>
+                        <option value="inactivo" selected="@(ViewBag.Estado == "inactivo")">Inactivos</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="itemsPorPagina" class="form-label">Mostrar</label>
+                    <select class="form-select" id="itemsPorPagina" name="itemsPorPagina">
+                        <option value="5" selected="@(ViewBag.ITEMS_POR_PAGINA == 5)">5 registros</option>
+                        <option value="10" selected="@(ViewBag.ITEMS_POR_PAGINA == 10)">10 registros</option>
+                        <option value="25" selected="@(ViewBag.ITEMS_POR_PAGINA == 25)">25 registros</option>
+                        <option value="50" selected="@(ViewBag.ITEMS_POR_PAGINA == 50)">50 registros</option>
+                    </select>
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button type="submit" class="btn btn-outline-primary me-2">
+                        <i class="fas fa-filter me-1"></i>
+                        Filtrar
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">
+                        <i class="fas fa-times"></i>
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Información de resultados -->
+    @if (ViewBag.TotalRegistros > 0)
+    {
+        <div class="alert alert-info">
+            <i class="fas fa-info-circle me-1"></i>
+            Mostrando <strong>@Model.Count()</strong> de <strong>@ViewBag.TotalRegistros</strong> tipos de inmueble
+            @if (!string.IsNullOrEmpty(ViewBag.Buscar))
+            {
+                <span>para la búsqueda: "<strong>@ViewBag.Buscar</strong>"</span>
+            }
+        </div>
+    }
+
+    <!-- Tabla de resultados -->
+    @if (Model.Any())
+    {
+        <div class="card">
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Fecha Creación</th>
+                                <th width="200">Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <strong>@item.Nombre</strong>
+                                    </td>
+                                    <td>
+                                        @if (!string.IsNullOrEmpty(item.Descripcion))
+                                        {
+                                            <span title="@item.Descripcion">
+                                                @(item.Descripcion.Length > 50 ? item.Descripcion.Substring(0, 50) + "..." : item.Descripcion)
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="text-muted">Sin descripción</span>
+                                        }
+                                    </td>
+                                    
+                                    <td>
+                                        @if (item.Estado)
+                                        {
+                                            <span class="badge bg-success">
+                                                <i class="fas fa-check-circle me-1"></i>
+                                                Activo
+                                            </span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-danger">
+                                                <i class="fas fa-times-circle me-1"></i>
+                                                Inactivo
+                                            </span>
+                                        }
+                                    </td>
+                                    <td>
+                                        @item.FechaCreacion.ToString("dd/MM/yyyy")
+                                    </td>
+                                    <td>
+                                        <div class="btn-group" role="group">
+                                            <a asp-action="Details" asp-route-id="@item.IdTipoInmueble" 
+                                                class="btn btn-success btn-sm" title="Detalle ">
+                                                <i class="bi bi-file-earmark-text"></i>
+                                            </a>
+                                            <a asp-action="Edit" asp-route-id="@item.IdTipoInmueble" 
+                                                class="btn btn-warning btn-sm" title="Editar">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                           
+                                            <a asp-action="Delete" asp-route-id="@item.IdTipoInmueble" 
+                                               class="btn btn-danger btn-sm" title="Eliminar">
+                                                <i class="bi bi-trash"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Paginación -->
+        @if (ViewBag.TotalPaginas > 1)
+        {
+            <nav aria-label="Paginación" class="mt-4">
+                <ul class="pagination justify-content-center">
+                    <!-- Botón Anterior -->
+                    @if (ViewBag.PaginaActual > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pagina="@(ViewBag.PaginaActual - 1)"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">
+                                <i class="fas fa-chevron-left"></i>
+                            </a>
+                        </li>
+                    }
+
+                    <!-- Números de página -->
+                    @{
+                        int inicio = Math.Max(1, ViewBag.PaginaActual - 2);
+                        int fin = Math.Min(ViewBag.TotalPaginas, ViewBag.PaginaActual + 2);
+                    }
+
+                    @if (inicio > 1)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="1"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">1</a>
+                        </li>
+                        @if (inicio > 2)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                    }
+
+                    @for (int i = inicio; i <= fin; i++)
+                    {
+                        <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@i"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">@i</a>
+                        </li>
+                    }
+
+                    @if (fin < ViewBag.TotalPaginas)
+                    {
+                        @if (fin < ViewBag.TotalPaginas - 1)
+                        {
+                            <li class="page-item disabled">
+                                <span class="page-link">...</span>
+                            </li>
+                        }
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" asp-route-pagina="@ViewBag.TotalPaginas"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">@ViewBag.TotalPaginas</a>
+                        </li>
+                    }
+
+                    <!-- Botón Siguiente -->
+                    @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                    {
+                        <li class="page-item">
+                            <a class="page-link" asp-action="Index" 
+                               asp-route-pagina="@(ViewBag.PaginaActual + 1)"
+                               asp-route-buscar="@ViewBag.Buscar"
+                               asp-route-estado="@ViewBag.Estado"
+                               asp-route-itemsPorPagina="@ViewBag.ITEMS_POR_PAGINA">
+                                <i class="fas fa-chevron-right"></i>
+                            </a>
+                        </li>
+                    }
+                </ul>
+            </nav>
+        }
+    }
+    else
+    {
+        <div class="card">
+            <div class="card-body text-center py-5">
+                <i class="fas fa-building fa-3x text-muted mb-3"></i>
+                <h4 class="text-muted">No se encontraron tipos de inmueble</h4>
+                <p class="text-muted">
+                    @if (!string.IsNullOrEmpty(ViewBag.Buscar))
+                    {
+                        <span>No hay resultados para "<strong>@ViewBag.Buscar</strong>"</span>
+                    }
+                    else
+                    {
+                        <span>Aún no hay tipos de inmueble registrados</span>
+                    }
+                </p>
+                <a asp-action="Create" class="btn btn-primary">
+                    <i class="fas fa-plus me-1"></i>
+                    Crear Primer Tipo
+                </a>
+            </div>
+        </div>
+    }
+</div>
+
+@section Scripts {
+    <script>
+        function cambiarEstado(id, estadoActual) {
+            const accion = estadoActual ? 'desactivar' : 'activar';
+            const mensaje = `¿Estás seguro de ${accion} este tipo de inmueble?`;
+            
+            if (confirm(mensaje)) {
+                fetch('@Url.Action("CambiarEstado", "TipoInmuebles")', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+                    },
+                    body: JSON.stringify({ id: id })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cambiar el estado');
+                });
+            }
+        }
+
+        // Auto-envío del formulario al cambiar filtros
+        document.getElementById('itemsPorPagina').addEventListener('change', function() {
+            this.form.submit();
+        });
+
+        document.getElementById('estado').addEventListener('change', function() {
+            this.form.submit();
+        });
+    </script>
+}

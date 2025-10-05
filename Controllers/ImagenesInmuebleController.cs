@@ -1,9 +1,11 @@
 using Microsoft.AspNetCore.Mvc;
 using Inmobiliaria_troncoso_leandro.Models;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
+    [Authorize(Policy = "AdminOEmpleado")]
     public class ImagenesInmuebleController : Controller
     {
         private readonly IRepositorioImagen _repositorioImagen;
