@@ -6,6 +6,7 @@ using Inmobiliaria_troncoso_leandro.Data.Repositorios;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Inmobiliaria_troncoso_leandro.Data;
+using Inmobiliaria_troncoso_leandro.Filters;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -35,6 +36,12 @@ builder.Services.AddScoped<IRepositorioContacto, RepositorioContacto>();
 builder.Services.AddScoped<IRepositorioTipoInmueble, RepositorioTipoInmueble>();
 builder.Services.AddScoped<IRepositorioContratoVenta, RepositorioContratoVenta>();
 builder.Services.AddSingleton<IWebHostEnvironment>(builder.Environment);
+builder.Services.AddControllersWithViews(options =>
+{
+    options.Filters.Add<LayoutActionFilter>();
+});
+
+
 
 // 2. CONFIGURAR AUTENTICACIÓN CON COOKIES
 builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)

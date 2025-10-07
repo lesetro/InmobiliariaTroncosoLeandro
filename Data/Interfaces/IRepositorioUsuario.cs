@@ -63,7 +63,6 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
 
         // Otros métodos útiles
         Task<int> GetTotalUsuariosInactivosAsync();
-        Task<Usuario> ObtenerPorEmailAsync(string email);
-        Task<IEnumerable<Usuario>> ObtenerTodosAsync();
+        
     }
 }

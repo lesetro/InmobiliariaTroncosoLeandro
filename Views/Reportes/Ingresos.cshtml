@@ -32,11 +32,11 @@
                 <label for="meses" class="form-label">
                     <i class="bi bi-calendar-range me-1"></i>Período
                 </label>
-                <select name="meses" id="meses" class="form-select">
-                    <option value="3" @(ViewBag.Meses == 3 ? "selected" : "")>Últimos 3 meses</option>
-                    <option value="6" @(ViewBag.Meses == 6 ? "selected" : "")>Últimos 6 meses</option>
-                    <option value="12" @(ViewBag.Meses == 12 ? "selected" : "")>Último año</option>
-                    <option value="24" @(ViewBag.Meses == 24 ? "selected" : "")>Últimos 2 años</option>
+               <select name="meses" id="meses" class="form-select">
+                    <option value="3" selected="@(ViewBag.Meses == 3)">Últimos 3 meses</option>
+                    <option value="6" selected="@(ViewBag.Meses == 6)">Últimos 6 meses</option>
+                    <option value="12" selected="@(ViewBag.Meses == 12)">Último año</option>
+                    <option value="24" selected="@(ViewBag.Meses == 24)">Últimos 2 años</option>
                 </select>
             </div>
             <div class="col-md-3">

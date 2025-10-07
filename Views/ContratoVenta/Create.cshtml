@@ -10,7 +10,6 @@
                 <h3 class="mb-0"><i class="bi bi-cash-coin"></i> Crear Nuevo Contrato de Venta</h3>
             </div>
             <div class="card-body">
-
                 @if (TempData["ErrorMessage"] != null)
                 {
                     <div class="alert alert-danger alert-dismissible fade show">
@@ -33,7 +32,6 @@
                 }
 
                 <form asp-action="Create" method="post">
-
                     <!-- FILA 1: Inmueble y Vendedor (Propietario) -->
                     <div class="row">
                         <div class="col-md-6">
@@ -234,10 +232,10 @@
                     <hr class="my-4">
 
                     <div class="d-flex gap-2 justify-content-center">
-                        <button type="submit" class="btn btn-success btn-lg">
+                        <a asp-controller="ContratoVenta" asp-action="Details" class="btn btn-success btn-lg">
                             <i class="bi bi-check-circle"></i> Crear Contrato de Venta
-                        </button>
-                        <a asp-controller="Contratos" asp-action="Index" class="btn btn-secondary btn-lg">
+                        </a>
+                        <a asp-controller="ContratoVenta" asp-action="Details" class="btn btn-secondary btn-lg">
                             <i class="bi bi-x-circle"></i> Cancelar
                         </a>
                     </div>
@@ -251,262 +249,392 @@
     <partial name="_ValidationScriptsPartial" />
     
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Variables globales
-            let inmuebleBloqueado = false;
-            let vendedorBloqueado = false;
-            
-            // Configurar autocompletados
-            setupAutocompletado('inmuebleSearch', 'idInmueble', 'inmuebleResults', '/ContratoVenta/BuscarInmueblesParaVenta', onInmuebleSelected);
-            setupAutocompletado('vendedorSearch', 'idVendedor', 'vendedorResults', '/ContratoVenta/BuscarVendedores', onVendedorSelected);
-            setupAutocompletado('compradorSearch', 'idComprador', 'compradorResults', '/ContratoVenta/BuscarCompradores');
-            
-            // Configurar cálculos de montos
-            const precioTotalInput = document.querySelector('input[name="PrecioTotal"]');
-            const montoSenaInput = document.querySelector('input[name="MontoSeña"]');
-            
-            precioTotalInput.addEventListener('input', actualizarResumen);
-            montoSenaInput.addEventListener('input', actualizarResumen);
-            
-            // Función genérica de autocompletado
-            function setupAutocompletado(inputId, hiddenId, resultsId, url, onSelectCallback = null) {
-                const input = document.getElementById(inputId);
-                const hidden = document.getElementById(hiddenId);
-                const results = document.getElementById(resultsId);
-                let timeoutId;
-                
-                input.addEventListener('input', function() {
-                    clearTimeout(timeoutId);
-                    const termino = this.value.trim();
-                    
-                    if (termino.length < 3) {
-                        results.innerHTML = '';
-                        results.style.display = 'none';
-                        hidden.value = '';
-                        return;
-                    }
-                    
-                    // Debounce de 300ms
-                    timeoutId = setTimeout(() => {
-                        buscarDatos(termino, url, results, hidden, input, onSelectCallback);
-                    }, 300);
-                });
-                
-                // Limpiar resultados al hacer click fuera
-                document.addEventListener('click', function(e) {
-                    if (!input.contains(e.target) && !results.contains(e.target)) {
-                        results.style.display = 'none';
-                    }
-                });
-            }
-            
-            // Función para buscar datos vía AJAX
-           
-async function buscarDatos(termino, url, resultsContainer, hiddenField, inputField, callback) {
-    try {
-        resultsContainer.innerHTML = '<div class="autocomplete-item loading">Buscando...</div>';
-        resultsContainer.style.display = 'block';
+       document.addEventListener('DOMContentLoaded', function() {
+    // Variables globales
+    let inmuebleBloqueado = false;
+    let vendedorBloqueado = false;
+    
+    // Configurar autocompletados
+    setupAutocompletado('inmuebleSearch', 'idInmueble', 'inmuebleResults', '/ContratoVenta/BuscarInmuebles', onInmuebleSelected);
+    setupAutocompletado('vendedorSearch', 'idVendedor', 'vendedorResults', '/ContratoVenta/BuscarVendedores', onVendedorSelected);
+    setupAutocompletado('compradorSearch', 'idComprador', 'compradorResults', '/ContratoVenta/BuscarCompradores');
+    
+    // Configurar cálculos de montos
+    const precioTotalInput = document.querySelector('input[name="PrecioTotal"]');
+    const montoSenaInput = document.querySelector('input[name="MontoSeña"]');
+    
+    if (precioTotalInput) precioTotalInput.addEventListener('input', actualizarResumen);
+    if (montoSenaInput) montoSenaInput.addEventListener('input', actualizarResumen);
+    
+    // Función genérica de autocompletado
+    function setupAutocompletado(inputId, hiddenId, resultsId, url, onSelectCallback = null) {
+        const input = document.getElementById(inputId);
+        const hidden = document.getElementById(hiddenId);
+        const results = document.getElementById(resultsId);
         
-        const response = await fetch(`${url}?termino=${encodeURIComponent(termino)}&limite=10`);
-        const data = await response.json();
-        
-        if (data.error) {
-            resultsContainer.innerHTML = `<div class="autocomplete-item error">${data.error}</div>`;
+        if (!input || !hidden || !results) {
+            console.error(`Elementos no encontrados para autocompletado: ${inputId}`);
             return;
         }
         
-        const items = data.data || data;
+        let timeoutId;
         
-        if (!items || items.length === 0) {
-            resultsContainer.innerHTML = '<div class="autocomplete-item no-results">No se encontraron resultados</div>';
-            return;
-        }
-        
-        // Crear elementos de resultados - USANDO SearchResult
-        resultsContainer.innerHTML = '';
-        items.forEach(item => {
-            const div = document.createElement('div');
-            div.className = 'autocomplete-item';
+        input.addEventListener('input', function() {
+            clearTimeout(timeoutId);
+            const termino = this.value.trim();
             
-            
-            div.textContent = item.TextoCompleto || item.Texto; 
-            div.dataset.id = item.Id; 
-            div.dataset.item = JSON.stringify(item);
-            
-            
-            if (item.ContactoInfo) {
-                div.title = item.ContactoInfo;
+            if (termino.length < 3) {
+                results.innerHTML = '';
+                results.style.display = 'none';
+                hidden.value = '';
+                return;
             }
             
-            div.addEventListener('click', function() {
-               
-                inputField.value = item.Texto; 
-                hiddenField.value = item.Id;
-                resultsContainer.style.display = 'none';
-                
-                if (callback) {
-                    callback(item);
-                }
-            });
-            
-            resultsContainer.appendChild(div);
+            // Debounce de 300ms
+            timeoutId = setTimeout(() => {
+                buscarDatos(termino, url, results, hidden, input, onSelectCallback);
+            }, 300);
         });
         
-    } catch (error) {
-        resultsContainer.innerHTML = `<div class="autocomplete-item error">Error: ${error.message}</div>`;
+        // Limpiar resultados al hacer click fuera
+        document.addEventListener('click', function(e) {
+            if (!input.contains(e.target) && !results.contains(e.target)) {
+                results.style.display = 'none';
+            }
+        });
     }
-}
-            
-            // Callback cuando se selecciona un inmueble
-            async function onInmuebleSelected(inmueble) {
-    if (propietarioBloqueado) return;
     
-    try {
-        // Obtener vendedor del inmueble
-        const response = await fetch(`/ContratoVenta/ObtenerVendedorDeInmueble?inmuebleId=${inmueble.Id}`);
-        const data = await response.json();
-        
-        if (data.success && data.data) {
-            const vendedor = data.data;
+    // Función para buscar datos vía AJAX
+    async function buscarDatos(termino, url, resultsContainer, hiddenField, inputField, callback) {
+        try {
+            console.log(` Buscando en ${url} con término: "${termino}"`);
             
-            // Llenar vendedor automáticamente - USANDO SearchResult
-            document.getElementById('vendedorSearch').value = vendedor.Texto; // Solo el texto
-            document.getElementById('idVendedor').value = vendedor.Id;
+            resultsContainer.innerHTML = '<div class="autocomplete-item loading">Buscando...</div>';
+            resultsContainer.style.display = 'block';
             
-            // Bloquear vendedor
-            document.getElementById('vendedorSearch').disabled = true;
-            vendedorBloqueado = true;
+            const fullUrl = `${url}?termino=${encodeURIComponent(termino)}&limite=10`;
+            console.log(` URL de búsqueda: ${fullUrl}`);
             
-            // Actualizar mensaje de ayuda
-            document.getElementById('vendedor-help').textContent = 
-                `Vendedor asignado automáticamente: ${vendedor.Texto}`;
-            document.getElementById('vendedor-help').className = 'form-text text-success';
-        }
-    } catch (error) {
-        console.error('Error al obtener vendedor:', error);
-    }
-}
-
-// Callback cuando se selecciona un vendedor
-async function onVendedorSelected(vendedor) {
-    if (inmuebleBloqueado) return;
-    
-    try {
-        // Obtener inmuebles del vendedor
-        const response = await fetch(`/ContratoVenta/ObtenerInmueblesPorVendedor?vendedorId=${vendedor.Id}&limite=15`);
-        const data = await response.json();
-        
-        if (data.success && data.data && data.data.length > 0) {
-            // Actualizar mensaje de ayuda
-            document.getElementById('vendedor-help').textContent = 
-                `${data.data.length} inmueble(s) disponible(s) de: ${vendedor.Texto}`;
-            document.getElementById('vendedor-help').className = 'form-text text-info';
+            const response = await fetch(fullUrl);
             
-            // Mostrar los inmuebles disponibles en el autocompletado
-            const inmuebleResults = document.getElementById('inmuebleResults');
-            inmuebleResults.innerHTML = '';
+            console.log(` Response status: ${response.status}`);
             
-            data.data.forEach(inmueble => {
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(` Data recibida:`, data);
+            
+            if (!data.success) {
+                console.error(` Error del servidor: ${data.error}`);
+                resultsContainer.innerHTML = `<div class="autocomplete-item error">${data.error || 'Error en la búsqueda'}</div>`;
+                return;
+            }
+            
+            const items = data.data || [];
+            console.log(` Items recibidos: ${items.length}`, items);
+            
+            if (items.length === 0) {
+                console.log(' No se encontraron resultados');
+                resultsContainer.innerHTML = '<div class="autocomplete-item no-results">No se encontraron resultados</div>';
+                return;
+            }
+            
+            // Crear elementos de resultados
+            resultsContainer.innerHTML = '';
+            items.forEach((item, index) => {
                 const div = document.createElement('div');
                 div.className = 'autocomplete-item';
                 
-                // USAR SearchResult properties
-                div.textContent = inmueble.TextoCompleto || inmueble.Texto;
-                div.dataset.id = inmueble.Id;
-                div.dataset.item = JSON.stringify(inmueble);
+               
+                const textoMostrar = item.TextoCompleto || item.textoCompleto || item.Texto || item.texto || 'Sin nombre';
+                const idItem = item.Id || item.id;
+                const precioItem = item.Precio || item.precio;
+                
+                div.textContent = textoMostrar;
+                div.dataset.id = idItem;
+                div.dataset.index = index;
+                div.dataset.itemData = JSON.stringify(item); 
+                
+                console.log(` Item ${index}:`, { id: idItem, texto: textoMostrar, itemCompleto: item });
                 
                 div.addEventListener('click', function() {
-                    document.getElementById('inmuebleSearch').value = inmueble.Texto; // Solo texto
-                    document.getElementById('idInmueble').value = inmueble.Id;
-                    inmuebleResults.style.display = 'none';
+                    console.log(` Item seleccionado:`, item);
+                    
+                    //  CORRECCIÓN: Usar propiedades en minúscula
+                    const textoParaInput = item.Texto || item.texto || textoMostrar;
+                    const idParaHidden = item.Id || item.id;
+                    
+                    inputField.value = textoParaInput;
+                    hiddenField.value = idParaHidden;
+                    resultsContainer.style.display = 'none';
+                    
+                    console.log(` Input actualizado: ${inputField.id} = "${textoParaInput}"`);
+                    console.log(` Hidden actualizado: ${hiddenField.id} = "${idParaHidden}"`);
+                    
+                    if (callback && typeof callback === 'function') {
+                        // Pasar el objeto completo con todas sus propiedades
+                        callback({
+                            Id: idParaHidden,
+                            Texto: textoParaInput,
+                            TextoCompleto: textoMostrar,
+                            Precio: precioItem,
+                            // Pasar todas las propiedades originales
+                            ...item
+                        });
+                    }
                 });
                 
-                inmuebleResults.appendChild(div);
+                resultsContainer.appendChild(div);
             });
             
-            inmuebleResults.style.display = 'block';
+            console.log(` ${items.length} elementos mostrados en autocompletado`);
             
-            // Actualizar placeholder del input de inmuebles
-            document.getElementById('inmuebleSearch').placeholder = 
-                `Seleccione uno de los ${data.data.length} inmuebles disponibles`;
-                
-        } else {
-            // No hay inmuebles disponibles
-            document.getElementById('vendedor-help').textContent = 
-                `${vendedor.Texto} no tiene inmuebles disponibles para vender`;
-            document.getElementById('vendedor-help').className = 'form-text text-warning';
+        } catch (error) {
+            console.error('Error en búsqueda:', error);
+            resultsContainer.innerHTML = '<div class="autocomplete-item error">Error de conexión con el servidor</div>';
         }
-    } catch (error) {
-        console.error('Error al obtener inmuebles del vendedor:', error);
-        document.getElementById('vendedor-help').textContent = 
-            'Error al cargar inmuebles del vendedor';
-        document.getElementById('vendedor-help').className = 'form-text text-danger';
     }
-}
-            // Actualizar resumen de montos
-            function actualizarResumen() {
-                const precioTotal = parseFloat(precioTotalInput.value) || 0;
-                const montoSena = parseFloat(montoSenaInput.value) || 0;
-                const saldoPendiente = precioTotal - montoSena;
-                const porcentajeSena = precioTotal > 0 ? (montoSena / precioTotal) * 100 : 0;
-                
-                // Actualizar displays
-                document.getElementById('resumenPrecioTotal').textContent = `$${precioTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-                document.getElementById('resumenSena').textContent = `$${montoSena.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-                document.getElementById('resumenPorcentajeSena').textContent = `(${porcentajeSena.toFixed(1)}%)`;
-                document.getElementById('resumenSaldo').textContent = `$${saldoPendiente.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-                
-                // Validar que la seña no sea mayor al precio total
-                if (montoSena > precioTotal) {
-                    montoSenaInput.setCustomValidity('La seña no puede ser mayor al precio total');
-                } else {
-                    montoSenaInput.setCustomValidity('');
-                }
+    
+    // Callback cuando se selecciona un inmueble
+    async function onInmuebleSelected(inmueble) {
+        console.log('Inmueble seleccionado:', inmueble);
+        
+        if (vendedorBloqueado) return;
+        
+        try {
+            // Obtener vendedor del inmueble
+            const inmuebleId = inmueble.Id || inmueble.id;
+            console.log(` Obteniendo vendedor para inmueble ID: ${inmuebleId}`);
+            
+            const response = await fetch(`/ContratoVenta/ObtenerVendedorDeInmueble?inmuebleId=${inmuebleId}`);
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
             }
             
-            // Limpiar selecciones
-            function limpiarInmueble() {
-                document.getElementById('inmuebleSearch').value = '';
-                document.getElementById('idInmueble').value = '';
-                inmuebleBloqueado = false;
-                precioTotalInput.value = '';
-                actualizarResumen();
-            }
+            const data = await response.json();
+            console.log(' Respuesta vendedor:', data);
             
-            function limpiarVendedor() {
-                document.getElementById('vendedorSearch').value = '';
-                document.getElementById('idVendedor').value = '';
-                document.getElementById('vendedorSearch').disabled = false;
-                vendedorBloqueado = false;
+            if (data.success && data.data) {
+                const vendedor = data.data;
+                console.log('👤 Vendedor encontrado:', vendedor);
                 
-                // Restaurar mensaje de ayuda
-                document.getElementById('vendedor-help').textContent = 
-                    'Puede buscar por vendedor primero si no recuerda el inmueble';
-                document.getElementById('vendedor-help').className = 'form-text text-muted';
+                // Llenar vendedor automáticamente
+                const vendedorSearch = document.getElementById('vendedorSearch');
+                const idVendedor = document.getElementById('idVendedor');
+                
+                if (vendedorSearch && idVendedor) {
+                   
+                    const textoVendedor = vendedor.Texto || vendedor.texto;
+                    const idVendedorVal = vendedor.Id || vendedor.id;
+                    
+                    vendedorSearch.value = textoVendedor;
+                    idVendedor.value = idVendedorVal;
+                    
+                    console.log(`👤 Vendedor asignado: "${textoVendedor}" (ID: ${idVendedorVal})`);
+                    
+                    // Bloquear vendedor
+                    vendedorSearch.disabled = true;
+                    vendedorBloqueado = true;
+                    
+                    // Actualizar mensaje de ayuda
+                    const vendedorHelp = document.getElementById('vendedor-help');
+                    if (vendedorHelp) {
+                        vendedorHelp.textContent = `Vendedor asignado automáticamente: ${textoVendedor}`;
+                        vendedorHelp.className = 'form-text text-success';
+                    }
+                }
+                
+                // Establecer precio total sugerido desde el inmueble
+                const precioInmueble = inmueble.Precio || inmueble.precio;
+                if (precioTotalInput && precioInmueble) {
+                    precioTotalInput.value = precioInmueble;
+                    console.log(` Precio asignado: ${precioInmueble}`);
+                    actualizarResumen();
+                }
+            } else {
+                throw new Error(data.error || 'Error al obtener vendedor');
+            }
+        } catch (error) {
+            console.error(' Error al obtener vendedor:', error);
+            const vendedorHelp = document.getElementById('vendedor-help');
+            if (vendedorHelp) {
+                vendedorHelp.textContent = 'Error al cargar el vendedor del inmueble: ' + error.message;
+                vendedorHelp.className = 'form-text text-danger';
+            }
+        }
+    }
+    
+    // Callback cuando se selecciona un vendedor
+    async function onVendedorSelected(vendedor) {
+        console.log('👤 Vendedor seleccionado:', vendedor);
+        
+        if (inmuebleBloqueado) return;
+        
+        try {
+            
+            const vendedorId = vendedor.Id || vendedor.id;
+            console.log(` Obteniendo inmuebles para vendedor ID: ${vendedorId}`);
+            
+            if (!vendedorId || vendedorId === 'undefined') {
+                throw new Error('ID de vendedor inválido');
             }
             
-            // Event listeners para limpiar al hacer backspace/delete
-            document.getElementById('inmuebleSearch').addEventListener('keydown', function(e) {
-                if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
-                    limpiarInmueble();
-                    limpiarVendedor();
+            const response = await fetch(`/ContratoVenta/ObtenerInmueblesPorVendedor?vendedorId=${vendedorId}&limite=15`);
+            
+            if (!response.ok) {
+                throw new Error(`Error HTTP: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            console.log(' Respuesta inmuebles:', data);
+            
+            const vendedorHelp = document.getElementById('vendedor-help');
+            
+            if (data.success && data.data && data.data.length > 0) {
+                // Actualizar mensaje de ayuda
+                if (vendedorHelp) {
+                    vendedorHelp.textContent = `${data.data.length} inmueble(s) disponible(s) de: ${vendedor.Texto || vendedor.texto}`;
+                    vendedorHelp.className = 'form-text text-info';
                 }
-            });
-            
-            document.getElementById('vendedorSearch').addEventListener('keydown', function(e) {
-                if ((e.key === 'Backspace' || e.key === 'Delete') && this.value.length <= 1) {
-                    limpiarVendedor();
+                
+                // Mostrar los inmuebles disponibles en el autocompletado
+                const inmuebleResults = document.getElementById('inmuebleResults');
+                const inmuebleSearch = document.getElementById('inmuebleSearch');
+                
+                if (inmuebleResults && inmuebleSearch) {
+                    inmuebleResults.innerHTML = '';
+                    
+                    data.data.forEach(inmueble => {
+                        const div = document.createElement('div');
+                        div.className = 'autocomplete-item';
+                        
+                       
+                        const textoInmueble = inmueble.TextoCompleto || inmueble.textoCompleto || inmueble.Texto || inmueble.texto;
+                        const idInmueble = inmueble.Id || inmueble.id;
+                        const precioInmueble = inmueble.Precio || inmueble.precio;
+                        
+                        div.textContent = textoInmueble;
+                        div.dataset.id = idInmueble;
+                        div.dataset.itemData = JSON.stringify(inmueble);
+                        
+                        div.addEventListener('click', function() {
+                            inmuebleSearch.value = textoInmueble;
+                            document.getElementById('idInmueble').value = idInmueble;
+                            inmuebleResults.style.display = 'none';
+                            
+                            console.log(` Inmueble seleccionado: "${textoInmueble}" (ID: ${idInmueble})`);
+                            
+                            if (precioTotalInput && precioInmueble) {
+                                precioTotalInput.value = precioInmueble;
+                                console.log(` Precio asignado: ${precioInmueble}`);
+                                actualizarResumen();
+                            }
+                        });
+                        
+                        inmuebleResults.appendChild(div);
+                    });
+                    
+                    inmuebleResults.style.display = 'block';
+                    
+                    // Actualizar placeholder del input de inmuebles
+                    inmuebleSearch.placeholder = `Seleccione uno de los ${data.data.length} inmuebles disponibles`;
+                    
+                    console.log(` Mostrados ${data.data.length} inmuebles en autocompletado`);
                 }
-            });
-            
-            // Configurar fecha de inicio por defecto
-            const fechaInicio = document.querySelector('input[name="FechaInicio"]');
-            const hoy = new Date().toISOString().split('T')[0];
-            fechaInicio.value = hoy;
-            
-            // Inicializar resumen
-            actualizarResumen();
-        });
+            } else {
+                // No hay inmuebles disponibles
+                if (vendedorHelp) {
+                    vendedorHelp.textContent = `${vendedor.Texto || vendedor.texto} no tiene inmuebles disponibles para vender`;
+                    vendedorHelp.className = 'form-text text-warning';
+                }
+                console.log(' No hay inmuebles disponibles para este vendedor');
+            }
+        } catch (error) {
+            console.error(' Error al obtener inmuebles del vendedor:', error);
+            const vendedorHelp = document.getElementById('vendedor-help');
+            if (vendedorHelp) {
+                vendedorHelp.textContent = 'Error al cargar inmuebles del vendedor: ' + error.message;
+                vendedorHelp.className = 'form-text text-danger';
+            }
+        }
+    }
+    
+    // Actualizar resumen de montos (sin cambios)
+    function actualizarResumen() {
+        const precioTotal = parseFloat(precioTotalInput?.value) || 0;
+        const montoSena = parseFloat(montoSenaInput?.value) || 0;
+        const saldoPendiente = precioTotal - montoSena;
+        const porcentajeSena = precioTotal > 0 ? (montoSena / precioTotal) * 100 : 0;
+        
+        // Actualizar displays
+        const resumenPrecioTotal = document.getElementById('resumenPrecioTotal');
+        const resumenSena = document.getElementById('resumenSena');
+        const resumenPorcentajeSena = document.getElementById('resumenPorcentajeSena');
+        const resumenSaldo = document.getElementById('resumenSaldo');
+        
+        if (resumenPrecioTotal) {
+            resumenPrecioTotal.textContent = `$${precioTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+        }
+        if (resumenSena) {
+            resumenSena.textContent = `$${montoSena.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+        }
+        if (resumenPorcentajeSena) {
+            resumenPorcentajeSena.textContent = `(${porcentajeSena.toFixed(1)}%)`;
+        }
+        if (resumenSaldo) {
+            resumenSaldo.textContent = `$${saldoPendiente.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+        }
+        
+        // Validar que la seña no sea mayor al precio total
+        if (montoSenaInput) {
+            if (montoSena > precioTotal) {
+                montoSenaInput.setCustomValidity('La seña no puede ser mayor al precio total');
+            } else {
+                montoSenaInput.setCustomValidity('');
+            }
+        }
+        
+        // Advertencia si la seña es menor al 10% del precio total
+        const señaMinima = precioTotal * 0.1;
+        if (resumenSena && resumenPorcentajeSena) {
+            if (montoSena > 0 && montoSena < señaMinima) {
+                resumenSena.className = 'text-warning fw-bold';
+                resumenPorcentajeSena.className = 'text-warning';
+            } else {
+                resumenSena.className = 'text-info';
+                resumenPorcentajeSena.className = 'text-muted';
+            }
+        }
+    }
+    console.log('🔍 DATOS ENVIADOS EN FORMULARIO:');
+    console.log('IdInmueble:', document.getElementById('idInmueble').value);
+    console.log('IdVendedor:', document.getElementById('idVendedor').value);
+    console.log('IdComprador:', document.getElementById('idComprador').value);
+    console.log('PrecioTotal:', document.querySelector('input[name="PrecioTotal"]').value);
+    console.log('MontoSeña:', document.querySelector('input[name="MontoSeña"]').value);
+    
+    // Verificar si hay campos vacíos
+    const camposRequeridos = ['idInmueble', 'idVendedor', 'idComprador'];
+    camposRequeridos.forEach(campo => {
+        const valor = document.getElementById(campo).value;
+        if (!valor || valor === '0') {
+            console.error(`❌ CAMPO VACÍO: ${campo} = "${valor}"`);
+        }
+    });
+    
+    // Configurar fecha de inicio por defecto
+    const fechaInicio = document.querySelector('input[name="FechaInicio"]');
+    if (fechaInicio) {
+        const hoy = new Date().toISOString().split('T')[0];
+        fechaInicio.value = hoy;
+    }
+    
+    // Inicializar resumen
+    actualizarResumen();
+});
     </script>
     
     <style>
@@ -533,6 +661,7 @@ async function onVendedorSelected(vendedor) {
             padding: 0.5rem 0.75rem;
             cursor: pointer;
             border-bottom: 1px solid #f8f9fa;
+            font-size: 0.9rem;
         }
         
         .autocomplete-item:hover {
@@ -562,39 +691,6 @@ async function onVendedorSelected(vendedor) {
         
         .card-header {
             border-bottom: 3px solid rgba(40, 167, 69, 0.3);
-        }
-        
-        .form-label.fw-bold {
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        
-        .alert-info {
-            background-color: #e3f2fd;
-            border-color: #90caf9;
-            color: #1565c0;
-        }
-        
-        .input-group-text {
-            background-color: #f8f9fa;
-            border-color: #ced4da;
-        }
-        
-        input:disabled {
-            background-color: #e9ecef;
-            opacity: 0.7;
-        }
-        
-        .text-success {
-            font-weight: 500;
-        }
-        
-        .text-info {
-            font-weight: 500;
-        }
-        
-        .bg-success {
-            background-color: #198754 !important;
         }
     </style>
 }

@@ -1,305 +1,88 @@
 @model Inmobiliaria_troncoso_leandro.Models.ContratoVenta
+
 @{
     ViewData["Title"] = "Cancelar Contrato de Venta";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-8">
-        <div class="card shadow">
-            <div class="card-header bg-danger text-white">
-                <h3 class="mb-0"><i class="bi bi-x-circle"></i> Cancelar Contrato de Venta</h3>
-            </div>
-            <div class="card-body">
-
-                @if (TempData["ErrorMessage"] != null)
-                {
-                    <div class="alert alert-danger alert-dismissible fade show">
-                        <strong>Error:</strong> @TempData["ErrorMessage"]
-                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                    </div>
-                }
-
-                <!-- Información del contrato -->
-                <div class="alert alert-warning">
-                    <h5><i class="bi bi-exclamation-triangle"></i> Confirmar Cancelación</h5>
-                    <p class="mb-0">Está a punto de cancelar el siguiente contrato de venta. Esta acción no se puede deshacer.</p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-danger text-white">
+                    <h3 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle"></i> Cancelar Contrato de Venta
+                    </h3>
                 </div>
+                <div class="card-body">
+                    <div class="alert alert-warning">
+                        <h5 class="alert-heading">¿Está seguro que desea cancelar este contrato de venta?</h5>
+                        <p class="mb-0">Esta acción no se puede deshacer.</p>
+                    </div>
 
-                <!-- Resumen del contrato -->
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <h6 class="mb-0"><i class="bi bi-file-text"></i> Detalles del Contrato</h6>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>ID Contrato:</strong><br>
-                                <span class="badge bg-secondary">#@Model.IdContratoVenta</span>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Estado Actual:</strong><br>
-                                <span class="badge @Model.EstadoBadgeClass">@Model.EstadoDescripcion</span>
-                            </div>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6>Información del Contrato</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">ID:</dt>
+                                <dd class="col-sm-8">@Model.IdContratoVenta</dd>
+
+                                <dt class="col-sm-4">Inmueble:</dt>
+                                <dd class="col-sm-8">@Model.Inmueble?.Direccion</dd>
+
+                                <dt class="col-sm-4">Comprador:</dt>
+                                <dd class="col-sm-8">@Model.Comprador?.NombreCompleto</dd>
+
+                                <dt class="col-sm-4">Vendedor:</dt>
+                                <dd class="col-sm-8">@Model.Vendedor?.Usuario?.NombreCompleto</dd>
+
+                                <dt class="col-sm-4">Precio Total:</dt>
+                                <dd class="col-sm-8">$@Model.PrecioTotal.ToString("N2")</dd>
+                            </dl>
                         </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Inmueble:</strong><br>
-                                @Model.Inmueble?.Direccion
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Vendedor:</strong><br>
-                                @Model.Vendedor?.Usuario?.Apellido, @Model.Vendedor?.Usuario?.Nombre
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Comprador:</strong><br>
-                                @Model.Comprador?.Apellido, @Model.Comprador?.Nombre<br>
-                                <small class="text-muted">DNI: @Model.Comprador?.Dni</small>
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Precio Total:</strong><br>
-                                <span class="text-success fw-bold">$@Model.PrecioTotal.ToString("N2")</span>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-4">
-                                <strong>Seña Pagada:</strong><br>
-                                <span class="text-info">$@Model.MontoSeña.ToString("N2")</span>
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Total Pagado:</strong><br>
-                                <span class="text-primary">$@Model.MontoPagado.ToString("N2")</span>
-                            </div>
-                            <div class="col-md-4">
-                                <strong>Saldo Pendiente:</strong><br>
-                                <span class="text-danger">$@Model.SaldoPendiente.ToString("N2")</span>
-                            </div>
-                        </div>
-                        <hr>
-                        <div class="row">
-                            <div class="col-md-6">
-                                <strong>Fecha Inicio:</strong><br>
-                                @Model.FechaInicio.ToString("dd/MM/yyyy")
-                            </div>
-                            <div class="col-md-6">
-                                <strong>Fecha Creación:</strong><br>
-                                @Model.FechaCreacion.ToString("dd/MM/yyyy")
-                            </div>
+                        <div class="col-md-6">
+                            <h6>Estado Actual</h6>
+                            <dl class="row">
+                                <dt class="col-sm-4">Estado:</dt>
+                                <dd class="col-sm-8">
+                                    <span class="badge @Model.EstadoBadgeClass">
+                                        @Model.EstadoDescripcion
+                                    </span>
+                                </dd>
+
+                                <dt class="col-sm-4">Monto Pagado:</dt>
+                                <dd class="col-sm-8">$@Model.MontoPagado.ToString("N2")</dd>
+
+                                <dt class="col-sm-4">Saldo Pendiente:</dt>
+                                <dd class="col-sm-8">$@Model.SaldoPendiente.ToString("N2")</dd>
+
+                                <dt class="col-sm-4">Porcentaje:</dt>
+                                <dd class="col-sm-8">@Model.PorcentajePagado.ToString("N2")%</dd>
+                            </dl>
                         </div>
                     </div>
+
+                    <form asp-action="CancelarContrato" asp-route-id="@Model.IdContratoVenta" method="post">
+                        <input type="hidden" asp-for="IdContratoVenta" />
+
+                        <div class="form-group">
+                            <label for="motivoCancelacion" class="form-label">Motivo de Cancelación:</label>
+                            <textarea id="motivoCancelacion" name="motivoCancelacion" class="form-control" rows="3"
+                                placeholder="Ingrese el motivo de la cancelación..." required
+                                maxlength="500"></textarea>
+                            <small class="form-text text-muted">Máximo 500 caracteres</small>
+                        </div>
+
+                        <div class="form-group mt-4">
+                            <button type="submit" class="btn btn-danger">
+                                <i class="fas fa-ban"></i> Confirmar Cancelación
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.IdContratoVenta" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Volver a Detalles
+                            </a>
+                        </div>
+                    </form>
                 </div>
-
-                <!-- Advertencias importantes -->
-                <div class="alert alert-danger">
-                    <h6><i class="bi bi-shield-exclamation"></i> Consecuencias de la Cancelación:</h6>
-                    <ul class="mb-0">
-                        <li>El contrato cambiará a estado <strong>"Cancelada"</strong></li>
-                        <li>Se registrará la fecha y motivo de cancelación</li>
-                        <li>El inmueble volverá a estar disponible para nuevas ventas o alquileres</li>
-                        <li>No se podrán registrar nuevos pagos para este contrato</li>
-                        <li>Esta acción <strong>NO se puede deshacer</strong></li>
-                        @if (Model.MontoPagado > 0)
-                        {
-                            <li class="fw-bold">Hay pagos registrados por $@Model.MontoPagado.ToString("N2") - Deberá gestionar los reembolsos correspondientes</li>
-                        }
-                    </ul>
-                </div>
-
-                <!-- Formulario de cancelación -->
-                <form asp-action="Cancel" method="post">
-                    <input type="hidden" name="id" value="@Model.IdContratoVenta" />
-                    
-                    <div class="form-group mb-4">
-                        <label for="motivoCancelacion" class="form-label fw-bold">
-                            <i class="bi bi-chat-left-text"></i> Motivo de Cancelación *
-                        </label>
-                        <textarea name="motivoCancelacion" id="motivoCancelacion" class="form-control" 
-                                  rows="4" placeholder="Describa el motivo de la cancelación..." 
-                                  required maxlength="500"></textarea>
-                        <small class="form-text text-muted">
-                            Este motivo quedará registrado en el historial del contrato (máximo 500 caracteres)
-                        </small>
-                        <div class="form-text">
-                            <span id="contadorCaracteres">0</span>/500 caracteres
-                        </div>
-                    </div>
-
-                    <!-- Confirmación final -->
-                    <div class="form-check mb-4">
-                        <input class="form-check-input" type="checkbox" id="confirmacion" required>
-                        <label class="form-check-label fw-bold text-danger" for="confirmacion">
-                            Confirmo que entiendo que esta acción no se puede deshacer y acepto las consecuencias
-                        </label>
-                    </div>
-
-                    <hr class="my-4">
-
-                    <div class="d-flex gap-2 justify-content-center">
-                        <button type="submit" class="btn btn-danger btn-lg" id="btnCancelar" disabled>
-                            <i class="bi bi-x-circle"></i> Confirmar Cancelación
-                        </button>
-                        <a asp-action="Edit" asp-route-id="@Model.IdContratoVenta" class="btn btn-secondary btn-lg">
-                            <i class="bi bi-arrow-left"></i> Volver a Editar
-                        </a>
-                        <a asp-controller="Contratos" asp-action="Index" class="btn btn-outline-secondary btn-lg">
-                            <i class="bi bi-list"></i> Volver al Listado
-                        </a>
-                    </div>
-                </form>
             </div>
         </div>
     </div>
 </div>
-
-@section Scripts {
-    <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            const motivoTextarea = document.getElementById('motivoCancelacion');
-            const contadorCaracteres = document.getElementById('contadorCaracteres');
-            const confirmacionCheckbox = document.getElementById('confirmacion');
-            const btnCancelar = document.getElementById('btnCancelar');
-            
-            // Contador de caracteres
-            motivoTextarea.addEventListener('input', function() {
-                const longitud = this.value.length;
-                contadorCaracteres.textContent = longitud;
-                
-                if (longitud > 500) {
-                    contadorCaracteres.className = 'text-danger';
-                } else if (longitud > 400) {
-                    contadorCaracteres.className = 'text-warning';
-                } else {
-                    contadorCaracteres.className = 'text-muted';
-                }
-                
-                actualizarBoton();
-            });
-            
-            // Habilitar/deshabilitar botón
-            confirmacionCheckbox.addEventListener('change', actualizarBoton);
-            
-            function actualizarBoton() {
-                const motivoValido = motivoTextarea.value.trim().length >= 10 && motivoTextarea.value.length <= 500;
-                const confirmado = confirmacionCheckbox.checked;
-                
-                btnCancelar.disabled = !(motivoValido && confirmado);
-            }
-            
-            // Validación del formulario
-            const form = document.querySelector('form');
-            form.addEventListener('submit', function(e) {
-                const motivo = motivoTextarea.value.trim();
-                
-                if (motivo.length < 10) {
-                    e.preventDefault();
-                    alert('El motivo de cancelación debe tener al menos 10 caracteres.');
-                    motivoTextarea.focus();
-                    return;
-                }
-                
-                if (motivo.length > 500) {
-                    e.preventDefault();
-                    alert('El motivo de cancelación no puede exceder los 500 caracteres.');
-                    motivoTextarea.focus();
-                    return;
-                }
-                
-                if (!confirmacionCheckbox.checked) {
-                    e.preventDefault();
-                    alert('Debe confirmar que entiende las consecuencias de esta acción.');
-                    return;
-                }
-                
-                // Confirmación final
-                if (!confirm('¿ESTÁ ABSOLUTAMENTE SEGURO de que desea cancelar este contrato de venta?\n\nEsta acción NO se puede deshacer.')) {
-                    e.preventDefault();
-                }
-            });
-            
-            // Ejemplos de motivos comunes (para ayudar al usuario)
-            const ejemplosMotivos = [
-                "Desistimiento del comprador - El comprador ha decidido no continuar con la compra por motivos personales.",
-                "Incumplimiento de pagos - El comprador no ha cumplido con los pagos establecidos en el contrato.",
-                "Problemas financieros - El comprador ha manifestado inconvenientes económicos para continuar con la compra.",
-                "Cambio de decisión del vendedor - El propietario ha decidido no vender la propiedad.",
-                "Defectos en la propiedad - Se han detectado problemas no declarados en el inmueble.",
-                "Falta de acuerdo en términos - Las partes no han podido llegar a un acuerdo en las condiciones finales.",
-                "Problemas legales - Existen impedimentos legales para concretar la venta."
-            ];
-            
-            // Agregar ayuda de ejemplos
-            const ayudaEjemplos = document.createElement('div');
-            ayudaEjemplos.className = 'mt-2';
-            ayudaEjemplos.innerHTML = `
-                <small class="text-muted">
-                    <strong>Ejemplos de motivos comunes:</strong><br>
-                    <select id="selectEjemplo" class="form-select form-select-sm mt-1">
-                        <option value="">Seleccionar un ejemplo...</option>
-                        ${ejemplosMotivos.map((ejemplo, index) => 
-                            `<option value="${ejemplo}">${ejemplo.substring(0, 60)}...</option>`
-                        ).join('')}
-                    </select>
-                </small>
-            `;
-            
-            motivoTextarea.parentNode.insertBefore(ayudaEjemplos, motivoTextarea.nextSibling);
-            
-            // Cargar ejemplo seleccionado
-            document.getElementById('selectEjemplo').addEventListener('change', function() {
-                if (this.value) {
-                    motivoTextarea.value = this.value;
-                    motivoTextarea.dispatchEvent(new Event('input'));
-                }
-            });
-        });
-    </script>
-    
-    <style>
-        .card-header {
-            border-bottom: 3px solid rgba(220, 53, 69, 0.3);
-        }
-        
-        .alert-warning {
-            background-color: #fff3cd;
-            border-color: #ffc107;
-            color: #856404;
-        }
-        
-        .alert-danger {
-            background-color: #f8d7da;
-            border-color: #f5c6cb;
-            color: #721c24;
-        }
-        
-        .form-check-input:checked {
-            background-color: #dc3545;
-            border-color: #dc3545;
-        }
-        
-        .btn:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-        
-        .badge {
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-        
-        #contadorCaracteres.text-danger {
-            font-weight: bold;
-        }
-        
-        #contadorCaracteres.text-warning {
-            font-weight: bold;
-        }
-        
-        .form-select-sm {
-            max-width: 400px;
-        }
-    </style>
-}

@@ -6,15 +6,22 @@
 <div class="row justify-content-center">
     <div class="col-md-12">
         <div class="card shadow">
-            <div class="card-header bg-warning text-dark">
+            <div class="card-header bg-primary text-white">
                 <h3 class="mb-0"><i class="bi bi-pencil-square"></i> Editar Contrato de Venta #@Model.IdContratoVenta</h3>
             </div>
             <div class="card-body">
-
                 @if (TempData["ErrorMessage"] != null)
                 {
                     <div class="alert alert-danger alert-dismissible fade show">
                         <strong>Error:</strong> @TempData["ErrorMessage"]
+                        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                    </div>
+                }
+
+                @if (TempData["SuccessMessage"] != null)
+                {
+                    <div class="alert alert-success alert-dismissible fade show">
+                        <strong>Éxito:</strong> @TempData["SuccessMessage"]
                         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
                     </div>
                 }
@@ -32,89 +39,73 @@
                     </div>
                 }
 
-                <!-- Estado actual del contrato -->
+                <!-- Información del contrato actual -->
                 <div class="alert alert-info mb-4">
+                    <h6><i class="bi bi-info-circle"></i> Información del Contrato</h6>
                     <div class="row">
-                        <div class="col-md-6">
-                            <strong>Estado actual:</strong>
+                        <div class="col-md-4">
+                            <strong>Estado Actual:</strong>
                             <span class="badge @Model.EstadoBadgeClass">@Model.EstadoDescripcion</span>
                         </div>
-                        <div class="col-md-6">
-                            <strong>Progreso de pago:</strong>
-                            <div class="progress mt-1">
-                                <div class="progress-bar @(Model.PorcentajePagado >= 100 ? "bg-success" : "bg-info")" 
-                                     role="progressbar" 
-                                     style="width: @(Model.PorcentajePagado)%;"
-                                     aria-valuenow="@Model.PorcentajePagado" 
-                                     aria-valuemin="0" 
-                                     aria-valuemax="100">
-                                    @Model.PorcentajePagado.ToString("F1")%
-                                </div>
-                            </div>
+                        <div class="col-md-4">
+                            <strong>Monto Pagado:</strong>
+                            <span class="text-success">$@Model.MontoPagado.ToString("N2")</span>
+                        </div>
+                        <div class="col-md-4">
+                            <strong>Porcentaje:</strong>
+                            <span>@Model.PorcentajePagado.ToString("N2")%</span>
                         </div>
                     </div>
                 </div>
 
-                @if (Model.Estado == "cancelada")
-                {
-                    <div class="alert alert-danger">
-                        <h6><i class="bi bi-exclamation-triangle"></i> Contrato Cancelado</h6>
-                        <p><strong>Motivo:</strong> @Model.MotivoCancelacion</p>
-                        <p><strong>Fecha de cancelación:</strong> @Model.FechaCancelacion?.ToString("dd/MM/yyyy")</p>
-                        <p class="mb-0">No se pueden realizar modificaciones en un contrato cancelado.</p>
-                    </div>
-                }
-                else if (Model.Estado == "escriturada")
-                {
-                    <div class="alert alert-success">
-                        <h6><i class="bi bi-check-circle"></i> Contrato Escriturado</h6>
-                        <p><strong>Fecha de escrituración:</strong> @Model.FechaEscrituracion?.ToString("dd/MM/yyyy")</p>
-                        <p class="mb-0">El contrato ya ha sido completado y escriturado. Las modificaciones están limitadas.</p>
-                    </div>
-                }
-
                 <form asp-action="Edit" method="post">
                     <input type="hidden" asp-for="IdContratoVenta" />
+                    <input type="hidden" asp-for="IdInmueble" />
+                    <input type="hidden" asp-for="IdVendedor" />
+                    <input type="hidden" asp-for="IdComprador" />
                     <input type="hidden" asp-for="IdUsuarioCreador" />
                     <input type="hidden" asp-for="FechaCreacion" />
+                    <input type="hidden" asp-for="MontoPagado" />
+                    <input type="hidden" asp-for="PorcentajePagado" />
 
-                    <!-- FILA 1: Información Básica (solo editable si no está cancelado/escriturado) -->
+                    <!-- FILA 1: Información de relaciones (solo lectura) -->
                     <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">
                                     <i class="bi bi-house"></i> Inmueble
                                 </label>
-                                <input type="text" class="form-control" value="@Model.Inmueble?.Direccion" readonly />
+                                <input type="text" class="form-control" 
+                                       value="@Model.Inmueble?.Direccion" readonly />
                                 <small class="form-text text-muted">No se puede modificar el inmueble</small>
                             </div>
                         </div>
 
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">
                                     <i class="bi bi-person-badge"></i> Vendedor
                                 </label>
                                 <input type="text" class="form-control" 
-                                       value="@Model.Vendedor?.Usuario?.Apellido, @Model.Vendedor?.Usuario?.Nombre" readonly />
+                                       value="@Model.Vendedor?.Usuario?.NombreCompleto" readonly />
                                 <small class="form-text text-muted">No se puede modificar el vendedor</small>
                             </div>
                         </div>
-                    </div>
 
-                    <!-- FILA 2: Comprador y Precio -->
-                    <div class="row">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">
                                     <i class="bi bi-person"></i> Comprador
                                 </label>
                                 <input type="text" class="form-control" 
-                                       value="@Model.Comprador?.Apellido, @Model.Comprador?.Nombre" readonly />
+                                       value="@Model.Comprador?.NombreCompleto" readonly />
                                 <small class="form-text text-muted">No se puede modificar el comprador</small>
                             </div>
                         </div>
+                    </div>
 
+                    <!-- FILA 2: Precio y Seña -->
+                    <div class="row">
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label asp-for="PrecioTotal" class="form-label fw-bold">
@@ -122,14 +113,32 @@
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input asp-for="PrecioTotal" type="number" step="0.01" min="1" class="form-control" 
-                                           required readonly="@(Model.Estado == "cancelada" || Model.Estado == "escriturada")" />
+                                    <input asp-for="PrecioTotal" type="number" step="0.01" min="1" class="form-control" required />
                                 </div>
                                 <span asp-validation-for="PrecioTotal" class="text-danger"></span>
-                                @if (Model.Estado == "cancelada" || Model.Estado == "escriturada")
-                                {
-                                    <small class="form-text text-muted">No se puede modificar en el estado actual</small>
-                                }
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="MontoSeña" class="form-label fw-bold">
+                                    <i class="bi bi-cash-stack"></i> Seña Inicial
+                                </label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="MontoSeña" type="number" step="0.01" min="0" class="form-control" />
+                                </div>
+                                <small class="form-text text-muted">
+                                    @if (Model.MontoSeña > 0)
+                                    {
+                                        <span class="text-success">Seña ya pagada</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-warning">Seña pendiente</span>
+                                    }
+                                </small>
+                                <span asp-validation-for="MontoSeña" class="text-danger"></span>
                             </div>
                         </div>
                     </div>
@@ -139,15 +148,11 @@
                         <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label asp-for="FechaInicio" class="form-label fw-bold">
-                                    <i class="bi bi-calendar-check"></i> Fecha de Inicio *
+                                    <i class="bi bi-calendar-check"></i> Fecha de Inicio del Proceso *
                                 </label>
-                                <input asp-for="FechaInicio" type="date" class="form-control" required 
-                                       readonly="@(Model.Estado == "cancelada" || Model.Estado == "escriturada")" />
+                                <input asp-for="FechaInicio" type="date" class="form-control" required />
+                                <small class="form-text text-muted">Fecha en que inició el proceso de venta</small>
                                 <span asp-validation-for="FechaInicio" class="text-danger"></span>
-                                @if (Model.Estado == "cancelada" || Model.Estado == "escriturada")
-                                {
-                                    <small class="form-text text-muted">No se puede modificar en el estado actual</small>
-                                }
                             </div>
                         </div>
 
@@ -156,65 +161,48 @@
                                 <label asp-for="FechaEscrituracion" class="form-label fw-bold">
                                     <i class="bi bi-file-earmark-text"></i> Fecha de Escrituración
                                 </label>
-                                <input asp-for="FechaEscrituracion" type="date" class="form-control" 
-                                       readonly="@(Model.Estado == "cancelada")" />
+                                <input asp-for="FechaEscrituracion" type="date" class="form-control" />
+                                <small class="form-text text-muted">
+                                    @if (Model.FechaEscrituracion.HasValue)
+                                    {
+                                        <span class="text-success">Escriturado el @Model.FechaEscrituracion.Value.ToShortDateString()</span>
+                                    }
+                                    else
+                                    {
+                                        <span>Fecha estimada para la escrituración</span>
+                                    }
+                                </small>
                                 <span asp-validation-for="FechaEscrituracion" class="text-danger"></span>
-                                @if (Model.Estado == "cancelada")
-                                {
-                                    <small class="form-text text-muted">No se puede modificar un contrato cancelado</small>
-                                }
                             </div>
                         </div>
                     </div>
 
-                    <!-- FILA 4: Montos de Pago -->
+                    <!-- FILA 4: Montos adicionales -->
                     <div class="row">
-                        <div class="col-md-4">
-                            <div class="form-group mb-3">
-                                <label asp-for="MontoSeña" class="form-label fw-bold">
-                                    <i class="bi bi-cash-stack"></i> Seña Inicial
-                                </label>
-                                <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input asp-for="MontoSeña" type="number" step="0.01" min="0" class="form-control" 
-                                           readonly="@(Model.Estado == "cancelada" || Model.Estado == "escriturada")" />
-                                </div>
-                                <span asp-validation-for="MontoSeña" class="text-danger"></span>
-                                @if (Model.Estado == "cancelada" || Model.Estado == "escriturada")
-                                {
-                                    <small class="form-text text-muted">No se puede modificar en el estado actual</small>
-                                }
-                            </div>
-                        </div>
-
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label asp-for="MontoAnticipos" class="form-label fw-bold">
                                     <i class="bi bi-wallet2"></i> Anticipos Previstos
                                 </label>
                                 <div class="input-group">
                                     <span class="input-group-text">$</span>
-                                    <input asp-for="MontoAnticipos" type="number" step="0.01" min="0" class="form-control" 
-                                           readonly="@(Model.Estado == "cancelada" || Model.Estado == "escriturada")" />
+                                    <input asp-for="MontoAnticipos" type="number" step="0.01" min="0" class="form-control" />
                                 </div>
+                                <small class="form-text text-muted">Monto total de anticipos previstos</small>
                                 <span asp-validation-for="MontoAnticipos" class="text-danger"></span>
-                                @if (Model.Estado == "cancelada" || Model.Estado == "escriturada")
-                                {
-                                    <small class="form-text text-muted">No se puede modificar en el estado actual</small>
-                                }
                             </div>
                         </div>
 
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <div class="form-group mb-3">
                                 <label class="form-label fw-bold">
-                                    <i class="bi bi-cash"></i> Monto Total Pagado
+                                    <i class="bi bi-percent"></i> Porcentaje Mínimo Seña
                                 </label>
                                 <div class="input-group">
-                                    <span class="input-group-text">$</span>
-                                    <input type="text" class="form-control bg-light" value="@Model.MontoPagado.ToString("F2")" readonly />
+                                    <input type="number" class="form-control" value="10" readonly />
+                                    <span class="input-group-text">%</span>
                                 </div>
-                                <small class="form-text text-muted">Calculado automáticamente de los pagos registrados</small>
+                                <small class="form-text text-muted">Seña mínima recomendada: 10% del precio total</small>
                             </div>
                         </div>
                     </div>
@@ -227,13 +215,9 @@
                                     <i class="bi bi-chat-text"></i> Observaciones
                                 </label>
                                 <textarea asp-for="Observaciones" class="form-control" rows="3" 
-                                          placeholder="Condiciones especiales, acuerdos, detalles del pago..."
-                                          readonly="@(Model.Estado == "cancelada")"></textarea>
+                                          placeholder="Condiciones especiales, acuerdos, detalles del pago..."></textarea>
+                                <small class="form-text text-muted">Información adicional relevante para el proceso de venta</small>
                                 <span asp-validation-for="Observaciones" class="text-danger"></span>
-                                @if (Model.Estado == "cancelada")
-                                {
-                                    <small class="form-text text-muted">No se puede modificar un contrato cancelado</small>
-                                }
                             </div>
                         </div>
                     </div>
@@ -245,92 +229,61 @@
                             <div class="row">
                                 <div class="col-md-3">
                                     <strong>Precio Total:</strong>
-                                    <span id="resumenPrecioTotal" class="text-success fw-bold">$@Model.PrecioTotal.ToString("F2")</span>
+                                    <span id="resumenPrecioTotal" class="text-success fw-bold">$@Model.PrecioTotal.ToString("N2")</span>
                                 </div>
                                 <div class="col-md-3">
                                     <strong>Seña:</strong>
-                                    <span id="resumenSena" class="text-info">$@Model.MontoSeña.ToString("F2")</span>
+                                    <span id="resumenSena" class="text-info">$@Model.MontoSeña.ToString("N2")</span>
                                     <small id="resumenPorcentajeSena" class="text-muted">
-                                        (@((Model.PrecioTotal > 0 ? (Model.MontoSeña / Model.PrecioTotal) * 100 : 0).ToString("F1"))%)
+                                        (@((Model.PrecioTotal > 0 ? (Model.MontoSeña / Model.PrecioTotal) * 100 : 0).ToString("N1"))%)
                                     </small>
                                 </div>
                                 <div class="col-md-3">
                                     <strong>Pagado:</strong>
-                                    <span class="text-primary fw-bold">$@Model.MontoPagado.ToString("F2")</span>
-                                    <small class="text-muted">(@Model.PorcentajePagado.ToString("F1")%)</small>
+                                    <span class="text-success">$@Model.MontoPagado.ToString("N2")</span>
+                                    <small class="text-muted">(@Model.PorcentajePagado.ToString("N1")%)</small>
                                 </div>
                                 <div class="col-md-3">
                                     <strong>Saldo Pendiente:</strong>
-                                    <span id="resumenSaldo" class="text-danger">$@Model.SaldoPendiente.ToString("F2")</span>
+                                    <span id="resumenSaldo" class="text-danger">$@Model.SaldoPendiente.ToString("N2")</span>
                                 </div>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Información de auditoría -->
-                    <div class="card border-secondary mb-4">
-                        <div class="card-header bg-light">
-                            <h6 class="mb-0"><i class="bi bi-clock-history"></i> Información de Auditoría</h6>
+                    <!-- Validaciones de estado -->
+                    @if (Model.Estado == "cancelada")
+                    {
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i>
+                            <strong>Contrato Cancelado:</strong> Este contrato fue cancelado el @Model.FechaCancelacion?.ToShortDateString().
+                            No se pueden realizar modificaciones.
                         </div>
-                        <div class="card-body">
-                            <div class="row small">
-                                <div class="col-md-4">
-                                    <strong>Creado por:</strong><br>
-                                    @Model.UsuarioCreador?.Apellido, @Model.UsuarioCreador?.Nombre
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Fecha creación:</strong><br>
-                                    @Model.FechaCreacion.ToString("dd/MM/yyyy HH:mm")
-                                </div>
-                                <div class="col-md-4">
-                                    <strong>Última modificación:</strong><br>
-                                    @Model.FechaModificacion.ToString("dd/MM/yyyy HH:mm")
-                                </div>
-                            </div>
-                            @if (Model.Estado == "cancelada" && Model.UsuarioCancelador != null)
-                            {
-                                <hr>
-                                <div class="row small">
-                                    <div class="col-md-6">
-                                        <strong>Cancelado por:</strong><br>
-                                        @Model.UsuarioCancelador.Apellido, @Model.UsuarioCancelador.Nombre
-                                    </div>
-                                    <div class="col-md-6">
-                                        <strong>Fecha cancelación:</strong><br>
-                                        @Model.FechaCancelacion?.ToString("dd/MM/yyyy HH:mm")
-                                    </div>
-                                </div>
-                            }
+                    }
+                    else if (Model.Estado == "escriturada")
+                    {
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle"></i>
+                            <strong>Contrato Escriturado:</strong> Este contrato fue escriturado el @Model.FechaEscrituracion?.ToShortDateString().
+                            Solo se pueden modificar observaciones.
                         </div>
-                    </div>
+                    }
 
                     <hr class="my-4">
 
                     <div class="d-flex gap-2 justify-content-center">
                         @if (Model.Estado != "cancelada" && Model.Estado != "escriturada")
                         {
-                            <button type="submit" class="btn btn-warning btn-lg">
-                                <i class="bi bi-check-circle"></i> Actualizar Contrato
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="bi bi-check-circle"></i> Guardar Cambios
                             </button>
                         }
-                        
-                        <a asp-controller="Contratos" asp-action="Index" class="btn btn-secondary btn-lg">
-                            <i class="bi bi-arrow-left"></i> Volver al Listado
+                        <a asp-action="Details" asp-route-id="@Model.IdContratoVenta" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-arrow-left"></i> Volver a Detalles
                         </a>
-                        
-                        @if (Model.Estado != "cancelada" && Model.Estado != "escriturada")
-                        {
-                            <a asp-action="Cancel" asp-route-id="@Model.IdContratoVenta" class="btn btn-danger btn-lg">
-                                <i class="bi bi-x-circle"></i> Cancelar Contrato
-                            </a>
-                        }
-                        
-                        @if (Model.Estado == "pendiente_escritura")
-                        {
-                            <a asp-action="Escriturar" asp-route-id="@Model.IdContratoVenta" class="btn btn-success btn-lg">
-                                <i class="bi bi-file-earmark-check"></i> Marcar como Escriturado
-                            </a>
-                        }
+                        <a asp-controller="Contratos" asp-action="Index" class="btn btn-outline-secondary btn-lg">
+                            <i class="bi bi-list"></i> Ver Todos los Contratos
+                        </a>
                     </div>
                 </form>
             </div>
@@ -347,105 +300,91 @@
             const precioTotalInput = document.querySelector('input[name="PrecioTotal"]');
             const montoSenaInput = document.querySelector('input[name="MontoSeña"]');
             
-            if (precioTotalInput && !precioTotalInput.readOnly) {
-                precioTotalInput.addEventListener('input', actualizarResumen);
-            }
+            if (precioTotalInput) precioTotalInput.addEventListener('input', actualizarResumen);
+            if (montoSenaInput) montoSenaInput.addEventListener('input', actualizarResumen);
             
-            if (montoSenaInput && !montoSenaInput.readOnly) {
-                montoSenaInput.addEventListener('input', actualizarResumen);
-            }
-            
-            // Actualizar resumen de montos
             function actualizarResumen() {
-                const precioTotal = parseFloat(precioTotalInput.value) || 0;
-                const montoSena = parseFloat(montoSenaInput.value) || 0;
-                const montoPagado = @Model.MontoPagado;
-                const saldoPendiente = precioTotal - montoPagado;
+                const precioTotal = parseFloat(precioTotalInput?.value) || 0;
+                const montoSena = parseFloat(montoSenaInput?.value) || 0;
+                const saldoPendiente = precioTotal - montoSena;
                 const porcentajeSena = precioTotal > 0 ? (montoSena / precioTotal) * 100 : 0;
                 
                 // Actualizar displays
-                document.getElementById('resumenPrecioTotal').textContent = `$${precioTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-                document.getElementById('resumenSena').textContent = `$${montoSena.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
-                document.getElementById('resumenPorcentajeSena').textContent = `(${porcentajeSena.toFixed(1)}%)`;
-                document.getElementById('resumenSaldo').textContent = `$${saldoPendiente.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                const resumenPrecioTotal = document.getElementById('resumenPrecioTotal');
+                const resumenSena = document.getElementById('resumenSena');
+                const resumenPorcentajeSena = document.getElementById('resumenPorcentajeSena');
+                const resumenSaldo = document.getElementById('resumenSaldo');
+                
+                if (resumenPrecioTotal) {
+                    resumenPrecioTotal.textContent = `$${precioTotal.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                }
+                if (resumenSena) {
+                    resumenSena.textContent = `$${montoSena.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                }
+                if (resumenPorcentajeSena) {
+                    resumenPorcentajeSena.textContent = `(${porcentajeSena.toFixed(1)}%)`;
+                }
+                if (resumenSaldo) {
+                    resumenSaldo.textContent = `$${saldoPendiente.toLocaleString('es-AR', { minimumFractionDigits: 2 })}`;
+                }
                 
                 // Validar que la seña no sea mayor al precio total
-                if (montoSena > precioTotal) {
-                    montoSenaInput.setCustomValidity('La seña no puede ser mayor al precio total');
-                } else {
-                    montoSenaInput.setCustomValidity('');
+                if (montoSenaInput) {
+                    if (montoSena > precioTotal) {
+                        montoSenaInput.setCustomValidity('La seña no puede ser mayor al precio total');
+                    } else {
+                        montoSenaInput.setCustomValidity('');
+                    }
+                }
+                
+                // Advertencia si la seña es menor al 10% del precio total
+                const señaMinima = precioTotal * 0.1;
+                if (resumenSena && resumenPorcentajeSena) {
+                    if (montoSena > 0 && montoSena < señaMinima) {
+                        resumenSena.className = 'text-warning fw-bold';
+                        resumenPorcentajeSena.className = 'text-warning';
+                    } else {
+                        resumenSena.className = 'text-info';
+                        resumenPorcentajeSena.className = 'text-muted';
+                    }
                 }
             }
             
-            // Configurar fecha mínima para escrituración (hoy o posterior)
-            const fechaEscrituracion = document.querySelector('input[name="FechaEscrituracion"]');
-            if (fechaEscrituracion && !fechaEscrituracion.readOnly) {
-                const hoy = new Date().toISOString().split('T')[0];
-                fechaEscrituracion.min = hoy;
-            }
+            // Inicializar resumen
+            actualizarResumen();
             
-            // Confirmación antes de enviar el formulario
-            const form = document.querySelector('form');
-            if (form) {
-                form.addEventListener('submit', function(e) {
-                    const precioTotal = parseFloat(precioTotalInput.value) || 0;
-                    const montoSena = parseFloat(montoSenaInput.value) || 0;
-                    
-                    if (montoSena > precioTotal) {
-                        e.preventDefault();
-                        alert('Error: La seña no puede ser mayor al precio total');
-                        return;
-                    }
-                    
-                    if (!confirm('¿Está seguro que desea guardar los cambios en el contrato de venta?')) {
-                        e.preventDefault();
+            // Deshabilitar campos si el contrato está cancelado o escriturado
+            const estado = '@Model.Estado';
+            if (estado === 'cancelada' || estado === 'escriturada') {
+                const inputs = document.querySelectorAll('input, textarea, select');
+                inputs.forEach(input => {
+                    if (!input.name.includes('Observaciones') && input.type !== 'hidden') {
+                        input.disabled = true;
                     }
                 });
-            }
-            
-            // Confirmación para cancelar contrato
-            const cancelBtn = document.querySelector('a[href*="Cancel"]');
-            if (cancelBtn) {
-                cancelBtn.addEventListener('click', function(e) {
-                    if (!confirm('¿Está seguro que desea cancelar este contrato de venta? Esta acción no se puede deshacer.')) {
-                        e.preventDefault();
-                    }
-                });
+                
+                const submitBtn = document.querySelector('button[type="submit"]');
+                if (submitBtn) {
+                    submitBtn.disabled = true;
+                    submitBtn.innerHTML = '<i class="bi bi-lock"></i> Modificación Bloqueada';
+                    submitBtn.className = 'btn btn-secondary btn-lg';
+                }
             }
         });
     </script>
-    
-    <style>
-        .card-header {
-            border-bottom: 3px solid rgba(255, 193, 7, 0.3);
-        }
-        
-        .form-label.fw-bold {
-            color: #495057;
-            margin-bottom: 0.5rem;
-        }
-        
-        .input-group-text {
-            background-color: #f8f9fa;
-            border-color: #ced4da;
-        }
-        
-        input:read-only, textarea:read-only {
-            background-color: #e9ecef;
-            opacity: 0.7;
-        }
-        
-        .bg-warning {
-            background-color: #ffc107 !important;
-        }
-        
-        .progress {
-            height: 8px;
-        }
-        
-        .badge {
-            font-size: 0.8rem;
-            font-weight: 500;
-        }
-    </style>
 }
+
+<style>
+    .card-header {
+        border-bottom: 3px solid rgba(13, 110, 253, 0.3);
+    }
+    
+    input:read-only, textarea:read-only {
+        background-color: #f8f9fa;
+        cursor: not-allowed;
+    }
+    
+    .badge {
+        font-size: 0.8rem;
+    }
+</style>

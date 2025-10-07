@@ -1,9 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using Inmobiliaria_troncoso_leandro.Models;
+using Inmobiliaria_troncoso_leandro.Data;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
-using Inmobiliaria_troncoso_leandro.Services;
-
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
@@ -11,41 +14,133 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
     public class ContratosController : Controller
     {
         private readonly IRepositorioContrato _repositorioContrato;
+        private readonly IRepositorioContratoVenta _repositorioContratoVenta;
         private const int ITEMS_POR_PAGINA = 10;
 
-        public ContratosController(IRepositorioContrato repositorioContrato)
+        public ContratosController(
+            IRepositorioContrato repositorioContrato,
+            IRepositorioContratoVenta repositorioContratoVenta)
         {
             _repositorioContrato = repositorioContrato;
+            _repositorioContratoVenta = repositorioContratoVenta;
         }
 
         // GET: Contratos - Index con paginación
-        public async Task<IActionResult> Index(int pagina = 1, string buscar = "", string estado = "",string tipoContrato = "")
+        [HttpGet]
+        public async Task<IActionResult> Index(string buscar = "", string estado = "", string tipoContrato = "", int pagina = 1)
         {
             try
             {
-                // repositorio directamente para paginación y búsqueda
-                var (contratos, totalRegistros) = await _repositorioContrato
-                    .ObtenerConPaginacionYBusquedaAsync(pagina, buscar, estado,tipoContrato, ITEMS_POR_PAGINA);
+                const int itemsPorPagina = 10;
+                List<ContratoIndexViewModel> todosContratos = new List<ContratoIndexViewModel>();
 
-                // Calcular información de paginación
-                var totalPaginas = (int)Math.Ceiling((double)totalRegistros / ITEMS_POR_PAGINA);
+                // 1. Cargar contratos de alquiler usando tu método de paginación
+                if (string.IsNullOrEmpty(tipoContrato) || tipoContrato == "alquiler")
+                {
+                    var (contratosAlquiler, _) = await _repositorioContrato.ObtenerConPaginacionYBusquedaAsync(
+                        1, buscar, estado, "alquiler", 1000); // Número grande para obtener todos filtrados
 
-                ViewBag.PaginaActual = pagina;
-                ViewBag.TotalPaginas = totalPaginas;
+                    todosContratos.AddRange(contratosAlquiler.Select(c => MapToViewModel(c, "alquiler")));
+                }
+
+                // 2. Cargar contratos de venta
+                if (string.IsNullOrEmpty(tipoContrato) || tipoContrato == "venta")
+                {
+                    var contratosVenta = await _repositorioContratoVenta.ObtenerTodosAsync();
+
+                    // Aplicar filtros manualmente - CORREGIDO para ContratoVenta
+                    var ventasFiltradas = contratosVenta.AsEnumerable();
+
+                    if (!string.IsNullOrEmpty(buscar))
+                    {
+                        ventasFiltradas = ventasFiltradas.Where(c =>
+                            (c.Inmueble?.Direccion?.Contains(buscar) == true) ||
+                            (c.Comprador?.Dni?.Contains(buscar) == true) ||
+                            (c.Vendedor?.Usuario?.Dni?.Contains(buscar) == true) ||
+                            (c.Comprador?.Nombre?.Contains(buscar) == true) ||
+                            (c.Comprador?.Apellido?.Contains(buscar) == true)
+                        );
+                    }
+
+                    if (!string.IsNullOrEmpty(estado))
+                    {
+                        ventasFiltradas = ventasFiltradas.Where(c => c.Estado == estado);
+                    }
+
+                    todosContratos.AddRange(ventasFiltradas.Select(c => MapToViewModel(c, "venta")));
+                }
+
+                // 3. Ordenar y paginar - CORREGIDO: usar Id en lugar de IdContrato
+                var contratosOrdenados = todosContratos.OrderByDescending(c => c.Id);
+                var totalRegistros = contratosOrdenados.Count();
+                var contratosPaginados = contratosOrdenados
+                    .Skip((pagina - 1) * itemsPorPagina)
+                    .Take(itemsPorPagina)
+                    .ToList();
+
                 ViewBag.TotalRegistros = totalRegistros;
+                ViewBag.TotalPaginas = (int)Math.Ceiling(totalRegistros / (double)itemsPorPagina);
+                ViewBag.PaginaActual = pagina;
                 ViewBag.Buscar = buscar;
                 ViewBag.Estado = estado;
                 ViewBag.TipoContrato = tipoContrato;
 
-                return View(contratos);
+                return View(contratosPaginados);
             }
             catch (Exception ex)
             {
-                TempData["ErrorMessage"] = $"Error al cargar los contratos: {ex.Message}";
-                return View(new List<Contrato>());
+                TempData["ErrorMessage"] = "Error al cargar contratos: " + ex.Message;
+                return View(new List<ContratoIndexViewModel>());
             }
         }
 
+        // Método helper para mapear Contrato (alquiler)
+        private ContratoIndexViewModel MapToViewModel(Contrato contrato, string tipo)
+        {
+            return new ContratoIndexViewModel
+            {
+                Id = contrato.IdContrato,
+                TipoContrato = tipo,
+                DireccionInmueble = contrato.Inmueble?.Direccion,
+                NombreCliente = contrato.Inquilino?.Usuario?.Nombre,
+                ApellidoCliente = contrato.Inquilino?.Usuario?.Apellido,
+                DniCliente = contrato.Inquilino?.Usuario?.Dni,
+                NombrePropietario = contrato.Propietario?.Usuario?.Nombre,
+                ApellidoPropietario = contrato.Propietario?.Usuario?.Apellido,
+                DniPropietario = contrato.Propietario?.Usuario?.Dni,
+                FechaInicio = contrato.FechaInicio,
+                FechaFin = contrato.FechaFin,
+                FechaCancelacion = contrato.FechaFinAnticipada,
+                MontoPrincipal = contrato.MontoMensual,
+                MultaAplicada = contrato.MultaAplicada,
+                Estado = contrato.Estado
+            };
+        }
+
+        // Método helper para mapear ContratoVenta
+        private ContratoIndexViewModel MapToViewModel(ContratoVenta contrato, string tipo)
+        {
+            return new ContratoIndexViewModel
+            {
+                Id = contrato.IdContratoVenta,
+                TipoContrato = tipo,
+                DireccionInmueble = contrato.Inmueble?.Direccion,
+                NombreCliente = contrato.Comprador?.Nombre,
+                ApellidoCliente = contrato.Comprador?.Apellido,
+                DniCliente = contrato.Comprador?.Dni,
+                NombrePropietario = contrato.Vendedor?.Usuario?.Nombre,
+                ApellidoPropietario = contrato.Vendedor?.Usuario?.Apellido,
+                DniPropietario = contrato.Vendedor?.Usuario?.Dni,
+                FechaInicio = contrato.FechaInicio,
+                FechaEscrituracion = contrato.FechaEscrituracion,
+                FechaCancelacion = contrato.FechaCancelacion,
+                MontoPrincipal = contrato.PrecioTotal,
+                MontoPagado = contrato.MontoPagado,
+                MontoSeña = contrato.MontoSeña,
+                Estado = contrato.Estado,
+                EstadoDescripcion = contrato.EstadoDescripcion
+            };
+        }
         // GET: Contratos/Details/5
         public async Task<IActionResult> Details(int id)
         {

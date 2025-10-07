@@ -289,9 +289,9 @@ public async Task<IActionResult> Create(Pago pago, IFormFile? ComprobanteArchivo
         return View(pago);
     }
 }
-       
 
-// GET: Alquileres/Edit/5
+// GET: Alquileres/Edit/5      
+[Authorize(Policy = "Administrador")]
 public async Task<IActionResult> Edit(int id)
 {
     if (id <= 0) return NotFound();
@@ -302,7 +302,8 @@ public async Task<IActionResult> Edit(int id)
     return View(pago);
 }
 
-// POST: Alquileres/Edit/5
+        // POST: Alquileres/Edit/5
+[Authorize(Policy = "Administrador")]
 [HttpPost]
 [ValidateAntiForgeryToken]
 public async Task<IActionResult> Edit(int id, Pago pago, IFormFile? ComprobanteArchivo)

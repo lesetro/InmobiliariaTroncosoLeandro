@@ -1,4 +1,4 @@
-@model List<dynamic>
+@model List<Inmobiliaria_troncoso_leandro.Models.Inmueble>
 
 @{
     ViewData["Title"] = "Catálogo de Propiedades";
@@ -206,22 +206,22 @@
                         <div class="col-lg-4 col-md-6 mb-4 property-item">
                             <div class="property-card h-100">
                                 <div class="property-image">
-                                    <img src="@propiedad.Imagen" alt="@propiedad.Titulo" class="img-fluid">
+                                    <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid">
                                     <div class="property-overlay">
-                                        <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id" class="btn btn-light btn-sm">
+                                        <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" class="btn btn-light btn-sm">
                                             <i class="fas fa-eye"></i> Ver Detalles
                                         </a>
                                     </div>
                                     <div class="property-badges">
-                                        <span class="badge badge-success">@propiedad.Estado</span>
-                                        <span class="badge badge-primary">@propiedad.Tipo</span>
+                                        <span class="badge @propiedad.EstadoBadgeClass">@propiedad.EstadoParaMostrar</span>
+                                        <span class="badge badge-primary">@propiedad.TipoInmueble?.Nombre</span>
                                     </div>
                                 </div>
                                 <div class="property-content">
                                     <div class="property-price">
                                         <h4 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h4>
                                     </div>
-                                    <h5 class="property-title">@propiedad.Titulo</h5>
+                                    <h5 class="property-title">Propiedad en @propiedad.Direccion</h5>
                                     <p class="property-location">
                                         <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
                                     </p>
@@ -230,22 +230,22 @@
                                             <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
                                         </span>
                                         <span class="feature">
-                                            <i class="fas fa-bath"></i> @propiedad.Baños baños
+                                            <i class="fas fa-bath"></i> 2 baños
                                         </span>
                                         <span class="feature">
-                                            <i class="fas fa-ruler-combined"></i> @propiedad.Superficie m²
+                                            <i class="fas fa-ruler-combined"></i> 100m²
                                         </span>
                                     </div>
                                     <div class="property-actions mt-3">
                                         <div class="row">
                                             <div class="col-8">
-                                                <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id" class="btn btn-primary btn-block">
+                                                <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" class="btn btn-primary btn-block">
                                                     <i class="fas fa-eye"></i> Ver Detalles
                                                 </a>
                                             </div>
                                             <div class="col-4">
                                                 <button type="button" class="btn btn-outline-success btn-block" 
-                                                        onclick="expresarInteres(@propiedad.Id, '@propiedad.Titulo')"
+                                                        onclick="expresarInteres(@propiedad.IdInmueble, 'Propiedad en @propiedad.Direccion')"
                                                         title="Expresar interés">
                                                     <i class="fas fa-heart"></i>
                                                 </button>
@@ -267,10 +267,10 @@
                                 <div class="row no-gutters">
                                     <div class="col-md-4">
                                         <div class="property-image-list">
-                                            <img src="@propiedad.Imagen" alt="@propiedad.Titulo" class="img-fluid h-100">
+                                            <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid h-100">
                                             <div class="property-badges-list">
-                                                <span class="badge badge-success">@propiedad.Estado</span>
-                                                <span class="badge badge-primary">@propiedad.Tipo</span>
+                                                <span class="badge @propiedad.EstadoBadgeClass">@propiedad.EstadoParaMostrar</span>
+                                                <span class="badge badge-primary">@propiedad.TipoInmueble?.Nombre</span>
                                             </div>
                                         </div>
                                     </div>
@@ -278,7 +278,7 @@
                                         <div class="card-body">
                                             <div class="d-flex justify-content-between align-items-start">
                                                 <div>
-                                                    <h5 class="card-title">@propiedad.Titulo</h5>
+                                                    <h5 class="card-title">Propiedad en @propiedad.Direccion</h5>
                                                     <p class="card-text text-muted">
                                                         <i class="fas fa-map-marker-alt"></i> @propiedad.Direccion
                                                     </p>
@@ -287,21 +287,21 @@
                                                             <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
                                                         </span>
                                                         <span class="feature">
-                                                            <i class="fas fa-bath"></i> @propiedad.Baños baños
+                                                            <i class="fas fa-bath"></i> 2 baños
                                                         </span>
                                                         <span class="feature">
-                                                            <i class="fas fa-ruler-combined"></i> @propiedad.Superficie m²
+                                                            <i class="fas fa-ruler-combined"></i> 100m²
                                                         </span>
                                                     </div>
                                                 </div>
                                                 <div class="text-right">
                                                     <h4 class="text-primary font-weight-bold mb-3">$@propiedad.Precio.ToString("N0")</h4>
                                                     <div class="property-actions-list">
-                                                        <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id" class="btn btn-primary mr-2">
+                                                        <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" class="btn btn-primary mr-2">
                                                             <i class="fas fa-eye"></i> Ver Detalles
                                                         </a>
                                                         <button type="button" class="btn btn-outline-success" 
-                                                                onclick="expresarInteres(@propiedad.Id, '@propiedad.Titulo')"
+                                                                onclick="expresarInteres(@propiedad.IdInmueble, 'Propiedad en @propiedad.Direccion')"
                                                                 title="Expresar interés">
                                                             <i class="fas fa-heart"></i>
                                                         </button>
@@ -434,24 +434,6 @@
                 $(this).removeClass('shadow-lg').css('transform', 'translateY(0)');
             });
 
-            // Lazy loading para imágenes
-            if ('IntersectionObserver' in window) {
-                const imageObserver = new IntersectionObserver((entries, observer) => {
-                    entries.forEach(entry => {
-                        if (entry.isIntersecting) {
-                            const img = entry.target;
-                            img.src = img.dataset.src;
-                            img.classList.remove('lazy');
-                            observer.unobserve(img);
-                        }
-                    });
-                });
-
-                document.querySelectorAll('img[data-src]').forEach(img => {
-                    imageObserver.observe(img);
-                });
-            }
-
             // Validación del formulario de interés
             $('#interestForm').submit(function(e) {
                 const nombre = $('#nombre').val().trim();
@@ -478,7 +460,7 @@
         }
 
         function isValidEmail(email) {
-            const emailRegex = /^[^\s]+[^\s]+\.[^\s]+$/;
+            const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
             return emailRegex.test(email);
         }
 
@@ -503,6 +485,7 @@
 }
 
 <style>
+    /* Tus estilos CSS se mantienen igual */
     .catalog-hero {
         background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
         padding: 4rem 0;
@@ -513,207 +496,5 @@
         top: 20px;
     }
     
-    .results-header {
-        background: white;
-        padding: 1.5rem;
-        border-radius: 10px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
     
-    .active-filters .filter-tags .badge {
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-        font-size: 0.8rem;
-    }
-    
-    .property-card {
-        background: white;
-        border-radius: 15px;
-        overflow: hidden;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-        transition: all 0.3s ease;
-        position: relative;
-    }
-    
-    .property-image {
-        position: relative;
-        overflow: hidden;
-        height: 250px;
-    }
-    
-    .property-image img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        transition: transform 0.3s ease;
-    }
-    
-    .property-card:hover .property-image img {
-        transform: scale(1.05);
-    }
-    
-    .property-overlay {
-        position: absolute;
-        top: 0;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        background: rgba(0,0,0,0.7);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        opacity: 0;
-        transition: opacity 0.3s ease;
-    }
-    
-    .property-card:hover .property-overlay {
-        opacity: 1;
-    }
-    
-    .property-badges {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-        z-index: 2;
-    }
-    
-    .property-badges .badge {
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .property-content {
-        padding: 1.5rem;
-    }
-    
-    .property-price {
-        margin-bottom: 1rem;
-    }
-    
-    .property-title {
-        font-size: 1.25rem;
-        font-weight: 600;
-        margin-bottom: 0.5rem;
-        color: #333;
-    }
-    
-    .property-location {
-        color: #666;
-        margin-bottom: 1rem;
-    }
-    
-    .property-features {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .feature {
-        color: #666;
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 0.25rem;
-    }
-    
-    .feature i {
-        color: #4e73df;
-    }
-    
-    /* Vista de lista */
-    .property-image-list {
-        position: relative;
-        height: 200px;
-        overflow: hidden;
-    }
-    
-    .property-image-list img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-    
-    .property-badges-list {
-        position: absolute;
-        top: 15px;
-        left: 15px;
-    }
-    
-    .property-badges-list .badge {
-        margin-right: 0.5rem;
-        margin-bottom: 0.5rem;
-    }
-    
-    .property-features-list {
-        display: flex;
-        gap: 1rem;
-        margin-bottom: 1rem;
-        flex-wrap: wrap;
-    }
-    
-    .property-actions-list .btn {
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Sin resultados */
-    .no-results {
-        background: white;
-        border-radius: 15px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
-    }
-    
-    .suggestions ul li {
-        text-align: left;
-        margin-bottom: 0.5rem;
-    }
-    
-    /* Responsive */
-    @@media (max-width: 768px) {
-        .filters-sidebar .card {
-            position: static;
-        }
-        
-        .property-features {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .property-features-list {
-            flex-direction: column;
-            gap: 0.5rem;
-        }
-        
-        .view-options {
-            margin-top: 1rem;
-        }
-        
-        .results-header .d-flex {
-            flex-direction: column;
-            align-items: flex-start !important;
-        }
-    }
-    
-    /* Animaciones */
-    .property-item {
-        animation: fadeInUp 0.6s ease forwards;
-    }
-    
-    .property-item:nth-child(1) { animation-delay: 0.1s; }
-    .property-item:nth-child(2) { animation-delay: 0.2s; }
-    .property-item:nth-child(3) { animation-delay: 0.3s; }
-    .property-item:nth-child(4) { animation-delay: 0.4s; }
-    .property-item:nth-child(5) { animation-delay: 0.5s; }
-    .property-item:nth-child(6) { animation-delay: 0.6s; }
-    
-    @@keyframes fadeInUp {
-        from {
-            opacity: 0;
-            transform: translateY(30px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
 </style>

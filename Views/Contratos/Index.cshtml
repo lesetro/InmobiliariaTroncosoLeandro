@@ -1,4 +1,4 @@
-@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.Contrato>
+@model IEnumerable<Inmobiliaria_troncoso_leandro.Models.ContratoIndexViewModel>
 @{
     ViewData["Title"] = "Contratos";
 }
@@ -31,6 +31,7 @@
         </div>
     </div>
 </div>
+
 @if (TempData["ErrorMessage"] != null)
 {
     <div class="alert alert-danger alert-dismissible fade show">
@@ -60,7 +61,7 @@
                            id="buscar" 
                            name="buscar" 
                            class="form-control" 
-                           placeholder="Dirección, inquilino, propietario, DNI..."
+                           placeholder="Dirección, cliente, propietario, DNI..."
                            value="@ViewBag.Buscar">
                 </div>
                 <div class="col-md-3">
@@ -69,9 +70,16 @@
                     </label>
                     <select name="estado" id="estado" class="form-select">
                         <option value="">Todos los estados</option>
-                        <option value="vigente" selected="@(ViewBag.Estado == "vigente")">Vigente</option>
-                        <option value="finalizado" selected="@(ViewBag.Estado == "finalizado")">Finalizado</option>
-                        <option value="finalizado_anticipado" selected="@(ViewBag.Estado == "finalizado_anticipado")">Finalizado Anticipado</option>
+                        <option value="vigente" selected='@(ViewBag.Estado == "vigente")'>Vigente</option>
+                        <option value="finalizado" selected='@(ViewBag.Estado == "finalizado")'>Finalizado</option>
+                        <option value="finalizado_anticipado" selected='@(ViewBag.Estado == "finalizado_anticipado")'>Finalizado Anticipado</option>
+                        <!-- Estados para venta -->
+                        <option value="seña_pendiente" selected='@(ViewBag.Estado == "seña_pendiente")'>Seña Pendiente</option>
+                        <option value="seña_pagada" selected='@(ViewBag.Estado == "seña_pagada")'>Seña Pagada</option>
+                        <option value="en_proceso" selected='@(ViewBag.Estado == "en_proceso")'>En Proceso</option>
+                        <option value="pendiente_escritura" selected='@(ViewBag.Estado == "pendiente_escritura")'>Pendiente Escritura</option>
+                        <option value="escriturada" selected='@(ViewBag.Estado == "escriturada")'>Escriturada</option>
+                        <option value="cancelada" selected='@(ViewBag.Estado == "cancelada")'>Cancelada</option>
                     </select>
                 </div>
                 <div class="col-md-3">
@@ -80,22 +88,17 @@
                     </label>
                     <select name="tipoContrato" id="tipoContrato" class="form-select">
                         <option value="">Todos los tipos</option>
-                        <option value="alquiler" selected="@(ViewBag.TipoContrato == "alquiler")">Alquiler</option>
-                        <option value="venta" selected="@(ViewBag.TipoContrato == "venta")">Venta</option>
+                        <option value="alquiler" selected='@(ViewBag.TipoContrato == "alquiler")'>Alquiler</option>
+                        <option value="venta" selected='@(ViewBag.TipoContrato == "venta")'>Venta</option>
                     </select>
                 </div>
-                <div class="col-md-3">
+                <div class="col-md-2">
                     <button type="submit" class="btn btn-outline-primary me-2">
                         <i class="bi bi-search"></i> Buscar
                     </button>
                     <a asp-action="Index" class="btn btn-outline-secondary">
                         <i class="bi bi-x-circle"></i> Limpiar
                     </a>
-                </div>
-                <div class="col-md-2 text-end">
-                    <small class="text-muted">
-                        <i class="bi bi-info-circle"></i> Total: @ViewBag.TotalRegistros contratos
-                    </small>
                 </div>
             </div>
         </form>
@@ -108,7 +111,7 @@
         <i class="bi bi-file-text" style="font-size: 4rem; color: #6c757d;"></i>
         <h4 class="text-muted mt-3">No hay contratos</h4>
         <p class="text-muted">
-            @if (!string.IsNullOrEmpty(ViewBag.Buscar) || !string.IsNullOrEmpty(ViewBag.Estado))
+            @if (!string.IsNullOrEmpty(ViewBag.Buscar) || !string.IsNullOrEmpty(ViewBag.Estado) || !string.IsNullOrEmpty(ViewBag.TipoContrato))
             {
                 <span>No se encontraron contratos con los filtros aplicados.</span>
             }
@@ -135,27 +138,27 @@ else
                         <i class="bi bi-house"></i> Inmueble
                     </th>
                     <th style="width: 16%;">
-                        <i class="bi bi-person"></i> Inquilino
+                        <i class="bi bi-person"></i> Cliente
                     </th>
                     <th style="width: 16%;">
-                        <i class="bi bi-person-badge"></i> Propietario
+                        <i class="bi bi-person-badge"></i> Propietario/Vendedor
                     </th>
                     <th style="width: 10%;">
                         <i class="bi bi-calendar-check"></i> Inicio
                     </th>
                     <th style="width: 10%;">
-                        <i class="bi bi-calendar-x"></i> Fin
+                        <i class="bi bi-calendar-x"></i> Fin/Escrituración
                     </th>
-                    <th style="width: 10%;">
+                    <th style="width: 12%;">
                         <i class="bi bi-currency-dollar"></i> Monto
                     </th>
                     <th style="width: 8%;">
-                        <i class="bi bi-flag"></i> Tipo
+                        <i class="bi bi-tags"></i> Tipo
                     </th>
                     <th style="width: 8%;">
                         <i class="bi bi-flag"></i> Estado
                     </th>
-                    <th style="width: 4%;">Acciones</th>
+                    <th style="width: 12%;">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -163,24 +166,24 @@ else
                 {
                     <tr>
                         <td>
-                            <span class="badge bg-secondary">#@contrato.IdContrato</span>
+                            <span class="badge bg-secondary">#@contrato.Id</span>
                         </td>
                         <td>
-                            <strong class="text-primary">@contrato.Inmueble?.Direccion</strong>
+                            <strong class="text-primary">@contrato.DireccionInmueble</strong>
                         </td>
                         <td>
                             <div>
-                                <strong>@(contrato.Inquilino?.Usuario?.Apellido), @(contrato.Inquilino?.Usuario?.Nombre)</strong>
+                                <strong>@contrato.ApellidoCliente, @contrato.NombreCliente</strong>
                                 <br><small class="text-muted">
-                                    <i class="bi bi-card-text"></i> @contrato.Inquilino?.Usuario?.Dni
+                                    <i class="bi bi-card-text"></i> @contrato.DniCliente
                                 </small>
                             </div>
                         </td>
                         <td>
                             <div>
-                                <strong>@(contrato.Propietario?.Usuario?.Apellido), @(contrato.Propietario?.Usuario?.Nombre)</strong>
+                                <strong>@contrato.ApellidoPropietario, @contrato.NombrePropietario</strong>
                                 <br><small class="text-muted">
-                                    <i class="bi bi-card-text"></i> @contrato.Propietario?.Usuario?.Dni
+                                    <i class="bi bi-card-text"></i> @contrato.DniPropietario
                                 </small>
                             </div>
                         </td>
@@ -190,87 +193,118 @@ else
                             </span>
                         </td>
                         <td>
-                            <span class="badge bg-warning text-dark">
-                                @contrato.FechaFin.ToString("dd/MM/yyyy")
+                            @if (contrato.TipoContrato == "alquiler")
+                            {
+                                <span class="badge bg-warning text-dark">
+                                    @(contrato.FechaFin?.ToString("dd/MM/yyyy") ?? "N/A")
+                                </span>
+                                @if (contrato.FechaCancelacion.HasValue)
+                                {
+                                    <br><small class="text-muted">
+                                        <i class="bi bi-clock-history"></i> @contrato.FechaCancelacion.Value.ToString("dd/MM/yyyy")
+                                    </small>
+                                }
+                            }
+                            else
+                            {
+                                if (contrato.FechaEscrituracion.HasValue)
+                                {
+                                    <span class="badge bg-success">
+                                        @contrato.FechaEscrituracion.Value.ToString("dd/MM/yyyy")
+                                    </span>
+                                }
+                                else if (contrato.FechaCancelacion.HasValue)
+                                {
+                                    <span class="badge bg-danger">
+                                        @contrato.FechaCancelacion.Value.ToString("dd/MM/yyyy")
+                                    </span>
+                                }
+                                else
+                                {
+                                    <span class="badge bg-secondary">Pendiente</span>
+                                }
+                            }
+                        </td>
+                        <td>
+                            @if (contrato.TipoContrato == "alquiler")
+                            {
+                                <strong class="text-success">
+                                    @contrato.MontoPrincipal.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                </strong>
+                                @if (contrato.MultaAplicada > 0)
+                                {
+                                    <br><small class="text-danger">
+                                        <i class="bi bi-exclamation-triangle"></i> @contrato.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                    </small>
+                                }
+                            }
+                            else
+                            {
+                                <strong class="text-success">
+                                    @contrato.MontoPrincipal.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                </strong>
+                                <br><small class="text-info">
+                                    Pagado: @contrato.MontoPagado.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                </small>
+                                @if (contrato.MontoSeña > 0)
+                                {
+                                    <br><small class="text-warning">
+                                        Seña: @contrato.MontoSeña.ToString("C", new System.Globalization.CultureInfo("es-AR"))
+                                    </small>
+                                }
+                            }
+                        </td>
+                        <td>
+                            <span class="badge @(contrato.TipoContrato == "alquiler" ? "bg-primary" : "bg-success")">
+                                @contrato.TipoContrato?.ToUpper()
                             </span>
-                            @if (contrato.FechaFinAnticipada.HasValue)
-                            {
-                                <br><small class="text-muted">
-                                    <i class="bi bi-clock-history"></i> @contrato.FechaFinAnticipada.Value.ToString("dd/MM/yyyy")
-                                </small>
-                            }
                         </td>
                         <td>
-                            <strong class="text-success">
-                                @contrato.MontoMensual.ToString("C", new System.Globalization.CultureInfo("es-AR"))
-                            </strong>
-                            @if (contrato.MultaAplicada > 0)
-                            {
-                                <br><small class="text-danger">
-                                    <i class="bi bi-exclamation-triangle"></i> @contrato.MultaAplicada.ToString("C", new System.Globalization.CultureInfo("es-AR"))
-                                </small>
-                            }
+                            <span class="badge @contrato.EstadoBadgeClass">@contrato.EstadoTexto</span>
                         </td>
                         <td>
-                            @{
-                                var tipoBadgeClass = contrato.TipoContrato switch
+                            <div class="btn-group" role="group">
+                                @if (contrato.TipoContrato == "alquiler")
                                 {
-                                    "alquiler" => "bg-primary",
-                                    "venta" => "bg-success", 
-                                    _ => "bg-light text-dark"
-                                };
-        
-                                var tipoTexto = contrato.TipoContrato switch
+                                    <a asp-action="Details" asp-route-id="@contrato.Id" 
+                                       class="btn btn-success btn-sm" title="Detalle">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </a>
+                                    <a asp-action="Edit" asp-route-id="@contrato.Id" 
+                                       class="btn btn-warning btn-sm" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@contrato.Id" 
+                                       class="btn btn-info btn-sm" title="Imágenes">
+                                        <i class="bi bi-images"></i>
+                                    </a>
+                                    <a asp-action="Delete" asp-route-id="@contrato.Id" 
+                                       class="btn btn-danger btn-sm" title="Finalizar Contrato">
+                                        <i class="bi bi-flag-fill"></i>
+                                    </a>
+                                }
+                                else
                                 {
-                                    "alquiler" => "ALQUILER",
-                                    "venta" => "VENTA",
-                                    _ => contrato.TipoContrato?.ToUpper() ?? "SIN TIPO"
-                                };
-                            }
-                                <span class="badge @tipoBadgeClass">@tipoTexto</span>
-                        </td>
-
-                        <td>
-                            @{
-                                var estadoBadgeClass = contrato.Estado switch
-                                {
-                                    "vigente" => "bg-success",
-                                    "finalizado" => "bg-secondary",
-                                    "finalizado_anticipado" => "bg-warning text-dark",
-                                    _ => "bg-light text-dark"
-                                };
-                                
-                                var estadoTexto = contrato.Estado switch
-                                {
-                                    "vigente" => "VIGENTE",
-                                    "finalizado" => "FINALIZADO",
-                                    "finalizado_anticipado" => "FINALIZADO ANTICIPADO",
-                                    _ => contrato.Estado.ToUpper()
-                                };
-                            }
-                            <span class="badge @estadoBadgeClass">@estadoTexto</span>
-                        </td>
-                        <td>
-                            <div class="dropdown">
-                                <div class="btn-group" role="group">
-                                <a asp-action="Details" asp-route-id="@contrato.IdContrato" 
-                                   class="btn btn-success btn-sm" title="Detalle ">
-                                    <i class="bi bi-file-earmark-text"></i>
-                                </a>
-                                <a asp-action="Edit" asp-route-id="@contrato.IdContrato" 
-                                   class="btn btn-warning btn-sm" title="Editar">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
-                                <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@contrato.IdContrato" 
-                                   class="btn btn-info btn-sm" title="Imágenes">
-                                    <i class="bi bi-images"></i>
-                                </a>
-                                <a asp-action="Delete" asp-route-id="@contrato.IdContrato" 
-                                   class="btn btn-danger btn-sm" title="Finalizar Contrato">
-                                    <i class="bi bi-flag-fill"></i>
-                                </a>
-                            </div>
-                                
+                                     <a asp-controller="ContratoVenta" asp-action="Details" asp-route-id="@contrato.Id" 
+                                       class="btn btn-success btn-sm" title="Detalle">
+                                        <i class="bi bi-file-earmark-text"></i>
+                                    </a>
+                                    <a asp-controller="ContratoVenta" asp-action="Edit" asp-route-id="@contrato.Id" 
+                                       class="btn btn-warning btn-sm" title="Editar">
+                                        <i class="bi bi-pencil"></i>
+                                    </a> 
+                                    <a asp-controller="Pagos" asp-action="Index" asp-route-idContratoVenta="@contrato.Id" 
+                                       class="btn btn-info btn-sm" title="Pagos">
+                                        <i class="bi bi-cash-coin"></i>
+                                    </a>
+                                     @if (contrato.Estado != "cancelada" && contrato.Estado != "escriturada")
+                                    {
+                                        <a asp-controller="ContratoVenta" asp-action="Delete" asp-route-id="@contrato.Id" 
+                                           class="btn btn-danger btn-sm" title="Cancelar">
+                                            <i class="bi bi-x-circle"></i>
+                                        </a>
+                                    }
+                                }
                             </div>
                         </td>
                     </tr>
@@ -291,7 +325,8 @@ else
                         <a class="page-link" asp-action="Index" 
                            asp-route-pagina="@(ViewBag.PaginaActual - 1)"
                            asp-route-buscar="@ViewBag.Buscar"
-                           asp-route-estado="@ViewBag.Estado">
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-tipoContrato="@ViewBag.TipoContrato">
                             <i class="bi bi-chevron-left"></i> Anterior
                         </a>
                     </li>
@@ -308,7 +343,8 @@ else
                     <li class="page-item">
                         <a class="page-link" asp-action="Index" asp-route-pagina="1"
                            asp-route-buscar="@ViewBag.Buscar"
-                           asp-route-estado="@ViewBag.Estado">1</a>
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-tipoContrato="@ViewBag.TipoContrato">1</a>
                     </li>
                     @if (inicioRango > 2)
                     {
@@ -323,7 +359,8 @@ else
                     <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
                         <a class="page-link" asp-action="Index" asp-route-pagina="@i"
                            asp-route-buscar="@ViewBag.Buscar"
-                           asp-route-estado="@ViewBag.Estado">@i</a>
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-tipoContrato="@ViewBag.TipoContrato">@i</a>
                     </li>
                 }
 
@@ -338,7 +375,8 @@ else
                     <li class="page-item">
                         <a class="page-link" asp-action="Index" asp-route-pagina="@ViewBag.TotalPaginas"
                            asp-route-buscar="@ViewBag.Buscar"
-                           asp-route-estado="@ViewBag.Estado">@ViewBag.TotalPaginas</a>
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-tipoContrato="@ViewBag.TipoContrato">@ViewBag.TotalPaginas</a>
                     </li>
                 }
 
@@ -349,7 +387,8 @@ else
                         <a class="page-link" asp-action="Index" 
                            asp-route-pagina="@(ViewBag.PaginaActual + 1)"
                            asp-route-buscar="@ViewBag.Buscar"
-                           asp-route-estado="@ViewBag.Estado">
+                           asp-route-estado="@ViewBag.Estado"
+                           asp-route-tipoContrato="@ViewBag.TipoContrato">
                             Siguiente <i class="bi bi-chevron-right"></i>
                         </a>
                     </li>
@@ -372,72 +411,37 @@ else
 @section Scripts {
     <script>
         document.addEventListener('DOMContentLoaded', function() {
-            // Auto-submit al cambiar estado
+            // Auto-submit al cambiar filtros
             const estadoSelect = document.getElementById('estado');
+            const tipoSelect = document.getElementById('tipoContrato');
+            
             if (estadoSelect) {
                 estadoSelect.addEventListener('change', function() {
                     this.form.submit();
                 });
             }
+            
+            if (tipoSelect) {
+                tipoSelect.addEventListener('change', function() {
+                    this.form.submit();
+                });
+            }
 
-            // Confirmación para finalizar contratos
-            const finalizarLinks = document.querySelectorAll('a[href*="Delete"]');
+            // Confirmación para acciones
+            const finalizarLinks = document.querySelectorAll('a[href*="Delete"], a[href*="Cancelar"]');
             finalizarLinks.forEach(link => {
                 link.addEventListener('click', function(e) {
-                    if (!confirm('¿Está seguro que desea finalizar este contrato? Esta acción no se puede deshacer.')) {
+                    if (!confirm('¿Está seguro que desea realizar esta acción? Esta acción no se puede deshacer.')) {
                         e.preventDefault();
                     }
                 });
             });
 
-            // Tooltip para badges de estado
+            // Tooltip para badges
             const badges = document.querySelectorAll('.badge');
             badges.forEach(badge => {
                 badge.title = badge.textContent.trim();
             });
         });
     </script>
-
-    <style>
-        .table th {
-            background-color: #343a40;
-            color: white;
-            font-weight: 600;
-            border-color: #454d55;
-        }
-        
-        .table-striped > tbody > tr:nth-of-type(even) > td {
-        background-color: #f8f9fa; 
-        }
-        
-        .table-hover tbody tr:hover {
-            background-color: rgba(0,123,255,.1);
-        }
-        
-        .badge {
-            font-size: 0.75rem;
-            font-weight: 500;
-        }
-        
-        .dropdown-menu {
-            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-        }
-        
-        .dropdown-item:hover {
-            background-color: #f8f9fa;
-        }
-        
-        .pagination .page-link {
-            border-color: #dee2e6;
-        }
-        
-        .pagination .page-item.active .page-link {
-            background-color: #0d6efd;
-            border-color: #0d6efd;
-        }
-        
-        .card-body {
-            padding: 1.5rem;
-        }
-    </style>
 }

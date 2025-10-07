@@ -1,0 +1,8 @@
+@{
+    // Prioridad: ViewData > HttpContext > Default
+    var layout = ViewData["Layout"] as string 
+                ?? Context.Items["SelectedLayout"] as string 
+                ?? "_LayoutPublic";
+    
+    Layout = $"~/Views/Shared/{layout}.cshtml";
+}

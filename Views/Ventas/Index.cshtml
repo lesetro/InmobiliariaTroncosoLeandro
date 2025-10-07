@@ -21,7 +21,8 @@
         </div>
         
         <div class="btn-group ms-2">
-            <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
+        
+            @* <button type="button" class="btn btn-outline-secondary dropdown-toggle" data-bs-toggle="dropdown">
                 <i class="bi bi-funnel me-1"></i>Filtros
             </button>
             <ul class="dropdown-menu">
@@ -41,7 +42,7 @@
                 <li><a class="dropdown-item" href="@Url.Action("Index", new { buscar = "anticipo" })">
                     <i class="bi bi-cash me-2 text-info"></i>Solo Anticipos
                 </a></li>
-            </ul>
+            </ul> *@
         </div>
     </div>
 </div>
@@ -89,9 +90,9 @@
         <div class="col-md-3">
             <div class="card border-warning">
                 <div class="card-body text-center">
-                    <i class="bi bi-piggy-bank text-warning fs-2"></i>
-                    <h4 class="card-title text-warning mt-2">@Model.Count(p => p.Concepto.Contains("seña") || p.Concepto.Contains("Seña"))</h4>
-                    <p class="card-text">Señas</p>
+                    <i class="bi bi-graph-up text-warning fs-2"></i>
+                    <h4 class="card-title text-warning mt-2">@Model.Average(p => p.MontoTotal).ToString("C0")</h4>
+                    <p class="card-text">Promedio por Pago</p>
                 </div>
             </div>
         </div>

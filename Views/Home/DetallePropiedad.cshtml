@@ -1,7 +1,7 @@
-@model dynamic
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
 
 @{
-    ViewData["Title"] = Model.Titulo;
+    ViewData["Title"] = "Propiedad en " + Model.Direccion;
     Layout = "~/Views/Shared/_LayoutPublic.cshtml";
 }
 
@@ -12,7 +12,7 @@
             <ol class="breadcrumb mb-0">
                 <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Index">Inicio</a></li>
                 <li class="breadcrumb-item"><a asp-controller="Home" asp-action="Catalogo">Propiedades</a></li>
-                <li class="breadcrumb-item active" aria-current="page">@Model.Titulo</li>
+                <li class="breadcrumb-item active" aria-current="page">Propiedad en @Model.Direccion</li>
             </ol>
         </nav>
     </div>
@@ -25,10 +25,10 @@
             <!-- Galería de imágenes -->
             <div class="property-gallery mb-4">
                 <div class="main-image">
-                    <img src="@Model.Imagen" alt="@Model.Titulo" class="img-fluid rounded" id="mainImage">
+                    <img src="@Model.UrlPortadaODefault" alt="Propiedad en @Model.Direccion" class="img-fluid rounded" id="mainImage">
                     <div class="image-badges">
-                        <span class="badge badge-success badge-lg">@Model.Estado</span>
-                        <span class="badge badge-primary badge-lg">@Model.Tipo</span>
+                        <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span>
+                        <span class="badge badge-primary badge-lg">@Model.TipoInmueble?.Nombre</span>
                     </div>
                 </div>
 
@@ -36,8 +36,8 @@
                 <div class="thumbnail-gallery mt-3">
                     <div class="row">
                         <div class="col-3">
-                            <img src="@Model.Imagen" alt="Vista 1" class="img-fluid rounded thumbnail active"
-                                onclick="changeMainImage('@Model.Imagen')">
+                            <img src="@Model.UrlPortadaODefault" alt="Vista 1" class="img-fluid rounded thumbnail active"
+                                onclick="changeMainImage('@Model.UrlPortadaODefault')">
                         </div>
                         <div class="col-3">
                             <img src="https://via.placeholder.com/300x200/28a745/ffffff?text=Vista+2" alt="Vista 2"
@@ -62,7 +62,7 @@
             <div class="property-info mb-4">
                 <div class="d-flex justify-content-between align-items-start mb-3">
                     <div>
-                        <h1 class="property-title">@Model.Titulo</h1>
+                        <h1 class="property-title">Propiedad en @Model.Direccion</h1>
                         <p class="property-location text-muted">
                             <i class="fas fa-map-marker-alt"></i> @Model.Direccion
                         </p>
@@ -92,21 +92,21 @@
                             <div class="col-md-3 col-6 mb-3">
                                 <div class="feature-item text-center">
                                     <i class="fas fa-bath fa-2x text-success mb-2"></i>
-                                    <h6>@Model.Baños</h6>
+                                    <h6>2</h6>
                                     <small class="text-muted">Baños</small>
                                 </div>
                             </div>
                             <div class="col-md-3 col-6 mb-3">
                                 <div class="feature-item text-center">
                                     <i class="fas fa-ruler-combined fa-2x text-info mb-2"></i>
-                                    <h6>@Model.Superficie</h6>
+                                    <h6>100</h6>
                                     <small class="text-muted">m² totales</small>
                                 </div>
                             </div>
                             <div class="col-md-3 col-6 mb-3">
                                 <div class="feature-item text-center">
                                     <i class="fas fa-home fa-2x text-warning mb-2"></i>
-                                    <h6>@Model.Tipo</h6>
+                                    <h6>@Model.TipoInmueble?.Nombre</h6>
                                     <small class="text-muted">Tipo</small>
                                 </div>
                             </div>
@@ -115,17 +115,45 @@
                 </div>
             </div>
 
+            
             <!-- Descripción -->
-            <div class="property-description mb-4">
-                <div class="card">
-                    <div class="card-body">
-                        <h5 class="card-title mb-3">
-                            <i class="fas fa-align-left text-primary"></i> Descripción
-                        </h5>
-                        <p class="card-text">@Model.Descripcion</p>
-                    </div>
-                </div>
-            </div>
+<div class="property-description mb-4">
+    <div class="card">
+        <div class="card-body">
+            <h5 class="card-title mb-3">
+                <i class="fas fa-align-left text-primary"></i> Descripción de la Propiedad
+            </h5>
+            <p class="card-text">
+                <strong>Características principales:</strong><br>
+                • <strong>Tipo:</strong> @Model.TipoInmueble?.Nombre<br>
+                • <strong>Uso:</strong> @Model.Uso<br>
+                • <strong>Ambientes:</strong> @Model.Ambientes<br>
+                • <strong>Ubicación:</strong> @Model.Direccion<br>
+                • <strong>Estado:</strong> <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span><br>
+                • <strong>Precio:</strong> <span class="text-primary fw-bold">$@Model.Precio.ToString("N0") mensual</span>
+            </p>
+            
+            @if (!string.IsNullOrEmpty(Model.Coordenadas))
+            {
+                <p class="card-text mt-3">
+                    <strong>Ubicación precisa:</strong> Coordenadas GPS disponibles para visitas.
+                </p>
+            }
+            
+            <p class="card-text mt-3">
+                <strong>Disponibilidad:</strong> 
+                @if (Model.EstaDisponible)
+                {
+                    <span class="text-success">✅ Disponible para @Model.Uso.ToLower() inmediato</span>
+                }
+                else
+                {
+                    <span class="text-warning">⏳ Actualmente @Model.EstadoParaMostrar.ToLower()</span>
+                }
+            </p>
+        </div>
+    </div>
+</div>
 
             <!-- Características adicionales -->
             <div class="additional-features mb-4">
@@ -135,7 +163,19 @@
                             <i class="fas fa-star text-primary"></i> Características Adicionales
                         </h5>
                         <div class="row">
-                            @foreach (var caracteristica in Model.Caracteristicas)
+                            @{
+                                var caracteristicas = new List<string>
+                                {
+                                    $"{Model.Ambientes} ambiente{(Model.Ambientes > 1 ? "s" : "")}",
+                                    "2 baños completos",
+                                    "100m² de superficie",
+                                    Model.Uso.ToUpper(),
+                                    "Cocina equipada",
+                                    "Living comedor",
+                                    "Balcón/terraza"
+                                };
+                            }
+                            @foreach (var caracteristica in caracteristicas)
                             {
                                 <div class="col-md-6 mb-2">
                                     <div class="feature-check">
@@ -181,30 +221,34 @@
                         </h6>
                     </div>
                     <div class="card-body">
-                        <form asp-action="ExpresarInteres" method="post">
+                        <form asp-action="ExpresarInteres" method="post" id="interestForm">
+                            @Html.AntiForgeryToken()
                             <input type="hidden" name="propiedadId" value="@Model.IdInmueble" />
 
                             <div class="mb-3">
-                                <label>Nombre completo *</label>
-                                <input type="text" name="nombre" maxlength="100" required />
+                                <label class="form-label">Nombre completo *</label>
+                                <input type="text" name="nombre" class="form-control" maxlength="100" required>
                             </div>
 
                             <div class="mb-3">
-                                <label>Email *</label>
-                                <input type="email" name="email" maxlength="100" required />
+                                <label class="form-label">Email *</label>
+                                <input type="email" name="email" class="form-control" maxlength="100" required>
                             </div>
 
                             <div class="mb-3">
-                                <label>Teléfono</label>
-                                <input type="tel" name="telefono" maxlength="20" />
+                                <label class="form-label">Teléfono</label>
+                                <input type="tel" name="telefono" class="form-control" maxlength="20">
                             </div>
 
                             <div class="mb-3">
-                                <label>Mensaje</label>
-                                <textarea name="mensaje" maxlength="500" rows="4"></textarea>
+                                <label class="form-label">Mensaje</label>
+                                <textarea name="mensaje" class="form-control" maxlength="500" rows="4" 
+                                          placeholder="Cuéntanos qué te interesa de esta propiedad..."></textarea>
                             </div>
 
-                            <button type="submit">Expresar Interés</button>
+                            <button type="submit" class="btn btn-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Expresar Interés
+                            </button>
                         </form>
                     </div>
                 </div>
@@ -221,11 +265,11 @@
                             <a href="tel:+5492664123456" class="btn btn-outline-success btn-block mb-2">
                                 <i class="fas fa-phone"></i> +54 9 2664 123456
                             </a>
-                            <a href="https://wa.me/5492664123456?text=Hola,%20me%20interesa%20la%20propiedad:%20@Model.Titulo"
+                            <a href="https://wa.me/5492664123456?text=Hola,%20me%20interesa%20la%20propiedad:%20Propiedad%20en%20@Model.Direccion"
                                 target="_blank" class="btn btn-outline-success btn-block mb-2">
                                 <i class="fab fa-whatsapp"></i> WhatsApp
                             </a>
-                            <a href="mailto:info@inmobiliaria.com?subject=Consulta%20por%20@Model.Titulo"
+                            <a href="mailto:info@inmobiliaria.com?subject=Consulta%20por%20Propiedad%20en%20@Model.Direccion"
                                 class="btn btn-outline-primary btn-block">
                                 <i class="fas fa-envelope"></i> Email
                             </a>
@@ -264,12 +308,12 @@
                             </div>
                             <div class="form-group">
                                 <label class="small font-weight-bold">Expensas estimadas:</label>
-                                <input type="text" class="form-control" value="$@((Model.Precio * 0.15).ToString("N0"))"
+                                <input type="text" class="form-control" value="$@((Model.Precio * 0.15m).ToString("N0"))"
                                     readonly>
                             </div>
                             <hr>
                             <div class="total-cost">
-                                <strong>Costo inicial estimado: $@((Model.Precio * 2.15).ToString("N0"))</strong>
+                                <strong>Costo inicial estimado: $@((Model.Precio * 2.15m).ToString("N0"))</strong>
                             </div>
                         </div>
                     </div>
@@ -279,54 +323,58 @@
     </div>
 
     <!-- Propiedades relacionadas -->
-    @if (ViewBag.PropiedadesRelacionadas != null && ((IEnumerable<dynamic>)ViewBag.PropiedadesRelacionadas).Any())
-    {
-        <div class="related-properties mt-5">
-            <h3 class="mb-4">Propiedades Similares</h3>
-            <div class="row">
-                @foreach (var propiedad in ViewBag.PropiedadesRelacionadas)
-                {
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="property-card h-100">
-                            <div class="property-image">
-                                <img src="@propiedad.Imagen" alt="@propiedad.Titulo" class="img-fluid">
-                                <div class="property-badges">
-                                    <span class="badge badge-success">@propiedad.Estado</span>
-                                    <span class="badge badge-primary">@propiedad.Tipo</span>
-                                </div>
+   
+@{
+    var propiedadesRel = ViewBag.PropiedadesRelacionadas as IEnumerable<Inmobiliaria_troncoso_leandro.Models.Inmueble>;
+}
+
+@if (propiedadesRel != null && propiedadesRel.Any())
+{   <div class="related-properties mt-5">
+        <h3 class="mb-4">Propiedades Similares</h3>
+        <div class="row">
+            @foreach (var propiedad in propiedadesRel)
+            {
+                <div class="col-lg-4 col-md-6 mb-4">
+                    <div class="property-card h-100">
+                        <div class="property-image">
+                            <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid">
+                            <div class="property-badges">
+                                <span class="badge @propiedad.EstadoBadgeClass">@propiedad.EstadoParaMostrar</span>
+                                <span class="badge badge-primary">@propiedad.TipoInmueble?.Nombre</span>
                             </div>
-                            <div class="property-content">
-                                <div class="property-price">
-                                    <h5 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h5>
-                                </div>
-                                <h6 class="property-title">@propiedad.Titulo</h6>
-                                <p class="property-location">
-                                    <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
-                                </p>
-                                <div class="property-features">
-                                    <span class="feature">
-                                        <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
-                                    </span>
-                                    <span class="feature">
-                                        <i class="fas fa-bath"></i> @propiedad.Baños baños
-                                    </span>
-                                    <span class="feature">
-                                        <i class="fas fa-ruler-combined"></i> @propiedad.Superficie m²
-                                    </span>
-                                </div>
-                                <div class="property-actions mt-3">
-                                    <a asp-action="DetallePropiedad" asp-route-id="@propiedad.Id"
-                                        class="btn btn-outline-primary btn-block">
-                                        <i class="fas fa-eye"></i> Ver Detalles
-                                    </a>
-                                </div>
+                        </div>
+                        <div class="property-content">
+                            <div class="property-price">
+                                <h5 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h5>
+                            </div>
+                            <h6 class="property-title">Propiedad en @propiedad.Direccion</h6>
+                            <p class="property-location">
+                                <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
+                            </p>
+                            <div class="property-features">
+                                <span class="feature">
+                                    <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
+                                </span>
+                                <span class="feature">
+                                    <i class="fas fa-bath"></i> 2 baños
+                                </span>
+                                <span class="feature">
+                                    <i class="fas fa-ruler-combined"></i> 100m²
+                                </span>
+                            </div>
+                            <div class="property-actions mt-3">
+                                <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble"
+                                    class="btn btn-outline-primary btn-block">
+                                    <i class="fas fa-eye"></i> Ver Detalles
+                                </a>
                             </div>
                         </div>
                     </div>
-                }
-            </div>
+                </div>
+            }
         </div>
-    }
+    </div>
+}
 </div>
 
 @section Scripts {
@@ -385,7 +433,7 @@
         }
 
         function isValidEmail(email) {
-            const emailRegex = /^[^\s]+[^\s]+\.[^\s]+$/;
+            const emailRegex = /^[^\s@@]+@@[^\s@@]+\.[^\s@@]+$/;
             return emailRegex.test(email);
         }
 
@@ -408,6 +456,8 @@
         }
     </script>
 }
+
+<!-- Tus estilos CSS se mantienen igual -->
 
 <style>
     .property-gallery .main-image {

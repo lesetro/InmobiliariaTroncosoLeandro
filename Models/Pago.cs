@@ -150,6 +150,11 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Required(ErrorMessage = "Usuario creador es requerido")]
         [Column("id_usuario_creador")]
         public int IdUsuarioCreador { get; set; }
+        [Column("id_contrato_venta")]
+        public int? IdContratoVenta { get; set; }
+
+        [ForeignKey(nameof(IdContratoVenta))]
+        public virtual ContratoVenta? ContratoVenta { get; set; }
 
         [Column("id_usuario_anulador")]
         public int? IdUsuarioAnulador { get; set; }

@@ -304,9 +304,9 @@
                 </div>
                 <div class="card-body">
                     <div class="d-grid gap-2">
-                        <a href="@Url.Action("PorInmueble", "Ventas", new { inmuebleId = Model.IdInmueble })" 
+                        <a href="@Url.Action("Index", "Inmuebles", new { inmuebleId = Model.IdInmueble })" 
                            class="btn btn-outline-success btn-sm">
-                            <i class="bi bi-building me-2"></i>Ver Historial del Inmueble
+                            <i class="bi bi-building me-2"></i>Ver Inmuebles
                         </a>
                         
                         @if (!string.IsNullOrEmpty(Model.ComprobanteRuta))

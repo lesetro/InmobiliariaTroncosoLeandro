@@ -813,42 +813,6 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
     return null; // Retorna null si no encuentra el usuario
 }
 
-public async Task<IEnumerable<Usuario>> ObtenerTodosAsync()
-{
-    using var connection = new MySqlConnection(_connectionString);
-    await connection.OpenAsync();
 
-    string query = @"
-        SELECT id_usuario, email, password, rol, nombre, apellido, dni, 
-               direccion, telefono, estado, avatar
-        FROM usuario 
-        WHERE estado = 'activo'
-        ORDER BY nombre, apellido";
-
-    using var command = new MySqlCommand(query, connection);
-    
-    var usuarios = new List<Usuario>();
-    using var reader = await command.ExecuteReaderAsync();
-    
-    while (await reader.ReadAsync())
-    {
-        usuarios.Add(new Usuario
-        {
-            IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
-            Email = reader.GetString(reader.GetOrdinal("email")),
-            Password = reader.GetString(reader.GetOrdinal("password")),
-            Rol = reader.GetString(reader.GetOrdinal("rol")),
-            Nombre = reader.GetString(reader.GetOrdinal("nombre")),
-            Apellido = reader.GetString(reader.GetOrdinal("apellido")),
-            Dni = reader.GetString(reader.GetOrdinal("dni")),
-            Direccion = reader.GetString(reader.GetOrdinal("direccion")),
-            Telefono = reader.GetString(reader.GetOrdinal("telefono")),
-            Estado = reader.GetString(reader.GetOrdinal("estado")),
-            Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar"))
-        });
-    }
-
-    return usuarios;
-}
     }
 }

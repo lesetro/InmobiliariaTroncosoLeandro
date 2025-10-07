@@ -26,21 +26,19 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
             try
             {
-                // Verificar que el inmueble esté disponible
-                if (!await InmuebleDisponibleParaVentaInternoAsync(pago.IdInmueble, connection, transaction))
-                {
-                    return false;
-                }
+                Console.WriteLine($"🔍 REPOSITORIO - Iniciando creación de pago para inmueble: {pago.IdInmueble}");
 
                 // 1. Crear el pago de venta
                 string queryPago = @"
-                    INSERT INTO pago 
-                    (id_inmueble, tipo_pago, numero_pago, fecha_pago, concepto, 
-                     monto_base, monto_total, estado, id_usuario_creador, fecha_creacion,
-                     comprobante_ruta, comprobante_nombre, observaciones) 
-                    VALUES (@id_inmueble, @tipo_pago, @numero_pago, @fecha_pago, @concepto, 
-                            @monto_base, @monto_total, @estado, @id_usuario_creador, @fecha_creacion,
-                            @comprobante_ruta, @comprobante_nombre, @observaciones)";
+            INSERT INTO pago 
+            (id_inmueble, tipo_pago, numero_pago, fecha_pago, concepto, 
+             monto_base, monto_total, estado, id_usuario_creador, fecha_creacion,
+             comprobante_ruta, comprobante_nombre, observaciones, id_contrato_venta) 
+            VALUES (@id_inmueble, @tipo_pago, @numero_pago, @fecha_pago, @concepto, 
+                    @monto_base, @monto_total, @estado, @id_usuario_creador, @fecha_creacion,
+                    @comprobante_ruta, @comprobante_nombre, @observaciones, @id_contrato_venta)";
+
+                Console.WriteLine($"🔍 Ejecutando INSERT en tabla pago...");
 
                 using (var commandPago = new MySqlCommand(queryPago, connection, transaction))
                 {
@@ -50,26 +48,68 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                     commandPago.Parameters.AddWithValue("@fecha_pago", pago.FechaPago);
                     commandPago.Parameters.AddWithValue("@concepto", pago.Concepto);
                     commandPago.Parameters.AddWithValue("@monto_base", pago.MontoBase);
-                    commandPago.Parameters.AddWithValue("@monto_total", pago.MontoBase); // Sin mora en ventas
+                    commandPago.Parameters.AddWithValue("@monto_total", pago.MontoBase);
                     commandPago.Parameters.AddWithValue("@estado", "pagado");
                     commandPago.Parameters.AddWithValue("@id_usuario_creador", pago.IdUsuarioCreador);
                     commandPago.Parameters.AddWithValue("@fecha_creacion", DateTime.Now);
                     commandPago.Parameters.AddWithValue("@comprobante_ruta", pago.ComprobanteRuta ?? (object)DBNull.Value);
                     commandPago.Parameters.AddWithValue("@comprobante_nombre", pago.ComprobanteNombre ?? (object)DBNull.Value);
                     commandPago.Parameters.AddWithValue("@observaciones", pago.Observaciones ?? (object)DBNull.Value);
+                    commandPago.Parameters.AddWithValue("@id_contrato_venta", pago.IdContratoVenta ?? (object)DBNull.Value);
 
-                    await commandPago.ExecuteNonQueryAsync();
+                    var filasAfectadas = await commandPago.ExecuteNonQueryAsync();
+                    Console.WriteLine($"🔍 Filas afectadas en pago: {filasAfectadas}");
                 }
 
-                // 2. Cambiar estado del inmueble a "vendido"
-                await MarcarInmuebleComoVendidoInternoAsync(pago.IdInmueble, connection, transaction);
+                // 2. Actualizar el contrato de venta con el monto pagado
+                Console.WriteLine($"🔍 Actualizando contrato de venta: {pago.IdContratoVenta}");
+                string queryActualizarContrato = @"
+            UPDATE contrato_venta 
+            SET monto_pagado = monto_pagado + @monto_pagado,
+                porcentaje_pagado = ((monto_pagado + @monto_pagado) / precio_total) * 100,
+                fecha_modificacion = @fecha_modificacion
+            WHERE id_contrato_venta = @id_contrato_venta";
+
+                using (var commandContrato = new MySqlCommand(queryActualizarContrato, connection, transaction))
+                {
+                    commandContrato.Parameters.AddWithValue("@monto_pagado", pago.MontoBase);
+                    commandContrato.Parameters.AddWithValue("@id_contrato_venta", pago.IdContratoVenta);
+                    commandContrato.Parameters.AddWithValue("@fecha_modificacion", DateTime.Now);
+
+                    var filasContrato = await commandContrato.ExecuteNonQueryAsync();
+                    Console.WriteLine($"🔍 Filas afectadas en contrato: {filasContrato}");
+                }
+
+                // 3. Verificar si se pagó el total para marcar como vendido
+                string queryVerificarTotal = @"
+            SELECT (monto_pagado + @monto_pagado) >= precio_total as pago_completo
+            FROM contrato_venta 
+            WHERE id_contrato_venta = @id_contrato_venta";
+
+                using (var commandVerificar = new MySqlCommand(queryVerificarTotal, connection, transaction))
+                {
+                    commandVerificar.Parameters.AddWithValue("@monto_pagado", pago.MontoBase);
+                    commandVerificar.Parameters.AddWithValue("@id_contrato_venta", pago.IdContratoVenta);
+
+                    var pagoCompleto = Convert.ToBoolean(await commandVerificar.ExecuteScalarAsync());
+                    Console.WriteLine($"🔍 Pago completo: {pagoCompleto}");
+
+                    if (pagoCompleto)
+                    {
+                        Console.WriteLine($"🔍 Marcando inmueble como vendido...");
+                        await MarcarInmuebleComoVendidoInternoAsync(pago.IdInmueble, connection, transaction);
+                    }
+                }
 
                 await transaction.CommitAsync();
+                Console.WriteLine($"✅ Transacción completada exitosamente");
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
                 await transaction.RollbackAsync();
+                Console.WriteLine($"💥 ERROR en CrearPagoVentaAsync: {ex.Message}");
+                Console.WriteLine($"💥 StackTrace: {ex.StackTrace}");
                 return false;
             }
         }
@@ -398,17 +438,17 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         // MÉTODOS AUXILIARES
         // ========================
 
-       public async Task<List<Inmueble>> ObtenerInmueblesDisponiblesVentaAsync(string termino, int limite = 20)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+        public async Task<List<Inmueble>> ObtenerInmueblesDisponiblesVentaAsync(string termino, int limite = 20)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-        var inmuebles = new List<Inmueble>();
-        
-        // ✅ Ahora sí filtra por el término de búsqueda
-        string query = @"
+                var inmuebles = new List<Inmueble>();
+
+                // ✅ Ahora sí filtra por el término de búsqueda
+                string query = @"
             SELECT i.id_inmueble, i.direccion, i.precio, i.id_tipo_inmueble,
                    t.nombre as tipo_nombre
             FROM inmueble i
@@ -425,36 +465,36 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             ORDER BY i.direccion
             LIMIT @limite";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@termino", $"%{termino}%");
-        command.Parameters.AddWithValue("@limite", limite);
-        
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            inmuebles.Add(new Inmueble
-            {
-                IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
-                Direccion = reader.GetString(reader.GetOrdinal("direccion")),
-                Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
-                TipoInmueble = new TipoInmueble 
-                { 
-                    Nombre = reader.IsDBNull(reader.GetOrdinal("tipo_nombre")) 
-                        ? "Sin tipo" 
-                        : reader.GetString(reader.GetOrdinal("tipo_nombre"))
-                }
-            });
-        }
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@termino", $"%{termino}%");
+                command.Parameters.AddWithValue("@limite", limite);
 
-        return inmuebles;
-    }
-    catch (Exception ex)
-    {
-        // Mejor loggear el error para debug
-        Console.WriteLine($"Error en ObtenerInmueblesDisponiblesVentaAsync: {ex.Message}");
-        return new List<Inmueble>();
-    }
-}
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    inmuebles.Add(new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+                        TipoInmueble = new TipoInmueble
+                        {
+                            Nombre = reader.IsDBNull(reader.GetOrdinal("tipo_nombre"))
+                                ? "Sin tipo"
+                                : reader.GetString(reader.GetOrdinal("tipo_nombre"))
+                        }
+                    });
+                }
+
+                return inmuebles;
+            }
+            catch (Exception ex)
+            {
+                // Mejor loggear el error para debug
+                Console.WriteLine($"Error en ObtenerInmueblesDisponiblesVentaAsync: {ex.Message}");
+                return new List<Inmueble>();
+            }
+        }
 
         public async Task<List<Usuario>> ObtenerUsuariosActivosAsync(int limite = 20)
         {
@@ -464,7 +504,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 await connection.OpenAsync();
 
                 var usuarios = new List<Usuario>();
-                
+
                 string query = @"
                     SELECT id_usuario, nombre, apellido, dni
                     FROM usuario 
@@ -474,7 +514,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
                 using var command = new MySqlCommand(query, connection);
                 command.Parameters.AddWithValue("@limite", limite);
-                
+
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
@@ -522,20 +562,20 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         private async Task<bool> MarcarInmuebleComoVendidoInternoAsync(int idInmueble, MySqlConnection connection, MySqlTransaction? transaction)
         {
             string query = "UPDATE inmueble SET estado = 'vendido' WHERE id_inmueble = @id_inmueble";
-            
+
             using var command = new MySqlCommand(query, connection, transaction);
             command.Parameters.AddWithValue("@id_inmueble", idInmueble);
-            
+
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
         private async Task<bool> RestaurarEstadoInmuebleInternoAsync(int idInmueble, MySqlConnection connection, MySqlTransaction? transaction)
         {
             string query = "UPDATE inmueble SET estado = 'disponible' WHERE id_inmueble = @id_inmueble";
-            
+
             using var command = new MySqlCommand(query, connection, transaction);
             command.Parameters.AddWithValue("@id_inmueble", idInmueble);
-            
+
             return await command.ExecuteNonQueryAsync() > 0;
         }
 
@@ -570,20 +610,20 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         private static Pago MapearPagoVentaCompleto(System.Data.Common.DbDataReader reader)
         {
             var pago = MapearPagoVentaBasico(reader);
-            
+
             // Mapear relaciones
-            pago.Inmueble = new Inmueble 
-            { 
+            pago.Inmueble = new Inmueble
+            {
                 Direccion = reader.GetString(reader.GetOrdinal("inmueble_direccion"))
             };
-            
+
             pago.UsuarioCreador = new Usuario
             {
                 Nombre = reader.GetString(reader.GetOrdinal("creador_nombre")),
                 Apellido = reader.GetString(reader.GetOrdinal("creador_apellido"))
             };
-            
-            if (!reader.IsDBNull(reader.GetOrdinal("anulador_nombre"))) 
+
+            if (!reader.IsDBNull(reader.GetOrdinal("anulador_nombre")))
             {
                 pago.UsuarioAnulador = new Usuario
                 {
@@ -610,10 +650,10 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 FechaCreacion = reader.GetDateTime(reader.GetOrdinal("fecha_creacion")),
                 ComprobanteRuta = reader.IsDBNull(reader.GetOrdinal("comprobante_ruta")) ? null : reader.GetString(reader.GetOrdinal("comprobante_ruta")),
                 ComprobanteNombre = reader.IsDBNull(reader.GetOrdinal("comprobante_nombre")) ? null : reader.GetString(reader.GetOrdinal("comprobante_nombre")),
-                
+
                 // Mapear relaciones para listado
-                Inmueble = new Inmueble 
-                { 
+                Inmueble = new Inmueble
+                {
                     Direccion = reader.GetString(reader.GetOrdinal("inmueble_direccion"))
                 },
                 UsuarioCreador = new Usuario
@@ -622,6 +662,178 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                     Apellido = reader.GetString(reader.GetOrdinal("creador_apellido"))
                 }
             };
+        }
+        public async Task<decimal> ObtenerTotalPagadoVentaAsync(int idInmueble)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+            SELECT COALESCE(SUM(monto_base), 0) as total_pagado
+            FROM pago 
+            WHERE id_inmueble = @idInmueble 
+            AND tipo_pago = 'venta' 
+            AND estado = 'pagado'";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@idInmueble", idInmueble);
+
+                var result = await command.ExecuteScalarAsync();
+                return result != DBNull.Value ? Convert.ToDecimal(result) : 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener total pagado para inmueble {idInmueble}: {ex.Message}");
+                return 0;
+            }
+        }
+
+        public async Task<Pago?> ObtenerUltimoPagoVentaAsync(int idInmueble)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                const string query = @"
+            SELECT 
+                id_pago, 
+                numero_pago, 
+                fecha_pago, 
+                monto_base, 
+                monto_total,
+                estado,
+                concepto
+            FROM pago 
+            WHERE id_inmueble = @idInmueble 
+            AND tipo_pago = 'venta' 
+            AND estado = 'pagado'
+            ORDER BY numero_pago DESC 
+            LIMIT 1";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@idInmueble", idInmueble);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    return new Pago
+                    {
+                        IdPago = reader.GetInt32(reader.GetOrdinal("id_pago")),
+                        NumeroPago = reader.GetInt32(reader.GetOrdinal("numero_pago")),
+                        FechaPago = reader.GetDateTime(reader.GetOrdinal("fecha_pago")),
+                        MontoBase = reader.GetDecimal(reader.GetOrdinal("monto_base")),
+                        MontoTotal = reader.GetDecimal(reader.GetOrdinal("monto_total")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        Concepto = reader.GetString(reader.GetOrdinal("concepto"))
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error al obtener último pago para inmueble {idInmueble}: {ex.Message}");
+                return null;
+            }
+        }
+        //Buscar Inmuebles para ventas 
+
+        public async Task<List<SearchResultVenta>> BuscarInmueblesParaVentaAsync(string termino, int limite = 20)
+        {
+            var resultados = new List<SearchResultVenta>();
+
+            if (string.IsNullOrWhiteSpace(termino) || termino.Length < 2)
+                return resultados;
+
+            try
+            {
+                const string query = @"
+            SELECT 
+                cv.id_contrato_venta as IdContratoVenta,
+                i.id_inmueble as IdInmueble,
+                i.direccion as Direccion,
+                cv.precio_total as PrecioTotal,
+                cv.monto_seña as MontoSeña,
+                cv.monto_pagado as MontoPagado,
+                cv.estado as EstadoContrato,
+                cv.porcentaje_pagado as PorcentajePagado,
+                
+                -- Datos del comprador
+                u_comp.nombre as NombreComprador,
+                u_comp.apellido as ApellidoComprador,
+                u_comp.email as EmailComprador,
+                u_comp.telefono as TelefonoComprador,
+                
+                -- Tipo de inmueble
+                ti.nombre as TipoInmueble,
+                
+                -- Cálculos
+                (cv.precio_total - cv.monto_pagado) as SaldoPendiente,
+                CASE 
+                    WHEN cv.monto_seña > 0 AND cv.monto_pagado >= cv.monto_seña THEN 'pagada'
+                    WHEN cv.monto_seña > 0 AND cv.monto_pagado < cv.monto_seña THEN 'pendiente'
+                    ELSE 'sin seña'
+                END as EstadoSeña
+
+            FROM contrato_venta cv
+            INNER JOIN inmueble i ON cv.id_inmueble = i.id_inmueble
+            INNER JOIN usuario u_comp ON cv.id_comprador = u_comp.id_usuario
+            INNER JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
+            WHERE i.direccion LIKE @termino 
+                AND cv.estado NOT IN ('cancelado', 'finalizado')
+            ORDER BY i.direccion
+            LIMIT @limite";
+
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@termino", $"%{termino}%");
+                command.Parameters.AddWithValue("@limite", limite);
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var precioTotal = reader.GetDecimal(reader.GetOrdinal("PrecioTotal"));
+                    var montoPagado = reader.GetDecimal(reader.GetOrdinal("MontoPagado"));
+                    var saldoPendiente = reader.GetDecimal(reader.GetOrdinal("SaldoPendiente"));
+                    var montoSeña = reader.GetDecimal(reader.GetOrdinal("MontoSeña"));
+                    var porcentajePagado = reader.GetDecimal(reader.GetOrdinal("PorcentajePagado"));
+
+                    var resultado = new SearchResultVenta
+                    {
+                        Id = reader["IdContratoVenta"]?.ToString() ?? "0",
+                        IdInmueble = reader["IdInmueble"]?.ToString() ?? "0",
+                        Direccion = reader["Direccion"]?.ToString() ?? "Sin dirección",
+                        Texto = $"{reader["Direccion"]} - ${precioTotal.ToString("N0")}",
+                        PrecioTotal = precioTotal,
+                        MontoSeña = montoSeña,
+                        MontoPagado = montoPagado,
+                        SaldoPendiente = saldoPendiente,
+                        EstadoContrato = reader["EstadoContrato"]?.ToString() ?? "activo",
+                        EstadoSeña = reader["EstadoSeña"]?.ToString() ?? "sin seña",
+                        PorcentajePagado = porcentajePagado,
+                        NombreComprador = $"{reader["NombreComprador"]} {reader["ApellidoComprador"]}",
+                        EmailComprador = reader["EmailComprador"]?.ToString(),
+                        TelefonoComprador = reader["TelefonoComprador"]?.ToString(),
+                        Tipo = reader["TipoInmueble"]?.ToString() ?? "Inmueble",
+                        InfoAdicional = $"Saldo: ${saldoPendiente.ToString("N0")} | Seña: {reader["EstadoSeña"]?.ToString()}"
+                    };
+
+                    resultados.Add(resultado);
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en BuscarInmueblesParaVentaAsync: {ex.Message}");
+            }
+
+            return resultados;
         }
     }
 }

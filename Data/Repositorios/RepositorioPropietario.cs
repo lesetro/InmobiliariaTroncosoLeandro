@@ -476,17 +476,17 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         }
         // PAra el contrato VEnta
 
-        public async Task<IEnumerable<Propietario>> ObtenerTodosAsync()
+       public async Task<IEnumerable<Propietario>> ObtenerTodosAsync()
 {
     using var connection = new MySqlConnection(_connectionString);
     await connection.OpenAsync();
 
+    // QUERY MODIFICADA - Sin filtros de estado
     string query = @"
         SELECT p.id_propietario, p.id_usuario, p.fecha_alta, p.estado,
-               u.nombre, u.apellido, u.dni, u.email, u.telefono, u.direccion, u.avatar
+               u.id_usuario, u.nombre, u.apellido, u.dni, u.email, u.telefono, u.direccion, u.avatar, u.estado as usuario_estado
         FROM propietario p
         INNER JOIN usuario u ON p.id_usuario = u.id_usuario
-        WHERE p.estado = true AND u.estado = 'activo'
         ORDER BY u.nombre, u.apellido";
 
     using var command = new MySqlCommand(query, connection);
@@ -511,7 +511,8 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 Email = reader.GetString(reader.GetOrdinal("email")),
                 Telefono = reader.GetString(reader.GetOrdinal("telefono")),
                 Direccion = reader.GetString(reader.GetOrdinal("direccion")),
-                Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar"))
+                Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar")),
+                Estado = reader.GetString(reader.GetOrdinal("usuario_estado"))
             }
         });
     }

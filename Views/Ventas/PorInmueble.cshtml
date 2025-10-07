@@ -96,7 +96,7 @@
                     <h4 class="card-title text-info mt-2">
                         @Model.OrderByDescending(p => p.FechaPago).First().FechaPago.ToString("dd/MM")
                     </h4>
-                    <p class="card-text">Último Pago</p>
+                    <p class="card-text">Fecha Último Pago </p>
                 </div>
             </div>
         </div>
@@ -110,74 +110,75 @@
         var estaVendido = ViewBag.EstadoInmueble?.ToString().ToLower() == "vendido";
     }
 
-    <div class="card mb-4 border-info">
-        <div class="card-header bg-info text-white">
-            <h5 class="card-title mb-0">
-                <i class="bi bi-diagram-3 me-2"></i>Proceso de Venta
-            </h5>
+    <!-- Estado del proceso de venta -->
+<div class="card mb-4 border-info">
+    <div class="card-header bg-info text-white">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-diagram-3 me-2"></i>Proceso de Venta
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row text-center">
+            <div class="col-md-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-@(ViewBag.TieneSeña ? "success" : "light") rounded-circle p-3 mb-2">
+                        <i class="bi bi-piggy-bank fs-4 text-@(ViewBag.TieneSeña ? "white" : "muted")"></i>
+                    </div>
+                    <h6 class="text-@(ViewBag.TieneSeña ? "success" : "muted")">Seña</h6>
+                    <small class="text-@(ViewBag.TieneSeña ? "success" : "muted")">@(ViewBag.TieneSeña ? "✓ Recibida" : "Pendiente")</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-@(ViewBag.TieneAnticipo ? "success" : "light") rounded-circle p-3 mb-2">
+                        <i class="bi bi-cash fs-4 text-@(ViewBag.TieneAnticipo ? "white" : "muted")"></i>
+                    </div>
+                    <h6 class="text-@(ViewBag.TieneAnticipo ? "success" : "muted")">Anticipo</h6>
+                    <small class="text-@(ViewBag.TieneAnticipo ? "success" : "muted")">@(ViewBag.TieneAnticipo ? "✓ Pagado" : "Pendiente")</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-@(ViewBag.TieneTotal ? "success" : "light") rounded-circle p-3 mb-2">
+                        <i class="bi bi-currency-exchange fs-4 text-@(ViewBag.TieneTotal ? "white" : "muted")"></i>
+                    </div>
+                    <h6 class="text-@(ViewBag.TieneTotal ? "success" : "muted")">Pago Final</h6>
+                    <small class="text-@(ViewBag.TieneTotal ? "success" : "muted")">@(ViewBag.TieneTotal ? "✓ Completado" : "Pendiente")</small>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="d-flex flex-column align-items-center">
+                    <div class="bg-@(ViewBag.EstaVendido ? "success" : "warning") rounded-circle p-3 mb-2">
+                        <i class="bi bi-house-check fs-4 text-@(ViewBag.EstaVendido ? "white" : "dark")"></i>
+                    </div>
+                    <h6 class="text-@(ViewBag.EstaVendido ? "success" : "warning")">Escritura</h6>
+                    <small class="text-@(ViewBag.EstaVendido ? "success" : "warning")">@(ViewBag.EstaVendido ? "✓ Vendido" : "Pendiente")</small>
+                </div>
+            </div>
         </div>
-        <div class="card-body">
-            <div class="row text-center">
-                <div class="col-md-3">
-                    <div class="d-flex flex-column align-items-center">
-                        <div class="bg-@@(tieneSeña ? "success" : "light") rounded-circle p-3 mb-2">
-                            <i class="bi bi-piggy-bank fs-4 text-@@(tieneSeña ? "white" : "muted")"></i>
-                        </div>
-                        <h6 class="text-@@(tieneSeña ? "success" : "muted")">Seña</h6>
-                        <small class="text-@@(tieneSeña ? "success" : "muted")">@@(tieneSeña ? "✓ Recibida" : "Pendiente")</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="d-flex flex-column align-items-center">
-                        <div class="bg-@@(tieneAnticipo ? "success" : "light") rounded-circle p-3 mb-2">
-                            <i class="bi bi-cash fs-4 text-@@(tieneAnticipo ? "white" : "muted")"></i>
-                        </div>
-                        <h6 class="text-@@(tieneAnticipo ? "success" : "muted")">Anticipo</h6>
-                        <small class="text-@@(tieneAnticipo ? "success" : "muted")">@@(tieneAnticipo ? "✓ Pagado" : "Pendiente")</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="d-flex flex-column align-items-center">
-                        <div class="bg-@@(tieneTotal ? "success" : "light") rounded-circle p-3 mb-2">
-                            <i class="bi bi-currency-exchange fs-4 text-@@(tieneTotal ? "white" : "muted")"></i>
-                        </div>
-                        <h6 class="text-@@(tieneTotal ? "success" : "muted")">Pago Final</h6>
-                        <small class="text-@@(tieneTotal ? "success" : "muted")">@@(tieneTotal ? "✓ Completado" : "Pendiente")</small>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="d-flex flex-column align-items-center">
-                        <div class="bg-@@(estaVendido ? "success" : "warning") rounded-circle p-3 mb-2">
-                            <i class="bi bi-house-check fs-4 text-@@(estaVendido ? "white" : "dark")"></i>
-                        </div>
-                        <h6 class="text-@@(estaVendido ? "success" : "warning")">Escritura</h6>
-                        <small class="text-@@(estaVendido ? "success" : "warning")">@@(estaVendido ? "✓ Vendido" : "Pendiente")</small>
-                    </div>
-                </div>
-            </div>
-            
-            <!-- Barra de progreso -->
-            <div class="progress mt-3" style="height: 8px;">
-                @@{
-                    var progreso = 0;
-                    if (tieneSeña) progreso += 25;
-                    if (tieneAnticipo) progreso += 25;
-                    if (tieneTotal) progreso += 25;
-                    if (estaVendido) progreso += 25;
-                }
-                <div class="progress-bar bg-success" style="width: @@progreso%"></div>
-            </div>
-            <div class="text-center mt-2">
-                <small class="text-muted">Progreso: @@progreso% completado</small>
-            </div>
+        
+        <!-- Barra de progreso -->
+        <div class="progress mt-3" style="height: 8px;">
+            @{
+                var progreso = 0;
+                if (ViewBag.TieneSeña) progreso += 25;
+                if (ViewBag.TieneAnticipo) progreso += 25;
+                if (ViewBag.TieneTotal) progreso += 25;
+                if (ViewBag.EstaVendido) progreso += 25;
+            }
+            <div class="progress-bar bg-success" style="width: @progreso%"></div>
+        </div>
+        <div class="text-center mt-2">
+            <small class="text-muted">Progreso: @progreso% completado</small>
         </div>
     </div>
+</div>
 
     <!-- Historial completo de pagos -->
     <div class="card">
         <div class="card-header d-flex justify-content-between align-items-center">
             <h5 class="card-title mb-0">
-                <i class="bi bi-clock-history me-2"></i>Historial de Pagos - @@Model.Count() registros
+                <i class="bi bi-clock-history me-2"></i>Historial de Pagos - @Model.Count() registros
             </h5>
             <div class="btn-group" role="group">
                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportarHistorial()">

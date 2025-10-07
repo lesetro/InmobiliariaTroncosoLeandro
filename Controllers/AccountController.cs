@@ -471,7 +471,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             });
         }
 
-      
+
         //Configuracion inicial del sistema
 
 
@@ -594,7 +594,24 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return Json(new { error = ex.Message });
             }
         }
-        
+
+        private string DetermineLayout(string rol)
+        {
+            return rol?.ToLower() switch
+            {
+                "administrador" => "_LayoutAdmin",
+                "empleado" => "_LayoutEmpleado",
+                "propietario" => "_LayoutPropietario",
+                "inquilino" => "_LayoutInquilino",
+                _ => "_LayoutPublic"
+            };
+        }
+
+
+        protected void SetLayout(string rol)
+        {
+            ViewData["Layout"] = DetermineLayout(rol);
+        }
 
 
     }

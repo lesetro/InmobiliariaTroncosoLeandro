@@ -1,0 +1,284 @@
+@model Inmobiliaria_troncoso_leandro.Models.ContratoVenta
+
+@{
+    ViewData["Title"] = "Marcar como Escriturado";
+}
+
+<div class="row">
+    <div class="col-md-8">
+        <h2><i class="bi bi-building"></i> @ViewData["Title"]</h2>
+    </div>
+    <div class="col-md-4 text-end">
+        <a asp-action="Details" asp-route-id="@Model.IdContratoVenta" class="btn btn-info">
+            <i class="bi bi-eye"></i> Ver Detalles
+        </a>
+        <a asp-action="Index" asp-controller="Contratos" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<hr />
+
+<div class="alert alert-success">
+    <h5><i class="bi bi-check-circle"></i> Confirmar Escrituración</h5>
+    <p class="mb-0">
+        Esta acción marcará el contrato como <strong>ESCRITURADO</strong>, indicando que 
+        la transferencia de propiedad se completó legalmente.
+    </p>
+</div>
+
+<!-- Información del Contrato -->
+<div class="card mb-4">
+    <div class="card-header bg-primary text-white">
+        <h5 class="card-title mb-0">
+            <i class="bi bi-file-text"></i> Información del Contrato
+        </h5>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <p><strong>ID:</strong> #@Model.IdContratoVenta</p>
+                <p><strong>Inmueble:</strong> @Model.Inmueble?.Direccion</p>
+                <p><strong>Vendedor:</strong> @Model.Vendedor?.Usuario?.NombreCompleto</p>
+            </div>
+            <div class="col-md-6">
+                <p><strong>Comprador:</strong> @Model.Comprador?.NombreCompleto</p>
+                <p><strong>Precio Total:</strong> @Model.PrecioTotal.ToString("C", new System.Globalization.CultureInfo("es-AR"))</p>
+                <p><strong>Monto Pagado:</strong> @Model.MontoPagado.ToString("C", new System.Globalization.CultureInfo("es-AR"))</p>
+            </div>
+        </div>
+        
+        <!-- Estado de Pagos -->
+        <div class="mt-3 p-3 bg-light rounded">
+            <h6><i class="bi bi-cash-coin"></i> Estado de Pagos</h6>
+            <div class="progress mb-2" style="height: 25px;">
+                <div class="progress-bar @(Model.PorcentajePagado >= 100 ? "bg-success" : "bg-warning")" 
+                     role="progressbar" 
+                     style="width: @(Model.PorcentajePagado)%"
+                     aria-valuenow="@Model.PorcentajePagado" 
+                     aria-valuemin="0" 
+                     aria-valuemax="100">
+                    @Model.PorcentajePagado.ToString("N1")%
+                </div>
+            </div>
+            <small class="text-muted">
+                @if (Model.PorcentajePagado >= 100)
+                {
+                    <span class="text-success">
+                        <i class="bi bi-check-circle"></i> Pago completado al 100%
+                    </span>
+                }
+                else
+                {
+                    <span class="text-warning">
+                        <i class="bi bi-exclamation-triangle"></i> Faltan pagos por realizar
+                    </span>
+                }
+            </small>
+        </div>
+    </div>
+</div>
+
+<!-- Validaciones -->
+@if (Model.PorcentajePagado < 100)
+{
+    <div class="alert alert-warning">
+        <h6><i class="bi bi-exclamation-triangle"></i> Advertencia</h6>
+        <p class="mb-0">
+            El contrato no está completamente pagado (@Model.PorcentajePagado.ToString("N1")%). 
+            Se recomienda completar el pago antes de escriturar.
+        </p>
+    </div>
+}
+
+@if (Model.Inmueble?.Estado != "vendido" && Model.Inmueble?.Estado != "escriturado")
+{
+    <div class="alert alert-info">
+        <h6><i class="bi bi-info-circle"></i> Cambio de Estado del Inmueble</h6>
+        <p class="mb-0">
+            Al marcar como escriturado, el inmueble cambiará su estado a <strong>"Vendido"</strong> 
+            y ya no estará disponible para nuevos contratos.
+        </p>
+    </div>
+}
+
+<!-- Formulario de Escrituración -->
+<form asp-action="MarcarEscriturada" method="post">
+    <input type="hidden" name="id" value="@Model.IdContratoVenta" />
+    
+    <div class="card">
+        <div class="card-header bg-success text-white">
+            <h5 class="card-title mb-0">
+                <i class="bi bi-calendar-check"></i> Fecha de Escrituración
+            </h5>
+        </div>
+        <div class="card-body">
+            <div class="form-group mb-3">
+                <label for="fechaEscritura" class="form-label fw-bold">
+                    Fecha de Escrituración *
+                </label>
+                <input type="date" 
+                       id="fechaEscritura" 
+                       name="fechaEscritura" 
+                       class="form-control" 
+                       value="@DateTime.Now.ToString("yyyy-MM-dd")"
+                       min="@Model.FechaInicio.ToString("yyyy-MM-dd")"
+                       max="@DateTime.Now.AddDays(30).ToString("yyyy-MM-dd")"
+                       required />
+                <small class="form-text text-muted">
+                    Fecha en que se realizó la escritura en el registro de la propiedad.
+                    No puede ser anterior a la fecha de inicio del contrato (@Model.FechaInicio.ToString("dd/MM/yyyy")).
+                </small>
+            </div>
+
+            <div class="form-group mb-3">
+                <label class="form-label fw-bold">Verificaciones Requeridas</label>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="verificacionPagos" required>
+                    <label class="form-check-label" for="verificacionPagos">
+                        He verificado que los pagos están completos o autorizados
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="verificacionDocumentos" required>
+                    <label class="form-check-label" for="verificacionDocumentos">
+                        Todos los documentos legales están en orden
+                    </label>
+                </div>
+                <div class="form-check">
+                    <input class="form-check-input" type="checkbox" id="verificacionEscritura" required>
+                    <label class="form-check-label" for="verificacionEscritura">
+                        La escritura se realizó en el registro de la propiedad
+                    </label>
+                </div>
+            </div>
+
+            <div class="form-group mb-3">
+                <label for="observaciones" class="form-label fw-bold">Observaciones (opcional)</label>
+                <textarea id="observaciones" 
+                          name="observaciones" 
+                          class="form-control" 
+                          rows="3" 
+                          placeholder="Ingrese cualquier observación adicional sobre la escrituración..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- Botones de acción -->
+    <div class="row mt-4">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <button type="submit" class="btn btn-success" id="btnEscriturar">
+                                <i class="bi bi-building"></i> Marcar como Escriturado
+                            </button>
+                            <a asp-action="Details" asp-route-id="@Model.IdContratoVenta" class="btn btn-secondary">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                        </div>
+                        
+                        <div class="text-end">
+                            <small class="text-muted">
+                                <i class="bi bi-shield-check"></i> Acción requerida: Administrador
+                            </small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</form>
+
+@section Scripts {
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const form = document.querySelector('form');
+            const btnEscriturar = document.getElementById('btnEscriturar');
+            const fechaEscritura = document.getElementById('fechaEscritura');
+            const checks = document.querySelectorAll('.form-check-input');
+
+            // Validar fecha
+            fechaEscritura.addEventListener('change', function() {
+                const fechaInicio = new Date('@Model.FechaInicio.ToString("yyyy-MM-dd")');
+                const fechaSeleccionada = new Date(this.value);
+                
+                if (fechaSeleccionada < fechaInicio) {
+                    alert('La fecha de escritura no puede ser anterior a la fecha de inicio del contrato');
+                    this.value = '@DateTime.Now.ToString("yyyy-MM-dd")';
+                }
+            });
+
+            // Validar checks antes de enviar
+            form.addEventListener('submit', function(e) {
+                const allChecked = Array.from(checks).every(check => check.checked);
+                
+                if (!allChecked) {
+                    e.preventDefault();
+                    alert('Debe marcar todas las verificaciones requeridas antes de continuar');
+                    return;
+                }
+
+                if (!confirm('¿Está seguro que desea marcar este contrato como ESCRITURADO?\n\nEsta acción NO se puede deshacer y cambiará el estado del inmueble a VENDIDO.')) {
+                    e.preventDefault();
+                    return;
+                }
+
+                // Mostrar loading
+                btnEscriturar.disabled = true;
+                btnEscriturar.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
+            });
+
+            // Habilitar/deshabilitar botón según checks
+            checks.forEach(check => {
+                check.addEventListener('change', function() {
+                    const allChecked = Array.from(checks).every(c => c.checked);
+                    btnEscriturar.disabled = !allChecked;
+                });
+            });
+        });
+    </script>
+
+    <style>
+        .progress {
+            background-color: #e9ecef;
+        }
+        
+        .card {
+            border: none;
+            box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+        }
+        
+        .card-header {
+            border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+            font-weight: 600;
+        }
+        
+        .form-check-input:checked {
+            background-color: #198754;
+            border-color: #198754;
+        }
+        
+        .alert {
+            border: none;
+            border-left: 4px solid;
+        }
+        
+        .alert-success {
+            border-left-color: #198754;
+            background-color: #d1e7dd;
+        }
+        
+        .alert-warning {
+            border-left-color: #ffc107;
+            background-color: #fff3cd;
+        }
+        
+        .alert-info {
+            border-left-color: #0dcaf0;
+            background-color: #d1ecf1;
+        }
+    </style>
+}

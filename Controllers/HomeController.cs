@@ -164,7 +164,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 };
 
                 // Usar el método del repositorio (necesita implementarse)
-                // await _repositorioIntereses.CrearInteresAsync(interes);
+                 await _repositorioIntereses.CrearInteresAsync(interes);
                 
                 _logger.LogInformation($"Nueva consulta de interés: {nombre} ({email}) - Propiedad {propiedadId}");
 

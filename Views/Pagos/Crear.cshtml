@@ -207,68 +207,68 @@
 
 @section Scripts {
     <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            // Agregar eventos a todas las tarjetas y botones de selección
-            const tipoCards = document.querySelectorAll('.tipo-pago-card');
-            const botonesSeleccion = document.querySelectorAll('.seleccionar-tipo');
-            
-            // Hacer las tarjetas clickeables
-            tipoCards.forEach(card => {
-                card.addEventListener('click', function() {
-                    const tipo = this.getAttribute('data-tipo');
-                    if (tipo && tipo !== 'undefined') {
-                        seleccionarTipo(tipo);
+$(document).ready(function() {
+    // Cuando se selecciona un inmueble
+    $('#IdInmueble').on('change', function() {
+        var idInmueble = $(this).val();
+        if (idInmueble) {
+            $.getJSON('@Url.Action("ObtenerInfoContratoVenta", "Ventas")', { idInmueble: idInmueble })
+                .done(function(data) {
+                    if (data.error) {
+                        alert(data.error);
+                        // Limpiar campos
+                        $('#NumeroPago').val('');
+                        $('#MontoBase').val('');
+                    } else {
+                        // Llenar campos automáticamente
+                        $('#NumeroPago').val(data.proximoNumeroPago);
+                        $('#infoContrato').html(
+                            `Comprador: ${data.compradorNombre}<br>` +
+                            `Precio Venta: $${data.precioVenta}<br>` +
+                            `Total Pagado: $${data.totalPagado}<br>` +
+                            `Saldo Pendiente: $${data.saldoPendiente}`
+                        );
                     }
+                })
+                .fail(function() {
+                    alert('Error al obtener información del contrato');
                 });
-                
-                // Efectos hover
-                card.addEventListener('mouseenter', function() {
-                    this.classList.add('shadow-lg');
-                    this.style.transform = 'translateY(-5px)';
-                    this.style.transition = 'all 0.3s ease';
-                });
-                
-                card.addEventListener('mouseleave', function() {
-                    this.classList.remove('shadow-lg');
-                    this.style.transform = 'translateY(0)';
-                });
-            });
-            
-            // Eventos para botones de selección
-            botonesSeleccion.forEach(boton => {
-                boton.addEventListener('click', function(e) {
-                    e.stopPropagation();
-                    const tipo = this.getAttribute('data-tipo');
-                    seleccionarTipo(tipo);
-                });
-            });
-            
-            function seleccionarTipo(tipo) {
-                // Mostrar confirmación visual
-                const tipoTexto = {
-                    'alquiler': 'Pago de Alquiler',
-                    'venta': 'Pago de Venta', 
-                    'seña': 'Seña de Reserva',
-                    'reserva': 'Pago de Reserva'
-                };
-                
-                if (confirm(`¿Confirma que desea crear un ${tipoTexto[tipo]}?`)) {
-                    // Establecer el valor y enviar
-                    document.getElementById('tipoPagoSeleccionado').value = tipo;
-                    
-                    // Mostrar indicador de carga
-                    const button = document.querySelector(`[data-tipo="${tipo}"] .seleccionar-tipo`);
-                    if (button) {
-                        button.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Redirigiendo...';
-                        button.disabled = true;
-                    }
-                    
-                    // Enviar formulario
-                    document.getElementById('formTipoPago').submit();
-                }
-            }
-        });
-    </script>
+        }
+    });
+});
+
+// Agrega esto en tu vista o archivo JS
+$(document).ready(function() {
+    // Efecto hover en las cards
+    $('.tipo-pago-card').hover(
+        function() {
+            $(this).addClass('shadow-lg');
+            $(this).css('transform', 'translateY(-5px)');
+        },
+        function() {
+            $(this).removeClass('shadow-lg');
+            $(this).css('transform', 'translateY(0)');
+        }
+    );
+
+    // Manejar clic en los botones
+    $('.seleccionar-tipo').click(function() {
+        var tipoPago = $(this).data('tipo');
+        
+        // Redirigir según el tipo
+        switch(tipoPago) {
+            case 'venta':
+                window.location.href = '@Url.Action("Create", "Venta")';
+                break;
+            case 'alquiler':
+                window.location.href = '@Url.Action("Create", "Alquiler")';
+                break;
+            default:
+                console.error('Tipo de pago no reconocido:', tipoPago);
+        }
+    });
+});
+</script>
 }
 
 <style>
