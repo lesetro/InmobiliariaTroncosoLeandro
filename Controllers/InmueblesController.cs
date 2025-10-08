@@ -369,10 +369,12 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 Console.WriteLine($"Error en PopulateViewDataAsync: {ex.Message}");
             }
         }
-        private bool IsValidCoordinates(string coordinates)
+       private bool IsValidCoordinates(string coordinates)
         {
             if (string.IsNullOrEmpty(coordinates)) return true;
-            var pattern = @"^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$";
+    
+            // Permite espacios opcionales alrededor de la coma y después del signo negativo
+            var pattern = @"^\s*-?\d{1,2}(\.\d{1,6})?\s*,\s*-?\d{1,3}(\.\d{1,6})?\s*$";
             return System.Text.RegularExpressions.Regex.IsMatch(coordinates, pattern);
         }
     }

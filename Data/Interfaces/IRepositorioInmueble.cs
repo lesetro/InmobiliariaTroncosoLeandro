@@ -54,7 +54,17 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         Task<IEnumerable<Inmueble>> ObtenerDisponiblesParaVentaAsync();
         Task<IEnumerable<Inmueble>> BuscarParaVentaAsync(string termino, int limite = 10);
         Task<IEnumerable<Inmueble>> ObtenerPorPropietarioAsync(int propietarioId);
-        //Contrato Controller
+        Task<IList<Inmueble>> ObtenerPropiedadesDestacadasAsync(int limite = 6);
+
+        //home 
+        Task<List<Inmueble>> ObtenerCatalogoPublicoAsync(string? buscar = null, string? tipo = null, 
+        string? precio = null, string? ambientes = null, int pagina = 1, int itemsPorPagina = 12);
+    
+        Task<int> ObtenerTotalCatalogoAsync(string? buscar = null, string? tipo = null, 
+        string? precio = null, string? ambientes = null);
+    
+        
+        
         
         
     }

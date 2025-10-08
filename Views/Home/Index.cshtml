@@ -97,30 +97,42 @@
             <div class="col-12 text-center">
                 <h2 class="display-4 mb-3">Propiedades <span class="text-primary">Destacadas</span></h2>
                 <p class="lead text-muted">Las mejores oportunidades inmobiliarias disponibles</p>
+                
             </div>
         </div>
         
         <div class="row">
-            @if (ViewBag.PropiedadesDestacadas != null && ((IList<Inmobiliaria_troncoso_leandro.Models.Inmueble>)ViewBag.PropiedadesDestacadas).Any())
+            @if (ViewBag.PropiedadesDestacadas != null && ((IList<Inmueble>)ViewBag.PropiedadesDestacadas).Any())
             {
-                @foreach (var propiedad in (IList<Inmobiliaria_troncoso_leandro.Models.Inmueble>)ViewBag.PropiedadesDestacadas)
+                var propiedadesLista = (IList<Inmueble>)ViewBag.PropiedadesDestacadas;
+                
+                @foreach (var propiedad in propiedadesLista)
                 {
                     <div class="col-lg-4 col-md-6 mb-4">
                         <div class="property-card h-100">
                             <div class="property-image">
-                                @if (propiedad.Imagenes?.Any() == true)
+                                <!-- Debug de imágenes -->
+                                @{
+                                    var imagenMostrar = propiedad.Imagenes?.FirstOrDefault()?.Url ?? propiedad.UrlPortada;
+                                    var tieneImagen = !string.IsNullOrEmpty(imagenMostrar);
+                                }
+                                
+                                @if (tieneImagen)
                                 {
-                                    <img src="@Model.ImagenInmueble.First().url" alt="@propiedad.Direccion" class="img-fluid">
+                                    <img src="@imagenMostrar" alt="@propiedad.Direccion" class="img-fluid">
+                                    <small class="badge bg-secondary">ID: @propiedad.IdInmueble</small>
                                 }
                                 else
                                 {
                                     <img src="~/images/no-image.jpg" alt="Sin imagen" class="img-fluid">
+                                    <small class="badge bg-warning">Sin imagen - ID: @propiedad.IdInmueble</small>
                                 }
+                                
                                 <div class="property-badge">
                                     <span class="badge bg-success">@propiedad.Estado</span>
                                 </div>
                                 <div class="property-type">
-                                    <span class="badge bg-primary">@(propiedad.TipoInmueble?.Nombre ?? "Propiedad")</span>
+                                    <span class="badge bg-primary">@(propiedad.TipoInmueble?.Nombre ?? "Sin tipo")</span>
                                 </div>
                             </div>
                             <div class="property-content">
@@ -130,7 +142,8 @@
                                 </div>
                                 <h5 class="property-title">@propiedad.Direccion</h5>
                                 <p class="property-location">
-                                    <i class="fas fa-map-marker-alt text-muted"></i> Villa Mercedes, San Luis
+                                    <i class="fas fa-map-marker-alt text-muted"></i> 
+                                    
                                 </p>
                                 <div class="property-features">
                                     <span class="feature">
@@ -141,9 +154,11 @@
                                     </span>
                                 </div>
                                 <div class="property-actions mt-3">
-                                    <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" class="btn btn-primary btn-block">
-                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" 
+                                       class="btn btn-primary btn-sm">
+                                        <i class="fas fa-eye"></i> Ver
                                     </a>
+
                                 </div>
                             </div>
                         </div>
@@ -153,20 +168,14 @@
             else
             {
                 <div class="col-12 text-center">
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        Próximamente tendremos nuevas propiedades disponibles.
+                    <div class="alert alert-warning">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        No se encontraron propiedades destacadas.
+                        <br>
+                        <small>ViewBag.PropiedadesDestacadas es null o vacío</small>
                     </div>
                 </div>
             }
-        </div>
-        
-        <div class="row mt-4">
-            <div class="col-12 text-center">
-                <a asp-action="Catalogo" class="btn btn-outline-primary btn-lg">
-                    <i class="fas fa-search"></i> Ver Todas las Propiedades
-                </a>
-            </div>
         </div>
     </div>
 </section>

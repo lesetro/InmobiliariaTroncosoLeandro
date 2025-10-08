@@ -42,13 +42,8 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 ViewBag.ClientesInteresados = estadisticasIntereses.GetValueOrDefault("Total", 0);
                 ViewBag.AñosExperiencia = 15;
 
-                // Propiedades destacadas (las más recientes disponibles)
-                var propiedadesDestacadas = inmuebles
-                    .Where(i => i.Estado == "disponible")
-                    .OrderByDescending(i => i.FechaAlta)
-                    .Take(6)
-                    .ToList();
-
+                // Propiedades destacadas CON GALERÍA
+                var propiedadesDestacadas = await _repositorioInmueble.ObtenerPropiedadesDestacadasAsync(6);
                 ViewBag.PropiedadesDestacadas = propiedadesDestacadas;
 
                 return View();
@@ -56,86 +51,84 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error al cargar la página principal");
-                
+
                 // Valores por defecto en caso de error
                 ViewBag.TotalPropiedades = 0;
                 ViewBag.PropiedadesDisponibles = 0;
                 ViewBag.ClientesInteresados = 0;
                 ViewBag.AñosExperiencia = 15;
                 ViewBag.PropiedadesDestacadas = new List<Inmueble>();
-                
+
                 return View();
             }
         }
 
-        // GET: Home/Catalogo - Catálogo público de inmuebles
-        public async Task<IActionResult> Catalogo(string buscar = "", int pagina = 1)
-        {
-            try
-            {
-                const int itemsPorPagina = 12;
+        
+       // GET: Home/Catalogo - Catálogo público de inmuebles
+public async Task<IActionResult> Catalogo(string buscar = "", string tipo = "todos", 
+    string precio = "", string ambientes = "todos", int pagina = 1)
+{
+    try
+    {
+        const int itemsPorPagina = 12;
 
-                // Usar el método existente con filtro para solo inmuebles disponibles
-                var (inmuebles, totalRegistros) = await _repositorioInmueble.ObtenerConPaginacionYBusquedaAsync(
-                    pagina: pagina,
-                    buscar: buscar ?? "",
-                    estado: "Disponible",
-                    itemsPorPagina: itemsPorPagina
-                );
+        // Obtener propiedades del catálogo con filtros
+        var propiedades = await _repositorioInmueble.ObtenerCatalogoPublicoAsync(
+            buscar, tipo, precio, ambientes, pagina, itemsPorPagina);
 
-                var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
+        // Obtener total para paginación
+        var totalRegistros = await _repositorioInmueble.ObtenerTotalCatalogoAsync(
+            buscar, tipo, precio, ambientes);
 
-                ViewBag.FiltroBuscar = buscar;
-                ViewBag.TotalResultados = totalRegistros;
-                ViewBag.PaginaActual = pagina;
-                ViewBag.TotalPaginas = totalPaginas;
+        var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
 
-                // Obtener tipos de inmueble para filtros públicos
-                var tiposInmueble = await _repositorioInmueble.ObtenerTiposInmuebleActivosAsync();
-                ViewBag.TiposInmueble = tiposInmueble;
+        // ViewBags para la vista
+        ViewBag.FiltroBuscar = buscar;
+        ViewBag.FiltroTipo = tipo;
+        ViewBag.FiltroPrecio = precio;
+        ViewBag.FiltroAmbientes = ambientes;
+        ViewBag.TotalResultados = totalRegistros;
+        ViewBag.PaginaActual = pagina;
+        ViewBag.TotalPaginas = totalPaginas;
+        ViewBag.ItemsPorPagina = itemsPorPagina;
 
-                return View(inmuebles);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al cargar el catálogo");
-                TempData["Error"] = "Error al cargar las propiedades";
-                return View(new List<Inmueble>());
-            }
-        }
+        // Obtener tipos de inmueble para el dropdown
+        var tiposInmueble = await _repositorioInmueble.ObtenerTiposInmuebleActivosAsync();
+        ViewBag.TiposInmueble = tiposInmueble;
 
+        return View(propiedades);
+    }
+    catch (Exception ex)
+    {
+        _logger.LogError(ex, "Error al cargar el catálogo");
+        TempData["Error"] = "Error al cargar las propiedades";
+        return View(new List<Inmueble>());
+    }
+}
         // GET: Home/DetallePropiedad/{id} - Ver detalles de una propiedad específica
+        // GET: Home/DetallePropiedad
         public async Task<IActionResult> DetallePropiedad(int id)
         {
             try
             {
-                // Usar método EXISTENTE con detalles completos
-                var propiedad = await _repositorioInmueble.ObtenerInmuebleConDetallesAsync(id);
-                if (propiedad == null || propiedad.Estado != "disponible")
+                // Usar el método que SÍ incluye la galería de imágenes
+                var inmueble = await _repositorioInmueble.ObtenerInmuebleConGaleriaAsync(id);
+
+                if (inmueble == null || inmueble.Estado == "inactivo")
                 {
-                    TempData["Error"] = "Propiedad no encontrada o no disponible";
-                    return RedirectToAction("Catalogo");
+                    TempData["Error"] = "La propiedad no existe o no está disponible";
+                    return RedirectToAction(nameof(Catalogo));
                 }
 
-                // Obtener propiedades similares del mismo tipo (disponibles)
-                var (propiedadesSimilares, _) = await _repositorioInmueble.ObtenerConPaginacionYBusquedaAsync(1, "", "disponible", 10);
-                var propiedadesRelacionadas = propiedadesSimilares
-                    .Where(p => p.IdInmueble != id && p.IdTipoInmueble == propiedad.IdTipoInmueble)
-                    .Take(3)
-                    .ToList();
-
-                ViewBag.PropiedadesRelacionadas = propiedadesRelacionadas;
-
-                return View(propiedad);
+                return View(inmueble);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error al cargar detalles de la propiedad {Id}", id);
+                _logger.LogError(ex, "Error al cargar detalle de propiedad ID: {Id}", id);
                 TempData["Error"] = "Error al cargar los detalles de la propiedad";
-                return RedirectToAction("Catalogo");
+                return RedirectToAction(nameof(Catalogo));
             }
         }
-
         // POST: Home/ExpresarInteres - Expresar interés en una propiedad
         [HttpPost]
         [ValidateAntiForgeryToken]
@@ -164,8 +157,8 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 };
 
                 // Usar el método del repositorio (necesita implementarse)
-                 await _repositorioIntereses.CrearInteresAsync(interes);
-                
+                await _repositorioIntereses.CrearInteresAsync(interes);
+
                 _logger.LogInformation($"Nueva consulta de interés: {nombre} ({email}) - Propiedad {propiedadId}");
 
                 TempData["Success"] = "¡Gracias por tu interés! Nos pondremos en contacto contigo pronto.";

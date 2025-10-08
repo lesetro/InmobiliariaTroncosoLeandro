@@ -48,49 +48,52 @@
                             </div>
 
                             <!-- Tipo de propiedad -->
-                           <div class="form-group">
-                            <label for="tipo" class="font-weight-bold">Tipo de Propiedad</label>
-                            <select class="form-control" id="tipo" name="tipo">
-                             @{
-                                var filtroTipo = ViewBag.FiltroTipo as string;
-                            }
-                                <option value="todos" selected="@(filtroTipo == "todos" || string.IsNullOrEmpty(filtroTipo))">Todos los tipos</option>
-                                <option value="casa" selected="@(filtroTipo == "casa")">Casa</option>
-                                <option value="departamento" selected="@(filtroTipo == "departamento")">Departamento</option>
-                                <option value="local" selected="@(filtroTipo == "local")">Local Comercial</option>
-                                <option value="oficina" selected="@(filtroTipo == "oficina")">Oficina</option>
-                            </select>
+                            <div class="form-group">
+                                <label for="tipo" class="font-weight-bold">Tipo de Propiedad</label>
+                                <select class="form-control" id="tipo" name="tipo">
+                                    @{
+                                        var filtroTipo = ViewBag.FiltroTipo as string;
+                                    }
+                                    <option value="todos" selected="@(filtroTipo == "todos" || string.IsNullOrEmpty(filtroTipo))">Todos los tipos</option>
+                                    @if (ViewBag.TiposInmueble != null)
+                                    {
+                                        foreach (var tipo in ViewBag.TiposInmueble)
+                                        {
+                                            <option value="@tipo.Nombre.ToLower()" selected="@(filtroTipo == tipo.Nombre.ToLower())">@tipo.Nombre</option>
+                                        }
+                                    }
+                                </select>
                             </div>
 
-                           <!-- Rango de precio -->
-<div class="form-group">
-    <label for="precio" class="font-weight-bold">Rango de Precio</label>
-    <select class="form-control" id="precio" name="precio">
-        @{
-            var filtroPrecio = ViewBag.FiltroPrecio as string;
-        }
-        <option value="" selected="@(string.IsNullOrEmpty(filtroPrecio))">Todos los precios</option>
-        <option value="0-50000" selected="@(filtroPrecio == "0-50000")">Hasta $50.000</option>
-        <option value="50000-100000" selected="@(filtroPrecio == "50000-100000")">$50.000 - $100.000</option>
-        <option value="100000+" selected="@(filtroPrecio == "100000+")">Más de $100.000</option>
-    </select>
-</div>
+                            <!-- Rango de precio -->
+                            <div class="form-group">
+                                <label for="precio" class="font-weight-bold">Rango de Precio</label>
+                                <select class="form-control" id="precio" name="precio">
+                                    @{
+                                        var filtroPrecio = ViewBag.FiltroPrecio as string;
+                                    }
+                                    <option value="" selected="@(string.IsNullOrEmpty(filtroPrecio))">Todos los precios</option>
+                                    <option value="0-50000" selected="@(filtroPrecio == "0-50000")">Hasta $50.000</option>
+                                    <option value="50000-100000" selected="@(filtroPrecio == "50000-100000")">$50.000 - $100.000</option>
+                                    <option value="100000+" selected="@(filtroPrecio == "100000+")">Más de $100.000</option>
+                                </select>
+                            </div>
 
-<!-- Cantidad de ambientes -->
-<div class="form-group">
-    <label for="ambientes" class="font-weight-bold">Ambientes</label>
-    <select class="form-control" id="ambientes" name="ambientes">
-        @{
-            var filtroAmbientes = ViewBag.FiltroAmbientes as string;
-        }
-        <option value="todos" selected="@(filtroAmbientes == "todos" || string.IsNullOrEmpty(filtroAmbientes))">Cualquier cantidad</option>
-        <option value="1" selected="@(filtroAmbientes == "1")">1 ambiente</option>
-        <option value="2" selected="@(filtroAmbientes == "2")">2 ambientes</option>
-        <option value="3" selected="@(filtroAmbientes == "3")">3 ambientes</option>
-        <option value="4" selected="@(filtroAmbientes == "4")">4 ambientes</option>
-        <option value="5" selected="@(filtroAmbientes == "5")">5+ ambientes</option>
-    </select>
-</div>
+                            <!-- Cantidad de ambientes -->
+                            <div class="form-group">
+                                <label for="ambientes" class="font-weight-bold">Ambientes</label>
+                                <select class="form-control" id="ambientes" name="ambientes">
+                                    @{
+                                        var filtroAmbientes = ViewBag.FiltroAmbientes as string;
+                                    }
+                                    <option value="todos" selected="@(filtroAmbientes == "todos" || string.IsNullOrEmpty(filtroAmbientes))">Cualquier cantidad</option>
+                                    <option value="1" selected="@(filtroAmbientes == "1")">1 ambiente</option>
+                                    <option value="2" selected="@(filtroAmbientes == "2")">2 ambientes</option>
+                                    <option value="3" selected="@(filtroAmbientes == "3")">3 ambientes</option>
+                                    <option value="4" selected="@(filtroAmbientes == "4")">4 ambientes</option>
+                                    <option value="5" selected="@(filtroAmbientes == "5")">5+ ambientes</option>
+                                </select>
+                            </div>
 
                             <!-- Botones -->
                             <div class="form-group">
@@ -198,7 +201,7 @@
             }
 
             <!-- Resultados -->
-            @if (Model.Any())
+            @if (Model != null && Model.Any())
             {
                 <div id="propertiesGrid" class="row">
                     @foreach (var propiedad in Model)
@@ -206,7 +209,10 @@
                         <div class="col-lg-4 col-md-6 mb-4 property-item">
                             <div class="property-card h-100">
                                 <div class="property-image">
-                                    <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid">
+                                    @{
+                                        var imagenMostrar = propiedad.Imagenes?.FirstOrDefault()?.Url ?? propiedad.UrlPortadaODefault;
+                                    }
+                                    <img src="@imagenMostrar" alt="Propiedad en @propiedad.Direccion" class="img-fluid">
                                     <div class="property-overlay">
                                         <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble" class="btn btn-light btn-sm">
                                             <i class="fas fa-eye"></i> Ver Detalles
@@ -230,10 +236,10 @@
                                             <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
                                         </span>
                                         <span class="feature">
-                                            <i class="fas fa-bath"></i> 2 baños
+                                            <i class="fas fa-tag"></i> @propiedad.Uso
                                         </span>
                                         <span class="feature">
-                                            <i class="fas fa-ruler-combined"></i> 100m²
+                                            <i class="fas fa-home"></i> @propiedad.TipoInmueble?.Nombre
                                         </span>
                                     </div>
                                     <div class="property-actions mt-3">
@@ -267,7 +273,10 @@
                                 <div class="row no-gutters">
                                     <div class="col-md-4">
                                         <div class="property-image-list">
-                                            <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid h-100">
+                                            @{
+                                                var imagenLista = propiedad.Imagenes?.FirstOrDefault()?.Url ?? propiedad.UrlPortadaODefault;
+                                            }
+                                            <img src="@imagenLista" alt="Propiedad en @propiedad.Direccion" class="img-fluid h-100">
                                             <div class="property-badges-list">
                                                 <span class="badge @propiedad.EstadoBadgeClass">@propiedad.EstadoParaMostrar</span>
                                                 <span class="badge badge-primary">@propiedad.TipoInmueble?.Nombre</span>
@@ -287,10 +296,10 @@
                                                             <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
                                                         </span>
                                                         <span class="feature">
-                                                            <i class="fas fa-bath"></i> 2 baños
+                                                            <i class="fas fa-tag"></i> @propiedad.Uso
                                                         </span>
                                                         <span class="feature">
-                                                            <i class="fas fa-ruler-combined"></i> 100m²
+                                                            <i class="fas fa-home"></i> @propiedad.TipoInmueble?.Nombre
                                                         </span>
                                                     </div>
                                                 </div>
@@ -315,6 +324,62 @@
                         </div>
                     }
                 </div>
+
+                <!-- Paginación -->
+                @if (ViewBag.TotalPaginas > 1)
+                {
+                    <nav aria-label="Paginación de propiedades" class="mt-4">
+                        <ul class="pagination justify-content-center">
+                            @if (ViewBag.PaginaActual > 1)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Catalogo", new { 
+                                           buscar = ViewBag.FiltroBuscar, 
+                                           tipo = ViewBag.FiltroTipo, 
+                                           precio = ViewBag.FiltroPrecio, 
+                                           ambientes = ViewBag.FiltroAmbientes, 
+                                           pagina = ViewBag.PaginaActual - 1 
+                                       })">
+                                        <i class="fas fa-chevron-left"></i> Anterior
+                                    </a>
+                                </li>
+                            }
+
+                            @for (int i = 1; i <= ViewBag.TotalPaginas; i++)
+                            {
+                                <li class="page-item @(i == ViewBag.PaginaActual ? "active" : "")">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Catalogo", new { 
+                                           buscar = ViewBag.FiltroBuscar, 
+                                           tipo = ViewBag.FiltroTipo, 
+                                           precio = ViewBag.FiltroPrecio, 
+                                           ambientes = ViewBag.FiltroAmbientes, 
+                                           pagina = i 
+                                       })">
+                                        @i
+                                    </a>
+                                </li>
+                            }
+
+                            @if (ViewBag.PaginaActual < ViewBag.TotalPaginas)
+                            {
+                                <li class="page-item">
+                                    <a class="page-link" 
+                                       href="@Url.Action("Catalogo", new { 
+                                           buscar = ViewBag.FiltroBuscar, 
+                                           tipo = ViewBag.FiltroTipo, 
+                                           precio = ViewBag.FiltroPrecio, 
+                                           ambientes = ViewBag.FiltroAmbientes, 
+                                           pagina = ViewBag.PaginaActual + 1 
+                                       })">
+                                        Siguiente <i class="fas fa-chevron-right"></i>
+                                    </a>
+                                </li>
+                            }
+                        </ul>
+                    </nav>
+                }
             }
             else
             {
@@ -485,7 +550,6 @@
 }
 
 <style>
-    /* Tus estilos CSS se mantienen igual */
     .catalog-hero {
         background: linear-gradient(135deg, #4e73df 0%, #224abe 100%);
         padding: 4rem 0;
@@ -496,5 +560,104 @@
         top: 20px;
     }
     
+    .property-card {
+        transition: all 0.3s ease;
+        border: 1px solid #e3e6f0;
+        border-radius: 10px;
+        overflow: hidden;
+    }
     
+    .property-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    
+    .property-image {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+    
+    .property-image img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.3s ease;
+    }
+    
+    .property-card:hover .property-image img {
+        transform: scale(1.05);
+    }
+    
+    .property-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+    }
+    
+    .property-card:hover .property-overlay {
+        opacity: 1;
+    }
+    
+    .property-badges {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .property-content {
+        padding: 1.5rem;
+    }
+    
+    .property-features {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 1rem 0;
+    }
+    
+    .feature {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .filter-tags {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+    }
+    
+    .property-list-item .card {
+        transition: all 0.3s ease;
+    }
+    
+    .property-list-item .card:hover {
+        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    }
+    
+    .property-image-list {
+        position: relative;
+        height: 200px;
+        overflow: hidden;
+    }
+    
+    .property-badges-list {
+        position: absolute;
+        top: 10px;
+        left: 10px;
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
 </style>

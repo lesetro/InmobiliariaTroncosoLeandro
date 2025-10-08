@@ -258,10 +258,10 @@ $(document).ready(function() {
         // Redirigir según el tipo
         switch(tipoPago) {
             case 'venta':
-                window.location.href = '@Url.Action("Create", "Venta")';
+                window.location.href = '@Url.Action("Create", "Ventas")';
                 break;
             case 'alquiler':
-                window.location.href = '@Url.Action("Create", "Alquiler")';
+                window.location.href = '@Url.Action("Create", "Alquileres")';
                 break;
             default:
                 console.error('Tipo de pago no reconocido:', tipoPago);
