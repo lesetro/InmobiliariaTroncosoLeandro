@@ -2,6 +2,27 @@
 
 Sistema web completo para gestión de inmobiliaria desarrollado en **ASP.NET Core MVC** con arquitectura robusta y funcionalidades integrales para el manejo de propiedades, contratos, pagos y más.
 
+## Usuarios y contraseñas
+
+Administrador 
+
+Correo=  test2@inmobiliaria.com 
+Contraseña = Test1234
+
+Empleado 
+
+Correo=  test4@inmobiliaria04.com
+Contraseña = PasswordTemporal123
+
+Propietario
+
+Correo=  andrea@gmail.com
+Contraseña = PasswordTemporal123
+Inquilino
+
+Correo=  leandrosebastianTronco@gmail.com
+Contraseña = PasswordTemporal123
+
 ##  Inicio Rápido
 
 ###  Configuración Inicial de Administrador
