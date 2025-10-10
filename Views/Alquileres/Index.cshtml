@@ -71,7 +71,7 @@
                         <i class="bi bi-search me-1"></i>Buscar
                     </label>
                     <input type="text" class="form-control" id="buscar" name="buscar" 
-                           value="@ViewBag.Buscar" placeholder="Dirección, inquilino, concepto...">
+                           value="@ViewBag.Buscar" placeholder="Dirección del inmueble...">
                 </div>
                 <div class="col-md-3">
                     <label for="estado" class="form-label">
@@ -350,7 +350,7 @@ else
             clearTimeout(searchTimeout);
             searchTimeout = setTimeout(() => {
                 document.getElementById('filtrosForm').submit();
-            }, 500);
+            }, 1000);
         });
 
         // Submit inmediato al cambiar el select de estado

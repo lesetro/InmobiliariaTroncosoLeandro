@@ -53,18 +53,43 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Alquileres/Create
-        public IActionResult Create()
-        {
-            var pago = new Pago
-            {
-                TipoPago = "alquiler",
-                FechaPago = DateTime.Now.Date,
-                Estado = "pagado",
-                IdUsuarioCreador = USUARIO_SISTEMA_TEMPORAL
-            };
+        // GET: Alquileres/Create
+public async Task<IActionResult> Create(int? contratoId)
+{
+    var pago = new Pago
+    {
+        TipoPago = "alquiler",
+        FechaPago = DateTime.Now.Date,
+        Estado = "pagado",
+        IdUsuarioCreador = USUARIO_SISTEMA_TEMPORAL
+    };
 
-            return View(pago);
+    // Si se proporciona un contratoId, precargar los datos
+    if (contratoId.HasValue && contratoId > 0)
+    {
+        try
+        {
+            var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(contratoId.Value);
+            if (datosContrato != null)
+            {
+                pago.IdContrato = contratoId.Value;
+                pago.NumeroPago = datosContrato.ProximoNumeroPago;
+                
+                // Pasar datos a la vista para mostrar información
+                ViewBag.DatosContrato = datosContrato;
+                ViewBag.InfoPagos = $"{datosContrato.PagosRealizados}/{datosContrato.TotalMeses}";
+                ViewBag.ContratoPrecargado = true;
+            }
         }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error al precargar contrato: {ex.Message}");
+            
+        }
+    }
+
+    return View(pago);
+}
 
         // POST: Alquileres/Create
         [HttpPost]

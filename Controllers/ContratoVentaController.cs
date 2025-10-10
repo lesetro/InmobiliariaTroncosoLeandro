@@ -661,7 +661,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
                 if (contrato.Estado != "pendiente_escritura" && contrato.MontoPagado < contrato.PrecioTotal)
                 {
-                    TempData["ErrorMessage"] = "El contrato no está completamente pagado para escriturar";
+                    TempData["Proceso Escritura"] = "El contrato no está completamente pagado para escriturar, pase por oficina a firmar contrato y pagar";
                     return RedirectToAction("Details", new { id });
                 }
 
