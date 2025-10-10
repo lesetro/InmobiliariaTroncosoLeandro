@@ -1,0 +1,287 @@
+@model Usuario
+@using System.Security.Claims
+@{
+    ViewData["Title"] = "Dashboard Inquilino";
+    Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+    
+    var contrato = ViewBag.Contrato as Contrato;
+    var proximoPago = ViewBag.ProximoPago as Pago;
+    var pagosPendientes = ViewBag.PagosPendientes as List<Pago>;
+}
+
+
+<!-- SECCIÓN DEBUG (TEMPORAL - QUITAR DESPUÉS) -->
+<div class="alert alert-info alert-dismissible fade show" role="alert">
+    <h5>🔍 Información de Debug:</h5>
+    <p><strong>Usuario ID:</strong> @User.FindFirst(ClaimTypes.NameIdentifier)?.Value</p>
+    <p><strong>IdInquilino:</strong> @ViewBag.IdInquilino</p>
+    <p><strong>Contrato:</strong> @(contrato != null ? "SÍ" : "NO")</p>
+    <p><strong>Próximo Pago:</strong> @(proximoPago != null ? "SÍ" : "NO")</p>
+    <p><strong>Pagos Pendientes:</strong> @(pagosPendientes?.Count ?? 0)</p>
+    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+</div>
+<!-- FIN DEBUG -->
+<!-- Header -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-speedometer2 text-primary"></i> Mi Dashboard
+    </h1>
+    <span class="badge bg-primary">
+        <i class="bi bi-person-check"></i> INQUILINO
+    </span>
+</div>
+
+<!-- Estadísticas Rápidas -->
+<div class="row">
+    <!-- Contrato Activo -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Contrato
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @if (contrato != null)
+                            {
+                                <span class="badge bg-success">ACTIVO</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-secondary">NO ACTIVO</span>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-file-text fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Próximo Pago -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Próximo Pago
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @if (proximoPago != null)
+                            {
+                                <text>$@proximoPago.MontoTotal.ToString("N0")</text>
+                            }
+                            else
+                            {
+                                <text>-</text>
+                            }
+                        </div>
+                        @if (proximoPago != null)
+                        {
+                            <div class="text-xs text-muted">
+                                Vence: @proximoPago.FechaVencimiento?.ToString("dd/MM/yyyy")
+                            </div>
+                        }
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagos Pendientes -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pendientes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @(pagosPendientes?.Count ?? 0)
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Días Restantes -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Días Restantes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @(ViewBag.DiasParaVencimiento ?? 0)
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@if (contrato != null)
+{
+    <!-- Información del Contrato -->
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-house-door"></i> Mi Vivienda
+                    </h6>
+                    <span class="badge bg-success">@contrato.Estado?.ToUpper()</span>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            @if (contrato.Inmueble?.TienePortada ?? false)
+                            {
+                                <img src="@contrato.Inmueble.UrlPortadaODefault" 
+                                     class="img-fluid rounded" 
+                                     style="height: 150px; object-fit: cover;"
+                                     alt="Vivienda">
+                            }
+                            else
+                            {
+                                <div class="bg-light rounded d-flex align-items-center justify-content-center" 
+                                     style="height: 150px;">
+                                    <i class="bi bi-house text-muted" style="font-size: 2rem;"></i>
+                                </div>
+                            }
+                        </div>
+                        <div class="col-md-8">
+                            <h5 class="text-dark">@contrato.Inmueble?.Direccion</h5>
+                            <div class="row mt-3">
+                                <div class="col-md-6">
+                                    <p><strong>Alquiler Mensual:</strong><br>
+                                       <span class="text-success h5">$@contrato.MontoMensual.ToString("N0")</span>
+                                    </p>
+                                    <p><strong>Ambientes:</strong> @contrato.Inmueble?.Ambientes</p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>Inicio:</strong> @contrato.FechaInicio.ToString("dd/MM/yyyy")</p>
+                                    <p><strong>Fin:</strong> @contrato.FechaFin.ToString("dd/MM/yyyy")</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <!-- Acciones Rápidas -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-lightning"></i> Acciones
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="d-grid gap-2">
+                        <a asp-action="MiContrato" class="btn btn-primary">
+                            <i class="bi bi-file-text"></i> Ver Contrato
+                        </a>
+                        <a asp-action="MisPagos" class="btn btn-outline-primary">
+                            <i class="bi bi-credit-card"></i> Mis Pagos
+                        </a>
+                        <a href="#" class="btn btn-outline-success">
+                            <i class="bi bi-cash"></i> Realizar Pago
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Propietario -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">
+                        <i class="bi bi-person"></i> Propietario
+                    </h6>
+                </div>
+                <div class="card-body text-center">
+                    <img src="@(contrato.Propietario?.Usuario?.Avatar ?? "/img/default-avatar.png")" 
+                         class="rounded-circle mb-2" 
+                         style="width: 60px; height: 60px; object-fit: cover;">
+                    <h6 class="mb-1">@contrato.Propietario?.Usuario?.NombreCompleto</h6>
+                    <p class="text-muted small mb-1">@contrato.Propietario?.Usuario?.Email</p>
+                    <p class="text-muted small mb-0">@contrato.Propietario?.Usuario?.Telefono</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Pagos Pendientes -->
+    @if (pagosPendientes != null && pagosPendientes.Any())
+    {
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-warning">
+                    <i class="bi bi-exclamation-triangle"></i> Pagos Pendientes
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-bordered table-sm">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Concepto</th>
+                                <th>Monto</th>
+                                <th>Vencimiento</th>
+                                <th>Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var pago in pagosPendientes)
+                            {
+                                <tr>
+                                    <td>@pago.Concepto</td>
+                                    <td class="font-weight-bold text-danger">$@pago.MontoTotal.ToString("N0")</td>
+                                    <td>@pago.FechaVencimiento?.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <a href="#" class="btn btn-sm btn-success">
+                                            <i class="bi bi-credit-card"></i> Pagar
+                                        </a>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    }
+}
+else
+{
+    <!-- Sin Contrato -->
+    <div class="card shadow">
+        <div class="card-body text-center py-5">
+            <i class="bi bi-house-x text-muted" style="font-size: 4rem;"></i>
+            <h4 class="text-muted mt-3">No tienes un contrato activo</h4>
+            <p class="text-muted">Actualmente no estás alquilando ninguna propiedad.</p>
+            <a asp-controller="Home" asp-action="Index" class="btn btn-primary">
+                <i class="bi bi-search"></i> Buscar Propiedades
+            </a>
+        </div>
+    </div>
+}

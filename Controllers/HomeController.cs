@@ -63,49 +63,84 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        
-       // GET: Home/Catalogo - Catálogo público de inmuebles
-public async Task<IActionResult> Catalogo(string buscar = "", string tipo = "todos", 
-    string precio = "", string ambientes = "todos", int pagina = 1)
-{
-    try
-    {
-        const int itemsPorPagina = 12;
 
-        // Obtener propiedades del catálogo con filtros
-        var propiedades = await _repositorioInmueble.ObtenerCatalogoPublicoAsync(
-            buscar, tipo, precio, ambientes, pagina, itemsPorPagina);
+        // GET: Home/Catalogo - Catálogo público de inmuebles
+        public async Task<IActionResult> Catalogo(string buscar = "", string tipo = "todos",
+            string precio = "", string ambientes = "todos", int pagina = 1)
+        {
+            try
+            {
+                const int itemsPorPagina = 12;
 
-        // Obtener total para paginación
-        var totalRegistros = await _repositorioInmueble.ObtenerTotalCatalogoAsync(
-            buscar, tipo, precio, ambientes);
+                var propiedades = await _repositorioInmueble.ObtenerCatalogoPublicoAsync(
+                    buscar, tipo, precio, ambientes, pagina, itemsPorPagina);
 
-        var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
+                var totalRegistros = await _repositorioInmueble.ObtenerTotalCatalogoAsync(
+                    buscar, tipo, precio, ambientes);
 
-        // ViewBags para la vista
-        ViewBag.FiltroBuscar = buscar;
-        ViewBag.FiltroTipo = tipo;
-        ViewBag.FiltroPrecio = precio;
-        ViewBag.FiltroAmbientes = ambientes;
-        ViewBag.TotalResultados = totalRegistros;
-        ViewBag.PaginaActual = pagina;
-        ViewBag.TotalPaginas = totalPaginas;
-        ViewBag.ItemsPorPagina = itemsPorPagina;
+                // NUEVO: Si no hay resultados pero hay filtros activos, mostrar mensaje especial
+                if (totalRegistros == 0 && !TodosFiltrosEnDefault(buscar, tipo, precio, ambientes))
+                {
+                    ViewBag.MostrarReinicio = true;
+                    ViewBag.FiltrosActivos = ObtenerFiltrosActivos(buscar, tipo, precio, ambientes);
+                }
+                else
+                {
+                    ViewBag.MostrarReinicio = false;
+                }
 
-        // Obtener tipos de inmueble para el dropdown
-        var tiposInmueble = await _repositorioInmueble.ObtenerTiposInmuebleActivosAsync();
-        ViewBag.TiposInmueble = tiposInmueble;
+                var totalPaginas = (int)Math.Ceiling((double)totalRegistros / itemsPorPagina);
 
-        return View(propiedades);
-    }
-    catch (Exception ex)
-    {
-        _logger.LogError(ex, "Error al cargar el catálogo");
-        TempData["Error"] = "Error al cargar las propiedades";
-        return View(new List<Inmueble>());
-    }
-}
-        // GET: Home/DetallePropiedad/{id} - Ver detalles de una propiedad específica
+                // ViewBags para la vista
+                ViewBag.FiltroBuscar = buscar;
+                ViewBag.FiltroTipo = tipo;
+                ViewBag.FiltroPrecio = precio;
+                ViewBag.FiltroAmbientes = ambientes;
+                ViewBag.TotalResultados = totalRegistros;
+                ViewBag.PaginaActual = pagina;
+                ViewBag.TotalPaginas = totalPaginas;
+
+                var tiposInmueble = await _repositorioInmueble.ObtenerTiposInmuebleActivosAsync();
+                ViewBag.TiposInmueble = tiposInmueble;
+
+                return View(propiedades);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error al cargar el catálogo");
+                TempData["Error"] = "Error al cargar las propiedades";
+                return View(new List<Inmueble>());
+            }
+        }
+
+        // Métodos auxiliares nuevos
+        private bool TodosFiltrosEnDefault(string buscar, string tipo, string precio, string ambientes)
+        {
+            return string.IsNullOrEmpty(buscar) &&
+                   (tipo == "todos" || string.IsNullOrEmpty(tipo)) &&
+                   string.IsNullOrEmpty(precio) &&
+                   (ambientes == "todos" || string.IsNullOrEmpty(ambientes));
+        }
+
+        private Dictionary<string, string> ObtenerFiltrosActivos(string buscar, string tipo, string precio, string ambientes)
+        {
+            var filtros = new Dictionary<string, string>();
+
+            if (!string.IsNullOrEmpty(buscar))
+                filtros.Add("Búsqueda", $"\"{buscar}\"");
+
+            if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
+                filtros.Add("Tipo", tipo);
+
+            if (!string.IsNullOrEmpty(precio))
+                filtros.Add("Precio", precio);
+
+            if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos")
+                filtros.Add("Ambientes", ambientes);
+
+            return filtros;
+        }
+
         // GET: Home/DetallePropiedad
         public async Task<IActionResult> DetallePropiedad(int id)
         {

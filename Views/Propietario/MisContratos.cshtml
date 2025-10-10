@@ -1,0 +1,181 @@
+@model IEnumerable<Contrato>
+@{
+    ViewData["Title"] = "Mis Contratos";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+    
+    var contratosActivos = Model.Where(c => c.Estado?.ToLower() == "activo").ToList();
+    var contratosFinalizados = Model.Where(c => c.Estado?.ToLower() == "finalizado").ToList();
+    var contratosProximosVencer = Model.Where(c => c.Estado?.ToLower() == "activo" && c.FechaFin <= DateTime.Today.AddDays(30)).ToList();
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-file-earmark-text text-primary"></i> Mis Contratos
+    </h1>
+    <div>
+        <span class="badge bg-success me-2">
+            Activos: @contratosActivos.Count
+        </span>
+        <span class="badge bg-secondary">
+            Total: @Model.Count()
+        </span>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Contratos Activos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @contratosActivos.Count
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-check-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Próximos a Vencer
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @contratosProximosVencer.Count
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Ingreso Mensual
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            $@contratosActivos.Sum(c => c.MontoMensual).ToString("N0")
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-secondary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-secondary text-uppercase mb-1">
+                            Finalizados
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @contratosFinalizados.Count
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-archive fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Lista de Contratos -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="bi bi-list-ul"></i> Lista de Contratos
+        </h6>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Inmueble</th>
+                            <th>Inquilino</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Fin</th>
+                            <th>Monto Mensual</th>
+                            <th>Estado</th>
+                            <th>Días Restantes</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var contrato in Model.OrderByDescending(c => c.FechaInicio))
+                        {
+                            var diasRestantes = (contrato.FechaFin - DateTime.Today).Days;
+                            <tr>
+                                <td>@contrato.Inmueble?.Direccion</td>
+                                <td>@contrato.Inquilino?.Usuario?.NombreCompleto</td>
+                                <td>@contrato.FechaInicio.ToString("dd/MM/yyyy")</td>
+                                <td>@contrato.FechaFin.ToString("dd/MM/yyyy")</td>
+                                <td class="font-weight-bold">$@contrato.MontoMensual.ToString("N0")</td>
+                                <td>
+                                    <span class="badge @(contrato.Estado?.ToLower() == "activo" ? "bg-success" : "bg-secondary")">
+                                        @contrato.Estado?.ToUpper()
+                                    </span>
+                                </td>
+                                <td>
+                                    @if (contrato.Estado?.ToLower() == "activo")
+                                    {
+                                        if (diasRestantes > 0)
+                                        {
+                                            <span class="badge bg-info">@diasRestantes días</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning">Vencido</span>
+                                        }
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-file-earmark-text text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No hay contratos registrados</h4>
+                <p class="text-muted">Los contratos aparecerán aquí cuando crees propiedades y las alquiles.</p>
+                <a asp-action="CrearInmueble" class="btn btn-primary mt-3">
+                    <i class="bi bi-plus-circle"></i> Crear Mi Primera Propiedad
+                </a>
+            </div>
+        }
+    </div>
+</div>

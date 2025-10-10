@@ -777,41 +777,85 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         }
         //para el contrato venta 
         public async Task<Usuario> ObtenerPorEmailAsync(string email)
-{
-    using var connection = new MySqlConnection(_connectionString);
-    await connection.OpenAsync();
+        {
+            using var connection = new MySqlConnection(_connectionString);
+            await connection.OpenAsync();
 
-    string query = @"
+            string query = @"
         SELECT id_usuario, email, password, rol, nombre, apellido, dni, 
                direccion, telefono, estado, avatar
         FROM usuario 
         WHERE email = @Email AND estado = 'activo'";
 
-    using var command = new MySqlCommand(query, connection);
-    command.Parameters.AddWithValue("@Email", email);
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@Email", email);
 
-    using var reader = await command.ExecuteReaderAsync();
-    
-    if (await reader.ReadAsync())
-    {
-        return new Usuario
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new Usuario
+                {
+                    IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
+                    Email = reader.GetString(reader.GetOrdinal("email")),
+                    Password = reader.GetString(reader.GetOrdinal("password")),
+                    Rol = reader.GetString(reader.GetOrdinal("rol")),
+                    Nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                    Apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                    Dni = reader.GetString(reader.GetOrdinal("dni")),
+                    Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                    Telefono = reader.GetString(reader.GetOrdinal("telefono")),
+                    Estado = reader.GetString(reader.GetOrdinal("estado")),
+                    Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar"))
+                };
+            }
+
+            return null;
+        }
+        public async Task<Usuario?> GetUsuarioPorPropietarioIdAsync(int idPropietario)
         {
-            IdUsuario = reader.GetInt32(reader.GetOrdinal("id_usuario")),
-            Email = reader.GetString(reader.GetOrdinal("email")),
-            Password = reader.GetString(reader.GetOrdinal("password")),
-            Rol = reader.GetString(reader.GetOrdinal("rol")),
-            Nombre = reader.GetString(reader.GetOrdinal("nombre")),
-            Apellido = reader.GetString(reader.GetOrdinal("apellido")),
-            Dni = reader.GetString(reader.GetOrdinal("dni")),
-            Direccion = reader.GetString(reader.GetOrdinal("direccion")),
-            Telefono = reader.GetString(reader.GetOrdinal("telefono")),
-            Estado = reader.GetString(reader.GetOrdinal("estado")),
-            Avatar = reader.IsDBNull(reader.GetOrdinal("avatar")) ? null : reader.GetString(reader.GetOrdinal("avatar"))
-        };
-    }
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
 
-    return null; // Retorna null si no encuentra el usuario
-}
+                var query = @"
+            SELECT u.*
+            FROM Usuario u
+            INNER JOIN Propietario p ON u.IdUsuario = p.IdUsuario
+            WHERE p.IdPropietario = @IdPropietario";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@IdPropietario", idPropietario);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    var usuario = new Usuario
+                    {
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("IdUsuario")),
+                        Nombre = reader.GetString(reader.GetOrdinal("Nombre")),
+                        Apellido = reader.GetString(reader.GetOrdinal("Apellido")),
+                        Email = reader.GetString(reader.GetOrdinal("Email")),
+                        Dni = reader.GetString(reader.GetOrdinal("Dni")),
+                        Telefono = reader.GetString(reader.GetOrdinal("Telefono")),
+                        Direccion = reader.GetString(reader.GetOrdinal("Direccion")),
+                        Rol = reader.GetString(reader.GetOrdinal("Rol")),
+                        Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                        Avatar = reader.IsDBNull(reader.GetOrdinal("Avatar")) ? null : reader.GetString(reader.GetOrdinal("Avatar"))
+                    };
+
+                    return usuario;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener usuario por ID de propietario: {ex.Message}", ex);
+            }
+        }
 
 
     }

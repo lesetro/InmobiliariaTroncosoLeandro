@@ -1,0 +1,183 @@
+@model Usuario
+@{
+    ViewData["Title"] = "Dashboard Propietario";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<!-- Header -->
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-speedometer2 text-success"></i> Mi Dashboard
+    </h1>
+    <div>
+        <span class="badge badge-success">
+            <i class="bi bi-person-check"></i> PROPIETARIO
+        </span>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row">
+    <!-- Total Propiedades -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Propiedades
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.TotalPropiedades</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-building fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propiedades Alquiladas -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Alquiladas
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.PropiedadesAlquiladas</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-house-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Propiedades Disponibles -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Disponibles
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">@ViewBag.PropiedadesDisponibles</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-house-door fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Ingresos Mensuales -->
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Ingresos Mensuales
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">$@ViewBag.IngresosMensuales.ToString("N0")</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Acciones Rápidas -->
+<div class="row">
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-lightning"></i> Acciones Rápidas
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="CrearInmueble" class="btn btn-success btn-block">
+                            <i class="bi bi-plus-circle"></i> Agregar Propiedad
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="MisInmuebles" class="btn btn-primary btn-block">
+                            <i class="bi bi-building"></i> Ver Mis Propiedades
+                        </a>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="MisContratos" class="btn btn-info btn-block">
+                            <i class="bi bi-file-text"></i> Ver Contratos
+                        </a>
+                    </div> 
+                    
+                    <div class="col-md-6 mb-3">
+                        <a asp-action="MisPagos" class="btn btn-warning btn-block">
+                            <i class="bi bi-currency-dollar"></i> Ver Ingresos
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-6 mb-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-person"></i> Mi Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <img class="img-fluid rounded-circle mb-3" 
+                         style="width: 120px; height: 120px; object-fit: cover;"
+                         src="@(Model.Avatar ?? "/img/default-avatar.png")" 
+                         alt="Avatar">
+                </div>
+                <h5 class="text-center">@Model.NombreCompleto</h5>
+                <p class="text-center text-muted mb-3">@Model.Email</p>
+                <div class="text-center">
+                    <a asp-action="MiPerfil" class="btn btn-outline-success btn-sm mr-2">
+                        <i class="bi bi-eye"></i> Ver Perfil
+                    </a>
+                    <a asp-action="EditarPerfil" class="btn btn-success btn-sm">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Propiedades Recientes -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-clock-history"></i> Propiedades Recientes
+                </h6>
+                <a asp-action="MisInmuebles" class="btn btn-sm btn-outline-success">Ver Todas</a>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle"></i> 
+                    Aquí se mostrarán tus propiedades más recientes. 
+                    <a asp-action="CrearInmueble" class="alert-link">Agrega tu primera propiedad</a>.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

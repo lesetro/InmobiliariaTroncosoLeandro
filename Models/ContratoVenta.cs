@@ -101,8 +101,6 @@ namespace Inmobiliaria_troncoso_leandro.Models
         // AUDITORÍA
         // ========================
 
-        [Required(ErrorMessage = "Debe seleccionar un usuario creador")]
-        [Range(1, int.MaxValue, ErrorMessage = "Debe seleccionar un usuario válido")]
         [Display(Name = "Usuario Creador")]
         [Column("id_usuario_creador")]
         public int IdUsuarioCreador { get; set; }

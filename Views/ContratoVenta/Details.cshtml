@@ -83,8 +83,9 @@
                                         <dt>Monto Pagado:</dt>
                                         <dd class="fs-5 fw-bold text-success">$@Model.MontoPagado.ToString("N2")</dd>
 
+                                        <!-- CORREGIDO: Usar SaldoPendiente del modelo en lugar de ViewBag -->
                                         <dt>Saldo Pendiente:</dt>
-                                        <dd class="fs-5 fw-bold text-danger">$@ViewBag.SaldoPendiente.ToString("N2")</dd>
+                                        <dd class="fs-5 fw-bold text-danger">$@Model.SaldoPendiente.ToString("N2")</dd>
 
                                         <dt>Porcentaje Completado:</dt>
                                         <dd class="fs-6">
@@ -292,7 +293,8 @@
                                     }
                                     else
                                     {
-                                        <text>Proceso de venta en curso. Saldo pendiente: $@ViewBag.SaldoPendiente.ToString("N2")</text>
+                                        <!-- CORREGIDO: Usar SaldoPendiente del modelo -->
+                                        <text>Proceso de venta en curso. Saldo pendiente: $@Model.SaldoPendiente.ToString("N2")</text>
                                     }
                                 </small>
                             </div>
@@ -369,41 +371,40 @@
     </div>
 </div>
 
-    <style>
-        .card {
-            border: none;
-            border-radius: 10px;
-        }
-        
-        .card-header {
-            border-radius: 10px 10px 0 0 !important;
-            font-weight: 600;
-        }
-        
-        .progress {
-            border-radius: 10px;
-        }
-        
-        .progress-bar {
-            border-radius: 10px;
-        }
-        
-        dt {
-            font-weight: 600;
-            color: #495057;
-        }
-        
-        dd {
-            margin-bottom: 0.5rem;
-        }
-        
-        .table th {
-            font-weight: 600;
-            background-color: #f8f9fa;
-        }
-        
-        .badge {
-            font-size: 0.75em;
-        }
-    </style>
-}
+<style>
+    .card {
+        border: none;
+        border-radius: 10px;
+    }
+    
+    .card-header {
+        border-radius: 10px 10px 0 0 !important;
+        font-weight: 600;
+    }
+    
+    .progress {
+        border-radius: 10px;
+    }
+    
+    .progress-bar {
+        border-radius: 10px;
+    }
+    
+    dt {
+        font-weight: 600;
+        color: #495057;
+    }
+    
+    dd {
+        margin-bottom: 0.5rem;
+    }
+    
+    .table th {
+        font-weight: 600;
+        background-color: #f8f9fa;
+    }
+    
+    .badge {
+        font-size: 0.75em;
+    }
+</style>

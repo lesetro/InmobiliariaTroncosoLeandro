@@ -19,7 +19,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         // ========================================
 
         Task<(IList<Contrato> contratos, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
-            int pagina, string buscar, string estado,string tipoContrato, int itemsPorPagina);
+            int pagina, string buscar, string estado, string tipoContrato, int itemsPorPagina);
 
         // ========================================
         // MÉTODOS DE VALIDACIÓN ESPECÍFICOS DE NEGOCIO
@@ -60,5 +60,8 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         // Métodos de relación para filtrado dinámico
         Task<List<dynamic>> ObtenerInmueblesPorPropietarioAsync(int propietarioId, int limite = 15);
         Task<dynamic?> ObtenerPropietarioDeInmuebleAsync(int inmuebleId);
+        Task<bool> TieneContratosActivosAsync(int idInmueble);
+
+        
     }
 }

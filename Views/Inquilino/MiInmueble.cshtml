@@ -1,0 +1,192 @@
+@model Inmueble
+@{
+    ViewData["Title"] = "Mi Vivienda";
+    Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-house-door text-primary"></i> Mi Vivienda
+    </h1>
+    <a asp-action="Index" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Imagen Principal -->
+        <div class="card shadow mb-4">
+            <div class="card-body p-0">
+                @if (Model.TienePortada)
+                {
+                    <img src="@Model.UrlPortadaODefault" class="w-100" 
+                         style="height: 300px; object-fit: cover;" 
+                         alt="Imagen de la vivienda">
+                }
+                else if (Model.Imagenes != null && Model.Imagenes.Any())
+                {
+                    <img src="@Model.Imagenes.First().Url" class="w-100" 
+                         style="height: 300px; object-fit: cover;" 
+                         alt="Imagen de la vivienda">
+                }
+                else
+                {
+                    <div class="text-center py-5 bg-light">
+                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Sin imágenes disponibles</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Información Básica -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-info-circle"></i> Información de la Vivienda
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>📍 Dirección:</strong><br>@Model.Direccion</p>
+                        <p><strong>🏠 Tipo:</strong> @Model.TipoInmueble?.Nombre</p>
+                        <p><strong>🎯 Uso:</strong> @Model.Uso</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>💰 Precio:</strong><br><span class="text-success font-weight-bold">$@Model.Precio.ToString("N0")</span></p>
+                        <p><strong>🚪 Ambientes:</strong> @Model.Ambientes</p>
+                        <p><strong>📊 Estado:</strong> <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span></p>
+                    </div>
+                </div>
+
+                <!-- Galería de Imágenes (Miniaturas) -->
+                @if (Model.Imagenes != null && Model.Imagenes.Any())
+                {
+                    <hr>
+                    <h6 class="font-weight-bold">🖼️ Galería de Imágenes</h6>
+                    <div class="row">
+                        @foreach (var imagen in Model.Imagenes.Take(6))
+                        {
+                            <div class="col-4 col-md-2 mb-2">
+                                <img src="@imagen.Url" class="img-thumbnail" 
+                                     style="height: 80px; object-fit: cover; cursor: pointer;" 
+                                     onclick="abrirImagen('@imagen.Url')"
+                                     alt="Imagen propiedad">
+                            </div>
+                        }
+                    </div>
+                    @if (Model.Imagenes.Count > 6)
+                    {
+                        <small class="text-muted">+ @(Model.Imagenes.Count - 6) imágenes más</small>
+                    }
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Propietario -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-person"></i> Propietario
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="@(Model.Propietario?.Usuario?.Avatar ?? "/img/default-avatar.png")" 
+                     class="rounded-circle mb-3" 
+                     style="width: 80px; height: 80px; object-fit: cover;">
+                <h6 class="mb-1">@Model.Propietario?.Usuario?.NombreCompleto</h6>
+                <p class="text-muted small mb-3">Propietario</p>
+                
+                <div class="border-top pt-3">
+                    <p class="mb-2">
+                        <i class="bi bi-telephone text-primary"></i> 
+                        @Model.Propietario?.Usuario?.Telefono
+                    </p>
+                    <p class="mb-0">
+                        <i class="bi bi-envelope text-primary"></i> 
+                        @Model.Propietario?.Usuario?.Email
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-lightning"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a href="tel:@Model.Propietario?.Usuario?.Telefono" class="btn btn-outline-primary">
+                        <i class="bi bi-telephone"></i> Llamar Propietario
+                    </a>
+                    <a href="mailto:@Model.Propietario?.Usuario?.Email" class="btn btn-outline-primary">
+                        <i class="bi bi-envelope"></i> Enviar Email
+                    </a>
+                    <a href="#" class="btn btn-outline-success">
+                        <i class="bi bi-cash"></i> Realizar Pago
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contactos de Emergencia -->
+        <div class="card shadow border-warning">
+            <div class="card-header py-3 bg-warning">
+                <h6 class="m-0 font-weight-bold text-dark">
+                    <i class="bi bi-exclamation-triangle"></i> Contactos de Emergencia
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p class="mb-2">
+                        <strong>🚨 Emergencias:</strong><br>
+                        <i class="bi bi-telephone"></i> 911
+                    </p>
+                    <p class="mb-2">
+                        <strong>🔥 Bomberos:</strong><br>
+                        <i class="bi bi-telephone"></i> 100
+                    </p>
+                    <p class="mb-2">
+                        <strong>🏥 Ambulancia:</strong><br>
+                        <i class="bi bi-telephone"></i> 107
+                    </p>
+                    <p class="mb-0">
+                        <strong>⚡ Electricidad:</strong><br>
+                        <i class="bi bi-telephone"></i> 0800-999-0810
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para imagen ampliada -->
+<div class="modal fade" id="imagenModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Imagen de la propiedad</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body text-center">
+                <img id="imagenAmpliada" src="" class="img-fluid" alt="Imagen ampliada">
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function abrirImagen(url) {
+            document.getElementById('imagenAmpliada').src = url;
+            new bootstrap.Modal(document.getElementById('imagenModal')).show();
+        }
+    </script>
+}

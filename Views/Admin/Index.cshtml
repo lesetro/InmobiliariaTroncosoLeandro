@@ -268,7 +268,7 @@
                     <h6 class="m-0 font-weight-bold text-primary">Accesos Rápidos</h6>
                 </div>
                 <div class="card-body">
-                    <div class="row">
+                    <div class="row flex-nowrap overflow-auto">
                         <div class="col-md-3 mb-3">
                             <a asp-controller="Usuario" asp-action="Create" class="btn btn-outline-primary btn-block">
                                 <i class="bi bi-person-plus"></i><br>Crear Usuario
@@ -284,11 +284,16 @@
                                 <i class="bi bi-file-earmark-plus"></i><br>Nuevo Contrato
                             </a>
                         </div>
+                         @if (User.IsInRole("administrador"))
+                        {
+                            
                         <div class="col-md-3 mb-3">
                             <a asp-controller="Reportes" asp-action="Index" class="btn btn-outline-warning btn-block">
                                 <i class="bi bi-graph-up"></i><br>Ver Reportes
                             </a>
+                        
                         </div>
+                        }
                     </div>
                 </div>
             </div>

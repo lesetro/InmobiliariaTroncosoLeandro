@@ -57,13 +57,26 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         Task<IList<Inmueble>> ObtenerPropiedadesDestacadasAsync(int limite = 6);
 
         //home 
-        Task<List<Inmueble>> ObtenerCatalogoPublicoAsync(string? buscar = null, string? tipo = null, 
+        Task<List<Inmueble>> ObtenerCatalogoPublicoAsync(string? buscar = null, string? tipo = null,
         string? precio = null, string? ambientes = null, int pagina = 1, int itemsPorPagina = 12);
-    
-        Task<int> ObtenerTotalCatalogoAsync(string? buscar = null, string? tipo = null, 
+
+        Task<int> ObtenerTotalCatalogoAsync(string? buscar = null, string? tipo = null,
         string? precio = null, string? ambientes = null);
-    
-        
+        //Inquilino 
+
+        Task<Inmueble?> GetByIdAsync(int id);
+        //gestionar imagenes del propietario
+
+        Task<bool> EliminarImagenAsync(int idImagen);
+        Task<ImagenInmueble> ObtenerImagenPorIdAsync(int idImagen);
+        Task<int> GuardarImagenGaleriaAsync(int idInmueble, string urlImagen);
+        Task<Inmueble> ObtenerPorIdAsync(int idInmueble);
+        Task<bool> ActualizarPortadaAsync(int idInmueble, string urlPortada);
+
+        //Eliminar inmueble del propietario
+        Task<Inmueble> ObtenerPorIdConImagenesAsync(int id);
+        Task<bool> EliminarLogicamenteAsync(int id);
+        Task<bool> EliminarImagenesPorInmuebleAsync(int idInmueble);
         
         
         

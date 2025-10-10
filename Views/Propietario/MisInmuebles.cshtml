@@ -1,0 +1,349 @@
+@model IEnumerable<Inmueble>
+@{
+    ViewData["Title"] = "Mis Propiedades";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-building text-success"></i> Mis Propiedades
+    </h1>
+    <a asp-action="CrearInmueble" class="btn btn-success">
+        <i class="bi bi-plus-circle"></i> Agregar Propiedad
+    </a>
+</div>
+
+<!-- Filtros Rápidos -->
+<div class="row mb-4">
+    <div class="col-md-12">
+        <div class="card">
+            <div class="card-body py-2">
+                <div class="row">
+                    <div class="col-md-3">
+                        <select class="form-select form-select-sm" id="filtroEstado">
+                            <option value="">Todos los estados</option>
+                            <option value="disponible">Disponible</option>
+                            <option value="alquilado">Alquilado</option>
+                            <option value="vendido">Vendido</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <input type="text" class="form-control form-control-sm" placeholder="Buscar por dirección..." id="filtroDireccion">
+                    </div>
+                    <div class="col-md-6 text-end">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle"></i> Mostrando @Model.Count() propiedades
+                        </small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-success">
+            <i class="bi bi-grid"></i> Mis Propiedades
+        </h6>
+        <div class="btn-group">
+            <button type="button" class="btn btn-outline-secondary btn-sm active" data-view="grid">
+                <i class="bi bi-grid-3x3-gap"></i>
+            </button>
+            <button type="button" class="btn btn-outline-secondary btn-sm" data-view="list">
+                <i class="bi bi-list-ul"></i>
+            </button>
+        </div>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <!-- Vista Grid -->
+            <div id="vista-grid" class="view-content">
+                <div class="row">
+                    @foreach (var inmueble in Model)
+                    {
+                        <div class="col-xl-4 col-lg-6 mb-4 property-card">
+                            <div class="card h-100 property-card-inner border-0 shadow-sm hover-shadow">
+                                <div class="position-relative">
+                                    <!-- Imagen de Portada -->
+                                    <img src="@inmueble.UrlPortadaODefault" 
+                                         class="card-img-top property-image" 
+                                         alt="@inmueble.Direccion"
+                                         style="height: 220px; object-fit: cover;"
+                                         onerror="this.src='/images/default/no-image-inmueble.jpg'">
+                                    
+                                    <!-- Badges de Estado -->
+                                    <div class="position-absolute top-0 start-0 m-2">
+                                        <span class="badge @inmueble.EstadoBadgeClass">
+                                            @inmueble.EstadoParaMostrar
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Contador de Imágenes -->
+                                    <div class="position-absolute top-0 end-0 m-2">
+                                        <span class="badge bg-dark bg-opacity-75 text-white">
+                                            <i class="bi @inmueble.IconoEstadoImagenes"></i>
+                                            @inmueble.ResumenImagenes
+                                        </span>
+                                    </div>
+                                    
+                                    <!-- Precio -->
+                                    <div class="position-absolute bottom-0 start-0 end-0 p-2 bg-dark bg-opacity-50 text-white">
+                                        <h5 class="mb-0 text-center">$@inmueble.Precio.ToString("N0")</h5>
+                                    </div>
+                                </div>
+                                
+                                <div class="card-body">
+                                    <!-- Dirección -->
+                                    <h6 class="card-title text-dark mb-2">@inmueble.Direccion</h6>
+                                    
+                                    <!-- Características -->
+                                    <div class="property-features mb-3">
+                                        <div class="row text-center g-2">
+                                            <div class="col-4">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-door-closed"></i><br>
+                                                    @inmueble.Ambientes amb.
+                                                </small>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-building"></i><br>
+                                                    @inmueble.TipoInmueble?.Nombre
+                                                </small>
+                                            </div>
+                                            <div class="col-4">
+                                                <small class="text-muted">
+                                                    <i class="bi bi-calendar"></i><br>
+                                                    @inmueble.FechaAlta.ToString("MMM yyyy")
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <!-- Uso -->
+                                    <div class="mb-2">
+                                        <span class="badge bg-light text-dark border">
+                                            <i class="bi bi-tag"></i> @inmueble.Uso
+                                        </span>
+                                    </div>
+                                </div>
+                                
+                                <!-- Acciones -->
+                                <div class="card-footer bg-transparent border-top">
+                                    <div class="btn-group w-100" role="group">
+                                        <a asp-action="DetalleInmueble" asp-route-id="@inmueble.IdInmueble" 
+                                           class="btn btn-outline-primary btn-sm" title="Ver Detalles">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        <a asp-action="EditarInmueble" asp-route-id="@inmueble.IdInmueble" 
+                                           class="btn btn-outline-success btn-sm" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="GestionarImagenes" asp-route-id="@inmueble.IdInmueble" 
+                                           class="btn btn-outline-info btn-sm" title="Gestionar Imágenes">
+                                            <i class="bi bi-images"></i>
+                                        </a>
+                                        <button type="button" 
+                                                class="btn btn-outline-danger btn-sm"
+                                                onclick="confirmarEliminacion(@inmueble.IdInmueble, '@inmueble.Direccion')"
+                                                title="Eliminar">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    }
+                </div>
+            </div>
+
+            <!-- Vista Lista (oculta inicialmente) -->
+            <div id="vista-lista" class="view-content d-none">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Imagen</th>
+                                <th>Dirección</th>
+                                <th>Tipo</th>
+                                <th>Ambientes</th>
+                                <th>Precio</th>
+                                <th>Estado</th>
+                                <th>Fecha Alta</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var inmueble in Model)
+                            {
+                                <tr>
+                                    <td>
+                                        <img src="@inmueble.UrlPortadaODefault" 
+                                             class="rounded" 
+                                             style="width: 60px; height: 45px; object-fit: cover;"
+                                             onerror="this.src='/images/default/no-image-inmueble.jpg'">
+                                    </td>
+                                    <td>
+                                        <strong>@inmueble.Direccion</strong><br>
+                                        <small class="text-muted">@inmueble.Uso</small>
+                                    </td>
+                                    <td>@inmueble.TipoInmueble?.Nombre</td>
+                                    <td>@inmueble.Ambientes</td>
+                                    <td class="fw-bold text-success">$@inmueble.Precio.ToString("N0")</td>
+                                    <td>
+                                        <span class="badge @inmueble.EstadoBadgeClass">
+                                            @inmueble.EstadoParaMostrar
+                                        </span>
+                                    </td>
+                                    <td>@inmueble.FechaAlta.ToString("dd/MM/yyyy")</td>
+                                    <td>
+                                        <div class="btn-group btn-group-sm">
+                                            <a asp-action="DetalleInmueble" asp-route-id="@inmueble.IdInmueble" 
+                                               class="btn btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a asp-action="EditarInmueble" asp-route-id="@inmueble.IdInmueble" 
+                                               class="btn btn-outline-success">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a asp-action="GestionarImagenes" asp-route-id="@inmueble.IdInmueble" 
+                                               class="btn btn-outline-info">
+                                                <i class="bi bi-images"></i>
+                                            </a>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-building text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No tienes propiedades registradas</h4>
+                <p class="text-muted mb-4">Comienza agregando tu primera propiedad</p>
+                <a asp-action="CrearInmueble" class="btn btn-success btn-lg">
+                    <i class="bi bi-plus-circle"></i> Agregar Primera Propiedad
+                </a>
+            </div>
+        }
+    </div>
+</div>
+
+<style>
+    .hover-shadow:hover {
+        transform: translateY(-2px);
+        transition: all 0.3s ease;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15) !important;
+    }
+    .property-image {
+        transition: transform 0.3s ease;
+    }
+    .property-card:hover .property-image {
+        transform: scale(1.05);
+    }
+    .view-content {
+        transition: opacity 0.3s ease;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        // Cambio entre vista grid y lista
+        document.querySelectorAll('[data-view]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                const view = this.getAttribute('data-view');
+                
+                // Actualizar botones activos
+                document.querySelectorAll('[data-view]').forEach(b => b.classList.remove('active'));
+                this.classList.add('active');
+                
+                // Mostrar/ocultar vistas
+                document.getElementById('vista-grid').classList.toggle('d-none', view !== 'grid');
+                document.getElementById('vista-lista').classList.toggle('d-none', view !== 'list');
+            });
+        });
+
+        // Filtros
+        document.getElementById('filtroEstado').addEventListener('change', filtrarPropiedades);
+        document.getElementById('filtroDireccion').addEventListener('input', filtrarPropiedades);
+
+        function filtrarPropiedades() {
+            const estado = document.getElementById('filtroEstado').value.toLowerCase();
+            const direccion = document.getElementById('filtroDireccion').value.toLowerCase();
+            
+            document.querySelectorAll('.property-card').forEach(card => {
+                const cardEstado = card.querySelector('.badge').textContent.toLowerCase();
+                const cardDireccion = card.querySelector('.card-title').textContent.toLowerCase();
+                
+                const coincideEstado = !estado || cardEstado.includes(estado);
+                const coincideDireccion = !direccion || cardDireccion.includes(direccion);
+                
+                card.style.display = (coincideEstado && coincideDireccion) ? 'block' : 'none';
+            });
+        }
+
+        function confirmarEliminacion(id, direccion) {
+    if (confirm(`¿Estás seguro de que quieres eliminar la propiedad:\n"${direccion}"?\n\nEsta acción no se puede deshacer.`)) {
+        eliminarInmueble(id);
+    }
+}
+
+function eliminarInmueble(id) {
+    // Mostrar loading
+    const boton = event.target.closest('button');
+    const originalHTML = boton.innerHTML;
+    boton.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    boton.disabled = true;
+
+    // Usar FormData para enviar el id
+    const formData = new FormData();
+    formData.append('id', id);
+
+    fetch('@Url.Action("EliminarInmueble", "Propietario")', {
+        method: 'POST',
+        body: formData,
+        headers: {
+            'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            mostrarMensaje('success', data.message);
+            
+            // Eliminar la tarjeta del DOM después de un breve delay
+            setTimeout(() => {
+                const card = document.querySelector(`[onclick*="${id}"]`).closest('.property-card');
+                if (card) {
+                    card.style.opacity = '0';
+                    setTimeout(() => card.remove(), 300);
+                } else {
+                    // Si no encuentra la tarjeta, recargar la página
+                    location.reload();
+                }
+            }, 1500);
+        } else {
+            mostrarMensaje('error', data.message);
+            // Restaurar botón
+            boton.innerHTML = originalHTML;
+            boton.disabled = false;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        mostrarMensaje('error', 'Error de conexión');
+        // Restaurar botón
+        boton.innerHTML = originalHTML;
+        boton.disabled = false;
+    });
+}
+    </script>
+
+    
+}

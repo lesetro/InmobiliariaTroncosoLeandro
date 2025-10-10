@@ -4,7 +4,7 @@
     ViewData["Title"] = "Gestión de Usuarios";
     Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
     
-    // ✅ Convertir ViewBag a variables tipadas para evitar errores con Math
+    
     var paginaActual = (int)ViewBag.PaginaActual;
     var totalPaginas = (int)ViewBag.TotalPaginas;
     var totalRegistros = (int)ViewBag.TotalRegistros;
@@ -283,10 +283,14 @@
                                             @if (User.IsInRole("administrador") || 
                                                  (User.IsInRole("empleado") && (usuario.Rol == "propietario" || usuario.Rol == "inquilino")))
                                             {
+                                                @if (User.IsInRole("administrador"))
+                                                {
+
                                                 <a asp-action="Edit" asp-route-id="@usuario.IdUsuario" 
                                                    class="btn btn-warning btn-sm" title="Editar">
                                                     <i class="bi bi-pencil"></i>
                                                 </a>
+                                                }
                                             }
                                             
                                             @if (User.IsInRole("administrador"))

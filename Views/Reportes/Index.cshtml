@@ -231,6 +231,81 @@
         <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
     </div>
 }
+<!-- Modal para Editar Observaciones -->
+<div class="modal fade" id="modalObservaciones" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Editar Observaciones</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <textarea id="observacionesTexto" class="form-control" rows="5" 
+                          placeholder="Ingrese sus observaciones aquí..."></textarea>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="guardarObservaciones()">Guardar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Token anti-falsificación -->
+@Html.AntiForgeryToken()
+
+@section Scripts {
+    <script>
+        let interesSeleccionado = null;
+
+        function editarObservaciones(id) {
+            interesSeleccionado = id;
+            
+            fetch(`/InteresInmueble/ObtenerInfoRapida?id=${id}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        $('#observacionesTexto').val(data.data.observaciones || '');
+                        $('#modalObservaciones').modal('show');
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('Error al cargar observaciones');
+                });
+        }
+
+        function guardarObservaciones() {
+            const observaciones = $('#observacionesTexto').val();
+            
+            fetch('/InteresInmueble/ActualizarObservaciones', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'RequestVerificationToken': document.querySelector('input[name="__RequestVerificationToken"]').value
+                },
+                body: `id=${interesSeleccionado}&observaciones=${encodeURIComponent(observaciones)}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert(data.message);
+                    $('#modalObservaciones').modal('hide');
+                    // Opcional: recargar la página o actualizar algún elemento específico
+                    location.reload();
+                } else {
+                    alert('Error: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al guardar observaciones');
+            });
+        }
+    </script>
+}
 
 @functions {
     private object? GetPropertyValue(object obj, string propertyName)

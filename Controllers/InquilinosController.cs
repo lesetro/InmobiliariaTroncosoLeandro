@@ -119,6 +119,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Inquilinos/Edit/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
@@ -146,6 +147,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: Inquilinos/Edit/5
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Inquilino inquilino)
         {
@@ -226,6 +228,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Inquilinos/Delete/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0)
@@ -252,6 +255,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // POST: Inquilinos/Delete/5
+        [Authorize(Policy = "Administrador")]
         [HttpPost, ActionName("Delete")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
@@ -313,5 +317,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
             return RedirectToAction(nameof(Index));
         }
+
+        
     }
 }

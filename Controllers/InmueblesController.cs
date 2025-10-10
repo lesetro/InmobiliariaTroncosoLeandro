@@ -4,6 +4,7 @@ using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
 using Inmobiliaria_troncoso_leandro.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
@@ -13,11 +14,18 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         private readonly IRepositorioInmueble _repositorioInmueble;
         private readonly ISearchService _searchService;
         private readonly IWebHostEnvironment _environment;
+        private readonly IRepositorioPropietario _repositorioPropietario;
 
-        public InmueblesController(IRepositorioInmueble repositorioInmueble, ISearchService searchService, IWebHostEnvironment environment)
+        public InmueblesController(
+            
+            IRepositorioInmueble repositorioInmueble,
+            ISearchService searchService,
+            IRepositorioPropietario repositorioPropietario, 
+            IWebHostEnvironment environment)
         {
             _repositorioInmueble = repositorioInmueble;
             _searchService = searchService;
+            _repositorioPropietario = repositorioPropietario;
             _environment = environment;
 
         }
@@ -64,7 +72,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        // POST: Inmuebles/Create
+       // POST: Inmuebles/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Inmueble inmueble)
@@ -79,7 +87,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     // Validar formato de coordenadas
                     if (!string.IsNullOrEmpty(inmueble.Coordenadas) && !IsValidCoordinates(inmueble.Coordenadas))
                     {
-                        ModelState.AddModelError("Coordenadas", "Formato de coordenadas inválido (ej. -34.6037,-58.3816)");
+                        ModelState.AddModelError("Coordenadas", "Formato de coordenadas inválido (ej. -34.6037,-58.3816), sin espacios despues de la coma");
                         await PopulateViewDataAsync();
                         return View(inmueble);
                     }
@@ -118,6 +126,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
 
         // GET: Inmuebles/Edit
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
@@ -148,6 +157,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: Inmuebles/Edit
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Inmueble inmueble)
         {
@@ -163,7 +173,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     // Validar formato de coordenadas
                     if (!string.IsNullOrEmpty(inmueble.Coordenadas) && !IsValidCoordinates(inmueble.Coordenadas))
                     {
-                        ModelState.AddModelError("Coordenadas", "Formato de coordenadas inválido (ej. -34.6037,-58.3816)");
+                        ModelState.AddModelError("Coordenadas", "Formato de coordenadas inválido (ej. -34.6037,-58.3816) *sin espacios despues de la coma");
                         await PopulateViewDataAsync();
                         return View(inmueble);
                     }
@@ -199,6 +209,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Inmuebles/Delete
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0)
@@ -230,6 +241,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: Inmuebles/Delete
         [HttpPost, ActionName("Delete")]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {

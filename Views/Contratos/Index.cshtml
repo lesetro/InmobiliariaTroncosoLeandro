@@ -266,43 +266,60 @@ else
                             <div class="btn-group" role="group">
                                 @if (contrato.TipoContrato == "alquiler")
                                 {
+                                    <!-- CONTRATO ALQUILER -->
                                     <a asp-action="Details" asp-route-id="@contrato.Id" 
                                        class="btn btn-success btn-sm" title="Detalle">
                                         <i class="bi bi-file-earmark-text"></i>
                                     </a>
-                                    <a asp-action="Edit" asp-route-id="@contrato.Id" 
-                                       class="btn btn-warning btn-sm" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@contrato.Id" 
+                                    @if (User.IsInRole("administrador"))
+                                    {
+                                        <a asp-action="Edit" asp-route-id="@contrato.Id" 
+                                           class="btn btn-warning btn-sm" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        <a asp-action="Delete" asp-route-id="@contrato.Id" 
+                                           class="btn btn-danger btn-sm" title="Finalizar Contrato">
+                                            <i class="bi bi-flag-fill"></i>
+                                        </a>
+                                    }
+                                   @*  <!-- Nota: Necesitarías IdInmueble en tu ViewModel para este enlace -->
+                                    <!-- <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@contrato.IdInmueble" 
                                        class="btn btn-info btn-sm" title="Imágenes">
                                         <i class="bi bi-images"></i>
-                                    </a>
-                                    <a asp-action="Delete" asp-route-id="@contrato.Id" 
-                                       class="btn btn-danger btn-sm" title="Finalizar Contrato">
-                                        <i class="bi bi-flag-fill"></i>
-                                    </a>
+                                    </a> --> *@
                                 }
                                 else
                                 {
-                                     <a asp-controller="ContratoVenta" asp-action="Details" asp-route-id="@contrato.Id" 
+                                    <!-- CONTRATO VENTA -->
+                                    <a asp-controller="ContratoVenta" asp-action="Details" asp-route-id="@contrato.Id" 
                                        class="btn btn-success btn-sm" title="Detalle">
                                         <i class="bi bi-file-earmark-text"></i>
                                     </a>
-                                    <a asp-controller="ContratoVenta" asp-action="Edit" asp-route-id="@contrato.Id" 
-                                       class="btn btn-warning btn-sm" title="Editar">
-                                        <i class="bi bi-pencil"></i>
-                                    </a> 
-                                    <a asp-controller="Pagos" asp-action="Index" asp-route-idContratoVenta="@contrato.Id" 
+                                    
+                                    <a asp-controller="Pagos" asp-action="Index" asp-route-id="@contrato.Id" 
                                        class="btn btn-info btn-sm" title="Pagos">
                                         <i class="bi bi-cash-coin"></i>
                                     </a>
-                                     @if (contrato.Estado != "cancelada" && contrato.Estado != "escriturada")
+                                    
+                                    @if (User.IsInRole("administrador"))
                                     {
-                                        <a asp-controller="ContratoVenta" asp-action="Delete" asp-route-id="@contrato.Id" 
-                                           class="btn btn-danger btn-sm" title="Cancelar">
-                                            <i class="bi bi-x-circle"></i>
+                                        <a asp-controller="ContratoVenta" asp-action="MarcarEscriturada" asp-route-id="@contrato.Id" 
+                                           class="btn btn-success btn-sm" title="Marcar Escriturada">
+                                            <i class="bi bi-file-check"></i>
                                         </a>
+                                        
+                                        @if (contrato.Estado != "cancelada" && contrato.Estado != "escriturada")
+                                        {
+                                            <a asp-controller="ContratoVenta" asp-action="Delete" asp-route-id="@contrato.Id" 
+                                               class="btn btn-danger btn-sm" title="Cancelar">
+                                                <i class="bi bi-x-circle"></i>
+                                            </a>
+                                        }
+                                        
+                                        <a asp-controller="ContratoVenta" asp-action="Edit" asp-route-id="@contrato.Id" 
+                                           class="btn btn-warning btn-sm" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a> 
                                     }
                                 }
                             </div>

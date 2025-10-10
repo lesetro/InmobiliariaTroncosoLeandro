@@ -5,7 +5,6 @@
     Layout = "~/Views/Shared/_LayoutPublic.cshtml";
 }
 
-<!-- Breadcrumb -->
 <div class="breadcrumb-section py-3 bg-light">
     <div class="container">
         <nav aria-label="breadcrumb">
@@ -20,45 +19,43 @@
 
 <div class="container py-5">
     <div class="row">
-        <!-- Información principal de la propiedad -->
+        <!-- Contenido principal - IZQUIERDA (8 columnas) -->
         <div class="col-lg-8">
             <!-- Galería de imágenes -->
-<div class="property-gallery mb-4">
-    <div class="main-image">
-        <img src="@Model.UrlPortadaODefault" alt="Propiedad en @Model.Direccion" class="img-fluid rounded" id="mainImage">
-        <div class="image-badges">
-            <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span>
-            <span class="badge badge-primary badge-lg">@Model.TipoInmueble?.Nombre</span>
-        </div>
-    </div>
-
-    <!-- Thumbnails (REALES desde la base de datos) -->
-    <div class="thumbnail-gallery mt-3">
-        <div class="row">
-            @if (Model.Imagenes != null && Model.Imagenes.Any())
-            {
-                <!-- Mostrar todas las imágenes incluyendo la portada -->
-                @foreach (var imagen in Model.Imagenes)
-                {
-                    <div class="col-3 mb-3">
-                        <img src="@imagen.Url" alt="@(imagen.Descripcion ?? "Vista de la propiedad")" 
-                             class="img-fluid rounded thumbnail @(imagen.Url == Model.UrlPortadaODefault ? "active" : "")"
-                             onclick="changeMainImage('@imagen.Url')">
+            <div class="property-gallery mb-4">
+                <div class="main-image">
+                    <img src="@Model.UrlPortadaODefault" alt="Propiedad en @Model.Direccion" class="img-fluid rounded" id="mainImage">
+                    <div class="image-badges">
+                        <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span>
+                        <span class="badge badge-primary badge-lg">@Model.TipoInmueble?.Nombre</span>
                     </div>
-                }
-            }
-            else
-            {
-                <!-- Si no hay imágenes, mostrar solo la portada -->
-                <div class="col-3">
-                    <img src="@Model.UrlPortadaODefault" alt="Vista principal" 
-                         class="img-fluid rounded thumbnail active"
-                         onclick="changeMainImage('@Model.UrlPortadaODefault')">
                 </div>
-            }
-        </div>
-    </div>
-</div>
+
+                <!-- Thumbnails -->
+                <div class="thumbnail-gallery mt-3">
+                    <div class="row">
+                        @if (Model.Imagenes != null && Model.Imagenes.Any())
+                        {
+                            @foreach (var imagen in Model.Imagenes)
+                            {
+                                <div class="col-3 mb-3">
+                                    <img src="@imagen.Url" alt="@(imagen.Descripcion ?? "Vista de la propiedad")" 
+                                         class="img-fluid rounded thumbnail @(imagen.Url == Model.UrlPortadaODefault ? "active" : "")"
+                                         onclick="changeMainImage('@imagen.Url')">
+                                </div>
+                            }
+                        }
+                        else
+                        {
+                            <div class="col-3">
+                                <img src="@Model.UrlPortadaODefault" alt="Vista principal" 
+                                     class="img-fluid rounded thumbnail active"
+                                     onclick="changeMainImage('@Model.UrlPortadaODefault')">
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
 
             <!-- Información básica -->
             <div class="property-info mb-4">
@@ -117,45 +114,44 @@
                 </div>
             </div>
 
-            
             <!-- Descripción -->
-<div class="property-description mb-4">
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title mb-3">
-                <i class="fas fa-align-left text-primary"></i> Descripción de la Propiedad
-            </h5>
-            <p class="card-text">
-                <strong>Características principales:</strong><br>
-                • <strong>Tipo:</strong> @Model.TipoInmueble?.Nombre<br>
-                • <strong>Uso:</strong> @Model.Uso<br>
-                • <strong>Ambientes:</strong> @Model.Ambientes<br>
-                • <strong>Ubicación:</strong> @Model.Direccion<br>
-                • <strong>Estado:</strong> <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span><br>
-                • <strong>Precio:</strong> <span class="text-primary fw-bold">$@Model.Precio.ToString("N0") mensual</span>
-            </p>
-            
-            @if (!string.IsNullOrEmpty(Model.Coordenadas))
-            {
-                <p class="card-text mt-3">
-                    <strong>Ubicación precisa:</strong> Coordenadas GPS disponibles para visitas.
-                </p>
-            }
-            
-            <p class="card-text mt-3">
-                <strong>Disponibilidad:</strong> 
-                @if (Model.EstaDisponible)
-                {
-                    <span class="text-success">✅ Disponible para @Model.Uso.ToLower() inmediato</span>
-                }
-                else
-                {
-                    <span class="text-warning">⏳ Actualmente @Model.EstadoParaMostrar.ToLower()</span>
-                }
-            </p>
-        </div>
-    </div>
-</div>
+            <div class="property-description mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-align-left text-primary"></i> Descripción de la Propiedad
+                        </h5>
+                        <p class="card-text">
+                            <strong>Características principales:</strong><br>
+                            • <strong>Tipo:</strong> @Model.TipoInmueble?.Nombre<br>
+                            • <strong>Uso:</strong> @Model.Uso<br>
+                            • <strong>Ambientes:</strong> @Model.Ambientes<br>
+                            • <strong>Ubicación:</strong> @Model.Direccion<br>
+                            • <strong>Estado:</strong> <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span><br>
+                            • <strong>Precio:</strong> <span class="text-primary fw-bold">$@Model.Precio.ToString("N0") mensual</span>
+                        </p>
+                    
+                        @if (!string.IsNullOrEmpty(Model.Coordenadas))
+                        {
+                            <p class="card-text mt-3">
+                                <strong>Ubicación precisa:</strong> Coordenadas GPS disponibles para visitas.
+                            </p>
+                        }
+                    
+                        <p class="card-text mt-3">
+                            <strong>Disponibilidad:</strong> 
+                            @if (Model.EstaDisponible)
+                            {
+                                <span class="text-success">✅ Disponible para @Model.Uso.ToLower() inmediato</span>
+                            }
+                            else
+                            {
+                                <span class="text-warning">⏳ Actualmente @Model.EstadoParaMostrar.ToLower()</span>
+                            }
+                        </p>
+                    </div>
+                </div>
+            </div>
 
             <!-- Características adicionales -->
             <div class="additional-features mb-4">
@@ -191,43 +187,44 @@
                 </div>
             </div>
 
-           <!-- Mapa interactivo -->
-<div class="property-map mb-4">
-    <div class="card">
-        <div class="card-body">
-            <h5 class="card-title mb-3">
-                <i class="fas fa-map-marked-alt text-primary"></i> Ubicación Exacta
-            </h5>
-            
-            @if (!string.IsNullOrEmpty(Model.Coordenadas))
-            {
-                <div id="map" class="mb-3"></div>
-                <div class="location-info">
-                    <p class="mb-1"><strong>Dirección:</strong> @Model.Direccion</p>
-                    <p class="mb-1"><strong>Coordenadas:</strong> @Model.Coordenadas</p>
-                    <small class="text-muted">
-                        <i class="fas fa-info-circle"></i> 
-                        Haz zoom y mueve el mapa para ver la ubicación exacta
-                    </small>
-                </div>
-            }
-            else
-            {
-                <div class="map-placeholder bg-light rounded d-flex align-items-center justify-content-center"
-                     style="height: 300px;">
-                    <div class="text-center text-muted">
-                        <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
-                        <h6>@Model.Direccion</h6>
-                        <p>Villa Mercedes, San Luis</p>
-                        <small>Coordenadas no disponibles</small>
+            <!-- Mapa interactivo -->
+            <div class="property-map mb-4">
+                <div class="card">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3">
+                            <i class="fas fa-map-marked-alt text-primary"></i> Ubicación Exacta
+                        </h5>
+                        
+                        @if (!string.IsNullOrEmpty(Model.Coordenadas))
+                        {
+                            <div id="map" class="mb-3"></div>
+                            <div class="location-info">
+                                <p class="mb-1"><strong>Dirección:</strong> @Model.Direccion</p>
+                                <p class="mb-1"><strong>Coordenadas:</strong> @Model.Coordenadas</p>
+                                <small class="text-muted">
+                                    <i class="fas fa-info-circle"></i> 
+                                    Haz zoom y mueve el mapa para ver la ubicación exacta
+                                </small>
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="map-placeholder bg-light rounded d-flex align-items-center justify-content-center"
+                                 style="height: 300px;">
+                                <div class="text-center text-muted">
+                                    <i class="fas fa-map-marker-alt fa-3x mb-3"></i>
+                                    <h6>@Model.Direccion</h6>
+                                    <p>Villa Mercedes, San Luis</p>
+                                    <small>Coordenadas no disponibles</small>
+                                </div>
+                            </div>
+                        }
                     </div>
                 </div>
-            }
-        </div>
-    </div>
-</div>
+            </div>
+        </div> <!-- Cierre del col-lg-8 -->
 
-        <!-- Sidebar -->
+        <!-- Sidebar - DERECHA (4 columnas) -->
         <div class="col-lg-4">
             <!-- Formulario de contacto -->
             <div class="contact-form-sticky">
@@ -336,63 +333,63 @@
                     </div>
                 </div>
             </div>
-        </div>
-    </div>
+        </div> <!-- Cierre del col-lg-4 -->
+    </div> <!-- Cierre del row -->
 
-    <!-- Propiedades relacionadas -->
-   
-@{
-    var propiedadesRel = ViewBag.PropiedadesRelacionadas as IEnumerable<Inmobiliaria_troncoso_leandro.Models.Inmueble>;
-}
+    <!-- Propiedades relacionadas (fuera del row principal) -->
+    @{
+        var propiedadesRel = ViewBag.PropiedadesRelacionadas as IEnumerable<Inmobiliaria_troncoso_leandro.Models.Inmueble>;
+    }
 
-@if (propiedadesRel != null && propiedadesRel.Any())
-{   <div class="related-properties mt-5">
-        <h3 class="mb-4">Propiedades Similares</h3>
-        <div class="row">
-            @foreach (var propiedad in propiedadesRel)
-            {
-                <div class="col-lg-4 col-md-6 mb-4">
-                    <div class="property-card h-100">
-                        <div class="property-image">
-                            <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid">
-                            <div class="property-badges">
-                                <span class="badge @propiedad.EstadoBadgeClass">@propiedad.EstadoParaMostrar</span>
-                                <span class="badge badge-primary">@propiedad.TipoInmueble?.Nombre</span>
+    @if (propiedadesRel != null && propiedadesRel.Any())
+    {   
+        <div class="related-properties mt-5">
+            <h3 class="mb-4">Propiedades Similares</h3>
+            <div class="row">
+                @foreach (var propiedad in propiedadesRel)
+                {
+                    <div class="col-lg-4 col-md-6 mb-4">
+                        <div class="property-card h-100">
+                            <div class="property-image">
+                                <img src="@propiedad.UrlPortadaODefault" alt="Propiedad en @propiedad.Direccion" class="img-fluid">
+                                <div class="property-badges">
+                                    <span class="badge @propiedad.EstadoBadgeClass">@propiedad.EstadoParaMostrar</span>
+                                    <span class="badge badge-primary">@propiedad.TipoInmueble?.Nombre</span>
+                                </div>
                             </div>
-                        </div>
-                        <div class="property-content">
-                            <div class="property-price">
-                                <h5 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h5>
-                            </div>
-                            <h6 class="property-title">Propiedad en @propiedad.Direccion</h6>
-                            <p class="property-location">
-                                <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
-                            </p>
-                            <div class="property-features">
-                                <span class="feature">
-                                    <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
-                                </span>
-                                <span class="feature">
-                                    <i class="fas fa-bath"></i> 2 baños
-                                </span>
-                                <span class="feature">
-                                    <i class="fas fa-ruler-combined"></i> 100m²
-                                </span>
-                            </div>
-                            <div class="property-actions mt-3">
-                                <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble"
-                                    class="btn btn-outline-primary btn-block">
-                                    <i class="fas fa-eye"></i> Ver Detalles
-                                </a>
+                            <div class="property-content">
+                                <div class="property-price">
+                                    <h5 class="text-primary font-weight-bold">$@propiedad.Precio.ToString("N0")</h5>
+                                </div>
+                                <h6 class="property-title">Propiedad en @propiedad.Direccion</h6>
+                                <p class="property-location">
+                                    <i class="fas fa-map-marker-alt text-muted"></i> @propiedad.Direccion
+                                </p>
+                                <div class="property-features">
+                                    <span class="feature">
+                                        <i class="fas fa-bed"></i> @propiedad.Ambientes amb.
+                                    </span>
+                                    <span class="feature">
+                                        <i class="fas fa-bath"></i> 2 baños
+                                    </span>
+                                    <span class="feature">
+                                        <i class="fas fa-ruler-combined"></i> 100m²
+                                    </span>
+                                </div>
+                                <div class="property-actions mt-3">
+                                    <a asp-action="DetallePropiedad" asp-route-id="@propiedad.IdInmueble"
+                                        class="btn btn-outline-primary btn-block">
+                                        <i class="fas fa-eye"></i> Ver Detalles
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
-                </div>
-            }
+                }
+            </div>
         </div>
-    </div>
-}
-</div>
+    }
+</div> 
 
 @section Scripts {
     <script>

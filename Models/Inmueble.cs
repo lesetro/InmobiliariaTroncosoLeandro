@@ -19,6 +19,9 @@ namespace Inmobiliaria_troncoso_leandro.Models
         [Column("id_tipo_inmueble")]
         public int IdTipoInmueble { get; set; }
 
+        [Column("id_usuario_creador")]
+        public int? IdUsuarioCreador { get; set; }
+
         [Required]
         [StringLength(255)]
         [Column("direccion")]
@@ -38,8 +41,8 @@ namespace Inmobiliaria_troncoso_leandro.Models
         public decimal Precio { get; set; }
 
         [StringLength(100)]
-        [RegularExpression(@"^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$", 
-            ErrorMessage = "Formato: latitud,longitud (ej. 40.7128,-74.0060)")]
+        [RegularExpression(@"^-?\d{1,2}(\.\d{1,6})?,\s*-?\d{1,3}(\.\d{1,6})?$", 
+        ErrorMessage = "Formato: latitud,longitud (ej. 40.7128, -74.0060),sin espacios despues de la coma")]
         [Column("coordenadas")]
         public string? Coordenadas { get; set; }
 

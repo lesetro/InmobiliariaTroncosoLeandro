@@ -2,8 +2,9 @@ using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
 using MySql.Data.MySqlClient;
 using System.Data.Common;
-using MySql.Data.MySqlClient;
 using System.Text;
+using Dapper;
+
 
 namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 {
@@ -88,69 +89,71 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             }
         }
 
-        // ===== NUEVOS MÉTODOS - GESTIÓN DE PORTADA =====
+        // ===== NUEVOS MÉTODOS - GESTIÓN DE PORTADA ===== 
 
         public async Task<bool> CrearInmuebleConPortadaAsync(Inmueble inmueble, IWebHostEnvironment environment)
+{
+    try
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+        using var transaction = await connection.BeginTransactionAsync();
+
+        try
         {
-            try
+            // 1. Insertar inmueble CON EL ESTADO QUE VIENE DEL FORMULARIO
+            string queryInmueble = @"INSERT INTO inmueble 
+                                    (id_propietario, id_tipo_inmueble, id_usuario_creador, direccion, uso, ambientes, 
+                                     precio, coordenadas, estado, fecha_alta) 
+                                    VALUES (@id_propietario, @id_tipo_inmueble, @id_usuario_creador, @direccion, @uso, @ambientes, 
+                                            @precio, @coordenadas, @estado, @fecha_alta);
+                                    SELECT LAST_INSERT_ID();";
+
+            int idInmueble;
+            using (var command = new MySqlCommand(queryInmueble, connection, transaction))
             {
-                using var connection = new MySqlConnection(_connectionString);
-                await connection.OpenAsync();
-                using var transaction = await connection.BeginTransactionAsync();
+                command.Parameters.AddWithValue("@id_propietario", inmueble.IdPropietario);
+                command.Parameters.AddWithValue("@id_tipo_inmueble", inmueble.IdTipoInmueble);
+                command.Parameters.AddWithValue("@id_usuario_creador", inmueble.IdUsuarioCreador);
+                command.Parameters.AddWithValue("@direccion", inmueble.Direccion);
+                command.Parameters.AddWithValue("@uso", inmueble.Uso);
+                command.Parameters.AddWithValue("@ambientes", inmueble.Ambientes);
+                command.Parameters.AddWithValue("@precio", inmueble.Precio);
+                command.Parameters.AddWithValue("@coordenadas", inmueble.Coordenadas ?? (object)DBNull.Value);
+                command.Parameters.AddWithValue("@estado", inmueble.Estado ?? "disponible");
+                
+                command.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
 
-                try
-                {
-                    // 1. Insertar inmueble sin portada primero para obtener ID
-                    string queryInmueble = @"INSERT INTO inmueble 
-                                            (id_propietario, id_tipo_inmueble, direccion, uso, ambientes, 
-                                             precio, coordenadas, estado, fecha_alta) 
-                                            VALUES (@id_propietario, @id_tipo_inmueble, @direccion, @uso, @ambientes, 
-                                                    @precio, @coordenadas, @estado, @fecha_alta);
-                                            SELECT LAST_INSERT_ID();";
-
-                    int idInmueble;
-                    using (var command = new MySqlCommand(queryInmueble, connection, transaction))
-                    {
-                        command.Parameters.AddWithValue("@id_propietario", inmueble.IdPropietario);
-                        command.Parameters.AddWithValue("@id_tipo_inmueble", inmueble.IdTipoInmueble);
-                        command.Parameters.AddWithValue("@direccion", inmueble.Direccion);
-                        command.Parameters.AddWithValue("@uso", inmueble.Uso);
-                        command.Parameters.AddWithValue("@ambientes", inmueble.Ambientes);
-                        command.Parameters.AddWithValue("@precio", inmueble.Precio);
-                        command.Parameters.AddWithValue("@coordenadas", inmueble.Coordenadas ?? (object)DBNull.Value);
-                        command.Parameters.AddWithValue("@estado", "disponible");
-                        command.Parameters.AddWithValue("@fecha_alta", DateTime.Now);
-
-                        idInmueble = Convert.ToInt32(await command.ExecuteScalarAsync());
-                    }
-
-                    // 2. Si hay archivo de portada, guardarlo y actualizar URL
-                    if (inmueble.PortadaFile != null && inmueble.PortadaFile.Length > 0)
-                    {
-                        string urlPortada = await GuardarArchivoPortadaAsync(inmueble.PortadaFile, idInmueble, environment);
-
-                        string queryActualizarPortada = "UPDATE inmueble SET url_portada = @url_portada WHERE id_inmueble = @id";
-                        using var commandPortada = new MySqlCommand(queryActualizarPortada, connection, transaction);
-                        commandPortada.Parameters.AddWithValue("@url_portada", urlPortada);
-                        commandPortada.Parameters.AddWithValue("@id", idInmueble);
-                        await commandPortada.ExecuteNonQueryAsync();
-                    }
-
-                    await transaction.CommitAsync();
-                    inmueble.IdInmueble = idInmueble; // Asignar ID generado
-                    return true;
-                }
-                catch
-                {
-                    await transaction.RollbackAsync();
-                    throw;
-                }
+                idInmueble = Convert.ToInt32(await command.ExecuteScalarAsync());
             }
-            catch
+
+            // 2. Si hay archivo de portada, guardarlo y actualizar URL
+            if (inmueble.PortadaFile != null && inmueble.PortadaFile.Length > 0)
             {
-                return false;
+                string urlPortada = await GuardarArchivoPortadaAsync(inmueble.PortadaFile, idInmueble, environment);
+
+                string queryActualizarPortada = "UPDATE inmueble SET url_portada = @url_portada WHERE id_inmueble = @id";
+                using var commandPortada = new MySqlCommand(queryActualizarPortada, connection, transaction);
+                commandPortada.Parameters.AddWithValue("@url_portada", urlPortada);
+                commandPortada.Parameters.AddWithValue("@id", idInmueble);
+                await commandPortada.ExecuteNonQueryAsync();
             }
+
+            await transaction.CommitAsync();
+            inmueble.IdInmueble = idInmueble; 
+            return true;
         }
+        catch
+        {
+            await transaction.RollbackAsync();
+            throw;
+        }
+    }
+    catch
+    {
+        return false;
+    }
+}
 
         public async Task<bool> ActualizarInmuebleConPortadaAsync(Inmueble inmueble, IWebHostEnvironment environment)
         {
@@ -1488,17 +1491,17 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             return inmuebles;
         }
 
-        public async Task<List<Inmueble>> ObtenerCatalogoPublicoAsync(string? buscar = null, string? tipo = null, 
+        public async Task<List<Inmueble>> ObtenerCatalogoPublicoAsync(string? buscar = null, string? tipo = null,
     string? precio = null, string? ambientes = null, int pagina = 1, int itemsPorPagina = 12)
-{
-    var inmuebles = new List<Inmueble>();
-    
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+        {
+            var inmuebles = new List<Inmueble>();
 
-        var query = new StringBuilder(@"
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var query = @"
             SELECT DISTINCT 
                 i.id_inmueble,
                 i.direccion,
@@ -1518,296 +1521,682 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 u.apellido as PropietarioApellido,
                 u.dni as PropietarioDni,
                 u.telefono as PropietarioTelefono,
-                u.email as PropietarioEmail
+                u.email as PropietarioEmail,
+                -- Agregar imágenes en la misma consulta
+                GROUP_CONCAT(DISTINCT img.url) as ImagenesUrls
             FROM inmueble i
             LEFT JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
             LEFT JOIN propietario p ON i.id_propietario = p.id_propietario
             LEFT JOIN usuario u ON p.id_usuario = u.id_usuario
+            LEFT JOIN imagen_inmueble img ON i.id_inmueble = img.id_inmueble
             WHERE i.estado IN ('disponible', 'venta', 'reservado_alquiler', 'reservado_venta')
-        ");
+        ";
 
-        // Filtro de búsqueda
-        if (!string.IsNullOrEmpty(buscar))
-        {
-            query.Append(" AND (i.direccion LIKE @buscar OR ti.nombre LIKE @buscar OR i.uso LIKE @buscar)");
-        }
+                var conditions = new List<string>();
+                var parameters = new List<MySqlParameter>();
 
-        // Filtro por tipo
-        if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
-        {
-            query.Append(" AND LOWER(ti.nombre) = LOWER(@tipo)");
-        }
-
-        // Filtro por precio
-        if (!string.IsNullOrEmpty(precio))
-        {
-            switch (precio)
-            {
-                case "0-50000":
-                    query.Append(" AND i.precio <= 50000");
-                    break;
-                case "50000-100000":
-                    query.Append(" AND i.precio BETWEEN 50000 AND 100000");
-                    break;
-                case "100000+":
-                    query.Append(" AND i.precio > 100000");
-                    break;
-            }
-        }
-
-        // Filtro por ambientes
-        if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos")
-        {
-            if (ambientes == "5")
-            {
-                query.Append(" AND i.ambientes >= 5");
-            }
-            else
-            {
-                query.Append(" AND i.ambientes = @ambientes");
-            }
-        }
-
-        query.Append(" ORDER BY i.fecha_alta DESC LIMIT @offset, @limit");
-        
-        using var command = new MySqlCommand(query.ToString(), connection);
-        
-        // Agregar parámetros
-        if (!string.IsNullOrEmpty(buscar))
-        {
-            command.Parameters.AddWithValue("@buscar", $"%{buscar}%");
-        }
-        
-        if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
-        {
-            command.Parameters.AddWithValue("@tipo", tipo);
-        }
-        
-        if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos" && ambientes != "5")
-        {
-            command.Parameters.AddWithValue("@ambientes", int.Parse(ambientes));
-        }
-        
-        var offset = (pagina - 1) * itemsPorPagina;
-        command.Parameters.AddWithValue("@offset", offset);
-        command.Parameters.AddWithValue("@limit", itemsPorPagina);
-
-        using var reader = await command.ExecuteReaderAsync();
-        
-        while (await reader.ReadAsync())
-        {
-            // Obtener índices de columnas
-            var idInmuebleOrdinal = reader.GetOrdinal("id_inmueble");
-            var direccionOrdinal = reader.GetOrdinal("direccion");
-            var usoOrdinal = reader.GetOrdinal("uso");
-            var ambientesOrdinal = reader.GetOrdinal("ambientes");
-            var precioOrdinal = reader.GetOrdinal("precio");
-            var estadoOrdinal = reader.GetOrdinal("estado");
-            var fechaAltaOrdinal = reader.GetOrdinal("fecha_alta");
-            var idPropietarioOrdinal = reader.GetOrdinal("id_propietario");
-            var idTipoInmuebleOrdinal = reader.GetOrdinal("id_tipo_inmueble");
-            var urlPortadaOrdinal = reader.GetOrdinal("url_portada");
-            var coordenadasOrdinal = reader.GetOrdinal("coordenadas");
-            var tipoIdOrdinal = reader.GetOrdinal("TipoId");
-            var tipoNombreOrdinal = reader.GetOrdinal("TipoNombre");
-            var propietarioNombreOrdinal = reader.GetOrdinal("PropietarioNombre");
-            var propietarioApellidoOrdinal = reader.GetOrdinal("PropietarioApellido");
-            var propietarioDniOrdinal = reader.GetOrdinal("PropietarioDni");
-            var propietarioTelefonoOrdinal = reader.GetOrdinal("PropietarioTelefono");
-            var propietarioEmailOrdinal = reader.GetOrdinal("PropietarioEmail");
-
-            var inmueble = new Inmueble
-            {
-                IdInmueble = reader.GetInt32(idInmuebleOrdinal),
-                Direccion = reader.GetString(direccionOrdinal),
-                Uso = reader.GetString(usoOrdinal),
-                Ambientes = reader.GetInt32(ambientesOrdinal),
-                Precio = reader.GetDecimal(precioOrdinal),
-                Estado = reader.GetString(estadoOrdinal),
-                FechaAlta = reader.GetDateTime(fechaAltaOrdinal),
-                IdPropietario = reader.GetInt32(idPropietarioOrdinal),
-                IdTipoInmueble = reader.GetInt32(idTipoInmuebleOrdinal),
-                UrlPortada = reader.IsDBNull(urlPortadaOrdinal) ? null : reader.GetString(urlPortadaOrdinal),
-                Coordenadas = reader.IsDBNull(coordenadasOrdinal) ? null : reader.GetString(coordenadasOrdinal)
-            };
-
-            // Tipo de inmueble
-            if (!reader.IsDBNull(tipoIdOrdinal))
-            {
-                inmueble.TipoInmueble = new TipoInmueble
+                // Filtro de búsqueda
+                if (!string.IsNullOrEmpty(buscar))
                 {
-                    IdTipoInmueble = reader.GetInt32(tipoIdOrdinal),
-                    Nombre = reader.GetString(tipoNombreOrdinal)
-                };
-            }
+                    conditions.Add("(i.direccion LIKE @buscar OR ti.nombre LIKE @buscar OR i.uso LIKE @buscar)");
+                    parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
+                }
 
-            // Propietario con Usuario
-            if (!reader.IsDBNull(idPropietarioOrdinal))
-            {
-                inmueble.Propietario = new Propietario
+                // Filtro por tipo (optimizado sin LOWER)
+                if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
                 {
-                    IdPropietario = reader.GetInt32(idPropietarioOrdinal),
-                    Usuario = new Usuario
+                    conditions.Add("ti.nombre = @tipo");
+                    parameters.Add(new MySqlParameter("@tipo", tipo));
+                }
+
+                // Filtro por precio
+                if (!string.IsNullOrEmpty(precio))
+                {
+                    switch (precio)
                     {
-                        Nombre = reader.IsDBNull(propietarioNombreOrdinal) ? "" : reader.GetString(propietarioNombreOrdinal),
-                        Apellido = reader.IsDBNull(propietarioApellidoOrdinal) ? "" : reader.GetString(propietarioApellidoOrdinal),
-                        Dni = reader.IsDBNull(propietarioDniOrdinal) ? "" : reader.GetString(propietarioDniOrdinal),
-                        Telefono = reader.IsDBNull(propietarioTelefonoOrdinal) ? "" : reader.GetString(propietarioTelefonoOrdinal),
-                        Email = reader.IsDBNull(propietarioEmailOrdinal) ? "" : reader.GetString(propietarioEmailOrdinal)
+                        case "0-50000":
+                            conditions.Add("i.precio <= 50000");
+                            break;
+                        case "50000-100000":
+                            conditions.Add("i.precio BETWEEN 50000 AND 100000");
+                            break;
+                        case "100000+":
+                            conditions.Add("i.precio > 100000");
+                            break;
                     }
-                };
+                }
+
+                // Filtro por ambientes
+                if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos")
+                {
+                    if (ambientes == "5")
+                    {
+                        conditions.Add("i.ambientes >= 5");
+                    }
+                    else if (int.TryParse(ambientes, out int ambientesValue))
+                    {
+                        conditions.Add("i.ambientes = @ambientes");
+                        parameters.Add(new MySqlParameter("@ambientes", ambientesValue));
+                    }
+                }
+
+                // Aplicar condiciones
+                if (conditions.Any())
+                {
+                    query += " AND " + string.Join(" AND ", conditions);
+                }
+
+                // Agrupar y paginar
+                query += @"
+            GROUP BY i.id_inmueble, i.direccion, i.uso, i.ambientes, i.precio, i.coordenadas, 
+                     i.url_portada, i.estado, i.fecha_alta, i.id_propietario, i.id_tipo_inmueble,
+                     ti.nombre, ti.id_tipo_inmueble, p.id_propietario, u.nombre, u.apellido, 
+                     u.dni, u.telefono, u.email
+            ORDER BY i.fecha_alta DESC 
+            LIMIT @offset, @limit";
+
+                var offset = (pagina - 1) * itemsPorPagina;
+                parameters.Add(new MySqlParameter("@offset", offset));
+                parameters.Add(new MySqlParameter("@limit", itemsPorPagina));
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddRange(parameters.ToArray());
+
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var inmueble = new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        Uso = reader.GetString(reader.GetOrdinal("uso")),
+                        Ambientes = reader.GetInt32(reader.GetOrdinal("ambientes")),
+                        Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        FechaAlta = reader.GetDateTime(reader.GetOrdinal("fecha_alta")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                        UrlPortada = reader.IsDBNull(reader.GetOrdinal("url_portada")) ? null : reader.GetString(reader.GetOrdinal("url_portada")),
+                        Coordenadas = reader.IsDBNull(reader.GetOrdinal("coordenadas")) ? null : reader.GetString(reader.GetOrdinal("coordenadas"))
+                    };
+
+                    // Tipo de inmueble
+                    if (!reader.IsDBNull(reader.GetOrdinal("TipoId")))
+                    {
+                        inmueble.TipoInmueble = new TipoInmueble
+                        {
+                            IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("TipoId")),
+                            Nombre = reader.GetString(reader.GetOrdinal("TipoNombre"))
+                        };
+                    }
+
+                    // Propietario
+                    if (!reader.IsDBNull(reader.GetOrdinal("id_propietario")))
+                    {
+                        inmueble.Propietario = new Propietario
+                        {
+                            IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                            Usuario = new Usuario
+                            {
+                                Nombre = reader.IsDBNull(reader.GetOrdinal("PropietarioNombre")) ? "" : reader.GetString(reader.GetOrdinal("PropietarioNombre")),
+                                Apellido = reader.IsDBNull(reader.GetOrdinal("PropietarioApellido")) ? "" : reader.GetString(reader.GetOrdinal("PropietarioApellido")),
+                                Dni = reader.IsDBNull(reader.GetOrdinal("PropietarioDni")) ? "" : reader.GetString(reader.GetOrdinal("PropietarioDni")),
+                                Telefono = reader.IsDBNull(reader.GetOrdinal("PropietarioTelefono")) ? "" : reader.GetString(reader.GetOrdinal("PropietarioTelefono")),
+                                Email = reader.IsDBNull(reader.GetOrdinal("PropietarioEmail")) ? "" : reader.GetString(reader.GetOrdinal("PropietarioEmail"))
+                            }
+                        };
+                    }
+
+                    // Imágenes desde GROUP_CONCAT
+                    if (!reader.IsDBNull(reader.GetOrdinal("ImagenesUrls")))
+                    {
+                        var imagenesUrls = reader.GetString(reader.GetOrdinal("ImagenesUrls")).Split(',');
+                        inmueble.Imagenes = imagenesUrls
+                            .Where(url => !string.IsNullOrEmpty(url))
+                            .Select(url => new ImagenInmueble { Url = url })
+                            .ToList();
+                    }
+                    else
+                    {
+                        inmueble.Imagenes = new List<ImagenInmueble>();
+                    }
+
+                    inmuebles.Add(inmueble);
+                }
+
+                return inmuebles;
             }
-
-            inmuebles.Add(inmueble);
+            catch (Exception ex)
+            {
+                // Log del error
+                Console.WriteLine($"Error en ObtenerCatalogoPublicoAsync: {ex.Message}");
+                return new List<Inmueble>();
+            }
         }
-
-        // Cargar imágenes para cada inmueble
-        foreach (var inmueble in inmuebles)
+        public async Task<int> ObtenerTotalCatalogoAsync(string? buscar = null, string? tipo = null,
+            string? precio = null, string? ambientes = null)
         {
-            inmueble.Imagenes = await ObtenerImagenesPorInmuebleAsync(inmueble.IdInmueble);
-        }
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-        return inmuebles;
-    }
-    catch (Exception ex)
-    {
-        // Log del error
-        return new List<Inmueble>();
-    }
-}
-
-public async Task<int> ObtenerTotalCatalogoAsync(string? buscar = null, string? tipo = null, 
-    string? precio = null, string? ambientes = null)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
-
-        var query = new StringBuilder(@"
+                var query = new StringBuilder(@"
             SELECT COUNT(DISTINCT i.id_inmueble)
             FROM inmueble i
             LEFT JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
             WHERE i.estado IN ('disponible', 'venta', 'reservado_alquiler', 'reservado_venta')
         ");
 
-        // Aplicar los mismos filtros
-        if (!string.IsNullOrEmpty(buscar))
-        {
-            query.Append(" AND (i.direccion LIKE @buscar OR ti.nombre LIKE @buscar OR i.uso LIKE @buscar)");
-        }
+                // Aplicar los mismos filtros
+                if (!string.IsNullOrEmpty(buscar))
+                {
+                    query.Append(" AND (i.direccion LIKE @buscar OR ti.nombre LIKE @buscar OR i.uso LIKE @buscar)");
+                }
 
-        if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
-        {
-            query.Append(" AND LOWER(ti.nombre) = LOWER(@tipo)");
-        }
+                if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
+                {
+                    query.Append(" AND LOWER(ti.nombre) = LOWER(@tipo)");
+                }
 
-        if (!string.IsNullOrEmpty(precio))
-        {
-            switch (precio)
+                if (!string.IsNullOrEmpty(precio))
+                {
+                    switch (precio)
+                    {
+                        case "0-50000":
+                            query.Append(" AND i.precio <= 50000");
+                            break;
+                        case "50000-100000":
+                            query.Append(" AND i.precio BETWEEN 50000 AND 100000");
+                            break;
+                        case "100000+":
+                            query.Append(" AND i.precio > 100000");
+                            break;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos")
+                {
+                    if (ambientes == "5")
+                    {
+                        query.Append(" AND i.ambientes >= 5");
+                    }
+                    else
+                    {
+                        query.Append(" AND i.ambientes = @ambientes");
+                    }
+                }
+
+                using var command = new MySqlCommand(query.ToString(), connection);
+
+                // Agregar parámetros
+                if (!string.IsNullOrEmpty(buscar))
+                {
+                    command.Parameters.AddWithValue("@buscar", $"%{buscar}%");
+                }
+
+                if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
+                {
+                    command.Parameters.AddWithValue("@tipo", tipo);
+                }
+
+                if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos" && ambientes != "5")
+                {
+                    command.Parameters.AddWithValue("@ambientes", int.Parse(ambientes));
+                }
+
+                var result = await command.ExecuteScalarAsync();
+                return result != null ? Convert.ToInt32(result) : 0;
+            }
+            catch (Exception ex)
             {
-                case "0-50000":
-                    query.Append(" AND i.precio <= 50000");
-                    break;
-                case "50000-100000":
-                    query.Append(" AND i.precio BETWEEN 50000 AND 100000");
-                    break;
-                case "100000+":
-                    query.Append(" AND i.precio > 100000");
-                    break;
+                // Log del error
+                return 0;
             }
         }
 
-        if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos")
+        private async Task<List<ImagenInmueble>> ObtenerImagenesPorInmuebleAsync(int idInmueble)
         {
-            if (ambientes == "5")
+            var imagenes = new List<ImagenInmueble>();
+
+            try
             {
-                query.Append(" AND i.ambientes >= 5");
-            }
-            else
-            {
-                query.Append(" AND i.ambientes = @ambientes");
-            }
-        }
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-        using var command = new MySqlCommand(query.ToString(), connection);
-        
-        // Agregar parámetros
-        if (!string.IsNullOrEmpty(buscar))
-        {
-            command.Parameters.AddWithValue("@buscar", $"%{buscar}%");
-        }
-        
-        if (!string.IsNullOrEmpty(tipo) && tipo != "todos")
-        {
-            command.Parameters.AddWithValue("@tipo", tipo);
-        }
-        
-        if (!string.IsNullOrEmpty(ambientes) && ambientes != "todos" && ambientes != "5")
-        {
-            command.Parameters.AddWithValue("@ambientes", int.Parse(ambientes));
-        }
-
-        var result = await command.ExecuteScalarAsync();
-        return result != null ? Convert.ToInt32(result) : 0;
-    }
-    catch (Exception ex)
-    {
-        // Log del error
-        return 0;
-    }
-}
-
-private async Task<List<ImagenInmueble>> ObtenerImagenesPorInmuebleAsync(int idInmueble)
-{
-    var imagenes = new List<ImagenInmueble>();
-    
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
-
-        var query = @"
+                var query = @"
             SELECT id_imagen, id_inmueble, url, descripcion, orden, fecha_creacion
             FROM imagen_inmueble 
             WHERE id_inmueble = @idInmueble 
             ORDER BY orden ASC, fecha_creacion ASC";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@idInmueble", idInmueble);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@idInmueble", idInmueble);
 
-        using var reader = await command.ExecuteReaderAsync();
-        
-        while (await reader.ReadAsync())
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    // Obtener índices de columnas
+                    var idImagenOrdinal = reader.GetOrdinal("id_imagen");
+                    var idInmuebleOrdinal = reader.GetOrdinal("id_inmueble");
+                    var urlOrdinal = reader.GetOrdinal("url");
+                    var descripcionOrdinal = reader.GetOrdinal("descripcion");
+                    var ordenOrdinal = reader.GetOrdinal("orden");
+                    var fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
+
+                    var imagen = new ImagenInmueble
+                    {
+                        IdImagen = reader.GetInt32(idImagenOrdinal),
+                        IdInmueble = reader.GetInt32(idInmuebleOrdinal),
+                        Url = reader.GetString(urlOrdinal),
+                        Descripcion = reader.IsDBNull(descripcionOrdinal) ? null : reader.GetString(descripcionOrdinal),
+                        Orden = reader.GetInt32(ordenOrdinal),
+                        FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal)
+                    };
+
+                    imagenes.Add(imagen);
+                }
+
+                return imagenes;
+            }
+            catch (Exception ex)
+            {
+                // Log del error
+                return new List<ImagenInmueble>();
+            }
+        }
+
+        public async Task<Inmueble?> GetByIdAsync(int id)
         {
-            // Obtener índices de columnas
-            var idImagenOrdinal = reader.GetOrdinal("id_imagen");
-            var idInmuebleOrdinal = reader.GetOrdinal("id_inmueble");
-            var urlOrdinal = reader.GetOrdinal("url");
-            var descripcionOrdinal = reader.GetOrdinal("descripcion");
-            var ordenOrdinal = reader.GetOrdinal("orden");
-            var fechaCreacionOrdinal = reader.GetOrdinal("fecha_creacion");
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
 
+                var query = @"
+            SELECT i.*, 
+                   p.id_usuario AS prop_id, p.nombre AS prop_nombre, p.apellido AS prop_apellido, p.email AS prop_email,
+                   ti.id_tipo_inmueble, ti.nombre AS tipo_nombre
+            FROM Inmuebles i
+            LEFT JOIN Usuarios p ON i.IdPropietario = p.IdUsuario
+            LEFT JOIN TiposInmueble ti ON i.TipoInmuebleId = ti.IdTipoInmueble
+            WHERE i.IdInmueble = @Id";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@Id", id);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    var inmueble = new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("IdInmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("Direccion")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("IdPropietario")),
+                        IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("IdTipoInmueble")),
+                        Uso = reader.GetString(reader.GetOrdinal("Uso")),
+                        Ambientes = reader.GetInt32(reader.GetOrdinal("Ambientes")),
+                        Precio = reader.GetDecimal(reader.GetOrdinal("Precio")),
+                        Coordenadas = reader.IsDBNull(reader.GetOrdinal("Coordenadas")) ? null : reader.GetString(reader.GetOrdinal("Coordenadas")),
+                        UrlPortada = reader.IsDBNull(reader.GetOrdinal("UrlPortada")) ? null : reader.GetString(reader.GetOrdinal("UrlPortada")),
+                        Estado = reader.GetString(reader.GetOrdinal("Estado")),
+                        FechaAlta = reader.GetDateTime(reader.GetOrdinal("FechaAlta")),
+                        IdUsuarioCreador = reader.IsDBNull(reader.GetOrdinal("IdUsuarioCreador")) ? null : reader.GetInt32(reader.GetOrdinal("IdUsuarioCreador"))
+                    };
+
+                    // Mapear Propietario
+                    inmueble.Propietario = new Propietario
+                    {
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("IdPropietario")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("prop_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("prop_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("prop_email"))
+                        }
+                    };
+
+                    // Mapear TipoInmueble
+                    inmueble.TipoInmueble = new TipoInmueble
+                    {
+                        IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                        Nombre = reader.GetString(reader.GetOrdinal("tipo_nombre"))
+                    };
+
+                    return inmueble;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener inmueble por ID: {ex.Message}", ex);
+            }
+        }
+        //gestionar imagenes del propietario
+
+        public async Task<Inmueble> ObtenerPorIdAsync(int idInmueble)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+
+            var query = "SELECT id_inmueble, id_propietario, direccion, estado FROM inmueble WHERE id_inmueble = @IdInmueble";
+
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@IdInmueble", idInmueble);
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new Inmueble
+                {
+                    IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                    IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                    Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                    Estado = reader.GetString(reader.GetOrdinal("estado"))
+                };
+            }
+
+            return null;
+        }
+        public async Task<bool> ActualizarPortadaAsync(int idInmueble, string urlPortada)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+
+            var query = "UPDATE inmueble SET url_portada = @UrlPortada WHERE id_inmueble = @IdInmueble";
+
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@UrlPortada", urlPortada);
+            command.Parameters.AddWithValue("@IdInmueble", idInmueble);
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteNonQueryAsync();
+
+            return result > 0;
+        }
+
+
+        private async Task<string> GuardarPortadaAsync(IFormFile archivo, int idInmueble, IWebHostEnvironment environment)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return null;
+
+            try
+            {
+                var portadaFolder = Path.Combine("uploads", "propiedades", idInmueble.ToString(), "portada");
+                var uploadsFolder = Path.Combine(environment.WebRootPath, portadaFolder);
+
+                if (!Directory.Exists(uploadsFolder))
+                    Directory.CreateDirectory(uploadsFolder);
+
+                var fileName = $"portada_{Guid.NewGuid()}{Path.GetExtension(archivo.FileName)}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await archivo.CopyToAsync(stream);
+                }
+
+                return $"/{Path.Combine("uploads", "propiedades", idInmueble.ToString(), "portada", fileName).Replace("\\", "/")}";
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error guardando portada: {ex.Message}");
+                return null;
+            }
+        }
+        public async Task<bool> EliminarImagenAsync(int idImagen)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+
+            var query = "DELETE FROM imagen_inmueble WHERE id_imagen = @IdImagen";
+
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@IdImagen", idImagen);
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteNonQueryAsync();
+
+            return result > 0;
+        }
+        public async Task<ImagenInmueble> ObtenerImagenPorIdAsync(int idImagen)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+
+            var query = "SELECT * FROM imagen_inmueble WHERE id_imagen = @IdImagen";
+
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@IdImagen", idImagen);
+
+            await connection.OpenAsync();
+            using var reader = await command.ExecuteReaderAsync();
+
+            if (await reader.ReadAsync())
+            {
+                return new ImagenInmueble
+                {
+                    IdImagen = reader.GetInt32(reader.GetOrdinal("id_imagen")),
+                    IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                    Url = reader.GetString(reader.GetOrdinal("url")),
+                    Descripcion = reader.IsDBNull(reader.GetOrdinal("descripcion")) ? null : reader.GetString(reader.GetOrdinal("descripcion")),
+                    Orden = reader.GetInt32(reader.GetOrdinal("orden")),
+                    FechaCreacion = reader.GetDateTime(reader.GetOrdinal("fecha_creacion"))
+                };
+            }
+
+            return null;
+        }
+
+        public async Task<int> GuardarImagenGaleriaAsync(int idInmueble, string urlImagen)
+        {
+            using var connection = new MySqlConnection(_connectionString);
+
+            var query = @"INSERT INTO imagen_inmueble (id_inmueble, url, fecha_creacion) 
+                  VALUES (@IdInmueble, @Url, @FechaCreacion);
+                  SELECT LAST_INSERT_ID();";
+
+            using var command = new MySqlCommand(query, connection);
+            command.Parameters.AddWithValue("@IdInmueble", idInmueble);
+            command.Parameters.AddWithValue("@Url", urlImagen);
+            command.Parameters.AddWithValue("@FechaCreacion", DateTime.Now);
+
+            await connection.OpenAsync();
+            var result = await command.ExecuteScalarAsync();
+
+            return result != null ? Convert.ToInt32(result) : 0;
+        }
+
+
+        private async Task<string> GuardarImagenGaleriaAsync(IFormFile archivo, int idInmueble, IWebHostEnvironment environment)
+        {
+            if (archivo == null || archivo.Length == 0)
+                return null;
+
+            try
+            {
+                // Validar que sea una imagen
+                if (!archivo.ContentType.StartsWith("image/"))
+                {
+                    Console.WriteLine("=== ERROR: El archivo no es una imagen ===");
+                    return null;
+                }
+
+                // Crear estructura de carpetas
+                var galeriaFolder = Path.Combine("uploads", "propiedades", idInmueble.ToString(), "galeria");
+                var uploadsFolder = Path.Combine(environment.WebRootPath, galeriaFolder);
+
+                // Asegurar que existe el directorio
+                if (!Directory.Exists(uploadsFolder))
+                {
+                    Directory.CreateDirectory(uploadsFolder);
+                    Console.WriteLine($"=== Directorio creado: {uploadsFolder} ===");
+                }
+
+                // Generar nombre único del archivo
+                var fileExtension = Path.GetExtension(archivo.FileName).ToLower();
+                var fileName = $"galeria_{Guid.NewGuid()}{fileExtension}";
+                var filePath = Path.Combine(uploadsFolder, fileName);
+
+                Console.WriteLine($"=== Guardando imagen galería: {filePath} ===");
+
+                // Guardar archivo
+                using (var stream = new FileStream(filePath, FileMode.Create))
+                {
+                    await archivo.CopyToAsync(stream);
+                }
+
+                // Retornar URL relativa
+                var urlImagen = $"/{Path.Combine("uploads", "propiedades", idInmueble.ToString(), "galeria", fileName).Replace("\\", "/")}";
+                Console.WriteLine($"=== URL Galería generada: {urlImagen} ===");
+
+                return urlImagen;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== ERROR Guardando galería: {ex.Message} ===");
+                Console.WriteLine($"=== StackTrace: {ex.StackTrace} ===");
+                return null;
+            }
+        }
+
+        //eliminar inmueble 
+
+     
+
+public async Task<bool> EliminarLogicamenteAsync(int id)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+    
+    var sql = "UPDATE inmueble SET estado = 'inactivo' WHERE id_inmueble = @Id";
+    
+    using var command = new MySqlCommand(sql, connection);
+    command.Parameters.AddWithValue("@Id", id);
+    
+    var affectedRows = await command.ExecuteNonQueryAsync();
+    
+    return affectedRows > 0;
+}
+
+public async Task<Inmueble> ObtenerPorIdConImagenesAsync(int id)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+
+    var sql = @"
+        SELECT 
+            i.id_inmueble,
+            i.id_propietario,
+            i.id_tipo_inmueble,
+            i.direccion,
+            i.uso,
+            i.ambientes,
+            i.precio,
+            i.coordenadas,
+            i.url_portada,
+            i.estado,
+            i.fecha_alta,
+            ti.nombre as tipo_nombre,
+            ii.id_imagen,
+            ii.url as imagen_url,
+            ii.descripcion as imagen_descripcion,
+            ii.orden as imagen_orden
+        FROM inmueble i
+        LEFT JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
+        LEFT JOIN imagen_inmueble ii ON i.id_inmueble = ii.id_inmueble
+        WHERE i.id_inmueble = @Id";
+
+    using var command = new MySqlCommand(sql, connection);
+    command.Parameters.AddWithValue("@Id", id);
+
+    using var reader = await command.ExecuteReaderAsync();
+
+    Inmueble inmueble = null;
+    var imagenes = new List<ImagenInmueble>();
+
+    while (await reader.ReadAsync())
+    {
+        if (inmueble == null)
+        {
+            inmueble = new Inmueble
+            {
+                IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                Uso = reader.GetString(reader.GetOrdinal("uso")),
+                Ambientes = reader.GetInt32(reader.GetOrdinal("ambientes")),
+                Precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+                Estado = reader.GetString(reader.GetOrdinal("estado")),
+                FechaAlta = reader.GetDateTime(reader.GetOrdinal("fecha_alta"))
+            };
+
+            // Campos opcionales
+            if (!reader.IsDBNull(reader.GetOrdinal("coordenadas")))
+                inmueble.Coordenadas = reader.GetString(reader.GetOrdinal("coordenadas"));
+
+            if (!reader.IsDBNull(reader.GetOrdinal("url_portada")))
+                inmueble.UrlPortada = reader.GetString(reader.GetOrdinal("url_portada"));
+
+            // Tipo de inmueble
+            if (!reader.IsDBNull(reader.GetOrdinal("tipo_nombre")))
+            {
+                inmueble.TipoInmueble = new TipoInmueble
+                {
+                    IdTipoInmueble = reader.GetInt32(reader.GetOrdinal("id_tipo_inmueble")),
+                    Nombre = reader.GetString(reader.GetOrdinal("tipo_nombre"))
+                };
+            }
+        }
+
+        // Agregar imágenes si existen
+        if (!reader.IsDBNull(reader.GetOrdinal("id_imagen")))
+        {
             var imagen = new ImagenInmueble
             {
-                IdImagen = reader.GetInt32(idImagenOrdinal),
-                IdInmueble = reader.GetInt32(idInmuebleOrdinal),
-                Url = reader.GetString(urlOrdinal),
-                Descripcion = reader.IsDBNull(descripcionOrdinal) ? null : reader.GetString(descripcionOrdinal),
-                Orden = reader.GetInt32(ordenOrdinal),
-                FechaCreacion = reader.GetDateTime(fechaCreacionOrdinal)
+                IdImagen = reader.GetInt32(reader.GetOrdinal("id_imagen")),
+                IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                Url = reader.GetString(reader.GetOrdinal("imagen_url")),
+                Orden = reader.GetInt32(reader.GetOrdinal("imagen_orden")),
+                FechaCreacion = DateTime.Now 
             };
-            
+
+            if (!reader.IsDBNull(reader.GetOrdinal("imagen_descripcion")))
+                imagen.Descripcion = reader.GetString(reader.GetOrdinal("imagen_descripcion"));
+
             imagenes.Add(imagen);
         }
-        
-        return imagenes;
     }
-    catch (Exception ex)
+
+    if (inmueble != null)
     {
-        // Log del error
-        return new List<ImagenInmueble>();
+        inmueble.Imagenes = imagenes;
     }
+
+    return inmueble;
 }
+
+public async Task<bool> EliminarImagenesPorInmuebleAsync(int idInmueble)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+    
+    var sql = "DELETE FROM imagen_inmueble WHERE id_inmueble = @IdInmueble";
+    
+    using var command = new MySqlCommand(sql, connection);
+    command.Parameters.AddWithValue("@IdInmueble", idInmueble);
+    
+    var affectedRows = await command.ExecuteNonQueryAsync();
+    
+    return affectedRows > 0;
+}
+
+
     }
 }

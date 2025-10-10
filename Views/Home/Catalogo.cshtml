@@ -159,41 +159,49 @@
                 </div>
             </div>
 
-            <!-- Filtros activos -->
+            <!-- Filtros activos - MEJORADO -->
             @if (!string.IsNullOrEmpty(ViewBag.FiltroBuscar) || 
                  (!string.IsNullOrEmpty(ViewBag.FiltroTipo) && ViewBag.FiltroTipo != "todos") ||
                  !string.IsNullOrEmpty(ViewBag.FiltroPrecio) ||
                  (!string.IsNullOrEmpty(ViewBag.FiltroAmbientes) && ViewBag.FiltroAmbientes != "todos"))
             {
                 <div class="active-filters mb-4">
-                    <h6>Filtros activos:</h6>
-                    <div class="filter-tags">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h6 class="mb-0">
+                            <i class="fas fa-filter"></i> Filtros aplicados:
+                            <small class="text-muted">(@ViewBag.TotalResultados resultados)</small>
+                        </h6>
+                        <a href="@Url.Action("Catalogo")" class="btn btn-sm btn-outline-danger">
+                            <i class="fas fa-times"></i> Limpiar Todo
+                        </a>
+                    </div>
+                    <div class="filter-tags mt-2">
                         @if (!string.IsNullOrEmpty(ViewBag.FiltroBuscar))
                         {
                             <span class="badge badge-primary badge-pill">
                                 Búsqueda: "@ViewBag.FiltroBuscar"
-                                <a href="@Url.Action("Catalogo", new { tipo = ViewBag.FiltroTipo, precio = ViewBag.FiltroPrecio, ambientes = ViewBag.FiltroAmbientes })" class="text-white ml-1">×</a>
+                                <a href="javascript:void(0)" onclick="limpiarFiltro('buscar')" class="text-white ml-1">×</a>
                             </span>
                         }
                         @if (!string.IsNullOrEmpty(ViewBag.FiltroTipo) && ViewBag.FiltroTipo != "todos")
                         {
                             <span class="badge badge-success badge-pill">
                                 Tipo: @ViewBag.FiltroTipo.ToUpper()
-                                <a href="@Url.Action("Catalogo", new { buscar = ViewBag.FiltroBuscar, precio = ViewBag.FiltroPrecio, ambientes = ViewBag.FiltroAmbientes })" class="text-white ml-1">×</a>
+                                <a href="javascript:void(0)" onclick="limpiarFiltro('tipo')" class="text-white ml-1">×</a>
                             </span>
                         }
                         @if (!string.IsNullOrEmpty(ViewBag.FiltroPrecio))
                         {
                             <span class="badge badge-warning badge-pill">
                                 Precio: @ViewBag.FiltroPrecio
-                                <a href="@Url.Action("Catalogo", new { buscar = ViewBag.FiltroBuscar, tipo = ViewBag.FiltroTipo, ambientes = ViewBag.FiltroAmbientes })" class="text-white ml-1">×</a>
+                                <a href="javascript:void(0)" onclick="limpiarFiltro('precio')" class="text-white ml-1">×</a>
                             </span>
                         }
                         @if (!string.IsNullOrEmpty(ViewBag.FiltroAmbientes) && ViewBag.FiltroAmbientes != "todos")
                         {
                             <span class="badge badge-info badge-pill">
                                 @ViewBag.FiltroAmbientes ambiente@(ViewBag.FiltroAmbientes != "1" ? "s" : "")
-                                <a href="@Url.Action("Catalogo", new { buscar = ViewBag.FiltroBuscar, tipo = ViewBag.FiltroTipo, precio = ViewBag.FiltroPrecio })" class="text-white ml-1">×</a>
+                                <a href="javascript:void(0)" onclick="limpiarFiltro('ambientes')" class="text-white ml-1">×</a>
                             </span>
                         }
                     </div>
@@ -383,25 +391,74 @@
             }
             else
             {
-                <!-- Sin resultados -->
+                <!-- Sin resultados - CORREGIDO -->
                 <div class="no-results text-center py-5">
                     <i class="fas fa-search fa-5x text-muted mb-4"></i>
-                    <h3 class="text-muted">No se encontraron propiedades</h3>
-                    <p class="text-muted mb-4">
-                        Intenta ajustar los filtros de búsqueda o 
-                        <a asp-action="Catalogo" class="text-primary">ver todas las propiedades</a>
-                    </p>
-                    <div class="suggestions">
-                        <h5>Sugerencias:</h5>
-                        <ul class="list-unstyled">
-                            <li><i class="fas fa-check text-success"></i> Verifica la ortografía de los términos de búsqueda</li>
-                            <li><i class="fas fa-check text-success"></i> Intenta con términos de búsqueda más generales</li>
-                            <li><i class="fas fa-check text-success"></i> Reduce el número de filtros aplicados</li>
-                        </ul>
-                    </div>
-                    <a asp-action="Contacto" class="btn btn-primary mt-3">
-                        <i class="fas fa-phone"></i> Contactar para Ayuda Personalizada
-                    </a>
+                    
+                    @if (ViewBag.MostrarReinicio == true)
+                    {
+                        <!-- Mensaje cuando hay filtros activos pero no resultados -->
+                        <h3 class="text-muted">No se encontraron propiedades con los filtros aplicados</h3>
+                        <p class="text-muted mb-3">
+                            Filtros activos:
+                            @if (ViewBag.FiltrosActivos != null)
+                            {
+                                foreach (var filtro in ViewBag.FiltrosActivos)
+                                {
+                                    <span class="badge badge-primary mx-1">@filtro.Key: @filtro.Value</span>
+                                }
+                            }
+                        </p>
+                        <div class="suggestions mb-4">
+                            <h5>Puedes intentar:</h5>
+                            <div class="row justify-content-center">
+                                <div class="col-md-6">
+                                    <ul class="list-unstyled text-start">
+                                        <li class="mb-2">
+                                            <i class="fas fa-sync-alt text-primary"></i> 
+                                            <a href="@Url.Action("Catalogo")" class="text-primary fw-bold">Reiniciar todos los filtros</a> para ver todas las propiedades
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-filter text-success"></i> 
+                                            <strong>Reducir los filtros</strong> aplicados
+                                        </li>
+                                        <li class="mb-2">
+                                            <i class="fas fa-search text-info"></i> 
+                                            <strong>Buscar términos más generales</strong>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="action-buttons">
+                            <a asp-action="Catalogo" class="btn btn-primary btn-lg me-3">
+                                <i class="fas fa-sync-alt"></i> Ver Todas las Propiedades
+                            </a>
+                            <button type="button" class="btn btn-outline-secondary btn-lg" onclick="ajustarFiltros()">
+                                <i class="fas fa-filter"></i> Ajustar Filtros
+                            </button>
+                        </div>
+                    }
+                    else
+                    {
+                        <!-- Mensaje cuando no hay propiedades en general -->
+                        <h3 class="text-muted">No hay propiedades disponibles en este momento</h3>
+                        <p class="text-muted mb-4">
+                            Pronto tendremos nuevas propiedades disponibles.
+                        </p>
+                        <div class="suggestions">
+                            <h5>Mientras tanto puedes:</h5>
+                            <ul class="list-unstyled">
+                                <li><i class="fas fa-check text-success"></i> Contactarnos para propiedades futuras</li>
+                                <li><i class="fas fa-check text-success"></i> Explorar diferentes tipos de propiedades</li>
+                                <li><i class="fas fa-check text-success"></i> Revisar nuestros servicios</li>
+                            </ul>
+                        </div>
+                        <a asp-action="Contacto" class="btn btn-primary mt-3">
+                            <i class="fas fa-phone"></i> Contactar para Propiedades Futuras
+                        </a>
+                    }
                 </div>
             }
         </div>
@@ -429,31 +486,11 @@
                         <strong>Propiedad:</strong> <span id="propiedadTitulo"></span>
                     </div>
 
-                    <div class="form-group">
-                        <label for="nombre" class="font-weight-bold">Nombre Completo *</label>
-                        <input type="text" class="form-control" id="nombre" name="nombre" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="email" class="font-weight-bold">Email *</label>
-                        <input type="email" class="form-control" id="email" name="email" required>
-                    </div>
-
-                    <div class="form-group">
-                        <label for="telefono" class="font-weight-bold">Teléfono</label>
-                        <input type="tel" class="form-control" id="telefono" name="telefono">
-                    </div>
-
-                    <div class="form-group">
-                        <label for="mensaje" class="font-weight-bold">Mensaje</label>
-                        <textarea class="form-control" id="mensaje" name="mensaje" rows="3" 
-                                  placeholder="Cuéntanos qué te interesa de esta propiedad..."></textarea>
-                    </div>
-                </div>
+                    
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-paper-plane"></i> Enviar Consulta
+                        <i class="fas fa-paper-plane"></i> Hacer Consulta
                     </button>
                 </div>
             </form>
@@ -545,6 +582,61 @@
             setTimeout(() => {
                 $('.alert').fadeOut();
             }, 5000);
+        }
+
+        // NUEVAS FUNCIONES PARA FILTROS
+        function ajustarFiltros() {
+            // Desplazarse suavemente a los filtros
+            $('html, body').animate({
+                scrollTop: $('.filters-sidebar').offset().top - 100
+            }, 500);
+            
+            // Resaltar los filtros
+            $('.filters-sidebar .card').addClass('border-primary shadow-lg');
+            setTimeout(() => {
+                $('.filters-sidebar .card').removeClass('border-primary shadow-lg');
+            }, 2000);
+        }
+
+        // Limpiar filtros individuales
+        function limpiarFiltro(tipo) {
+            const url = new URL(window.location.href);
+            const params = new URLSearchParams(url.search);
+            
+            switch(tipo) {
+                case 'buscar':
+                    params.delete('buscar');
+                    break;
+                case 'tipo':
+                    params.set('tipo', 'todos');
+                    break;
+                case 'precio':
+                    params.delete('precio');
+                    break;
+                case 'ambientes':
+                    params.set('ambientes', 'todos');
+                    break;
+            }
+            
+            // Mantener solo los parámetros que queremos
+            const newParams = new URLSearchParams();
+            if (params.get('buscar')) newParams.set('buscar', params.get('buscar'));
+            if (params.get('tipo') && params.get('tipo') !== 'todos') newParams.set('tipo', params.get('tipo'));
+            if (params.get('precio')) newParams.set('precio', params.get('precio'));
+            if (params.get('ambientes') && params.get('ambientes') !== 'todos') newParams.set('ambientes', params.get('ambientes'));
+            if (params.get('pagina') && params.get('pagina') !== '1') newParams.set('pagina', params.get('pagina'));
+            
+            window.location.href = url.pathname + (newParams.toString() ? '?' + newParams.toString() : '');
+        }
+
+        // Auto-enfoque en el campo de búsqueda cuando no hay resultados
+        @if (ViewBag.MostrarReinicio == true && !string.IsNullOrEmpty(ViewBag.FiltroBuscar))
+        {
+            <text>
+            setTimeout(function() {
+                $('#buscar').focus().select();
+            }, 500);
+            </text>
         }
     </script>
 }
@@ -659,5 +751,14 @@
         display: flex;
         flex-direction: column;
         gap: 5px;
+    }
+    
+    .no-results {
+        background: #f8f9fa;
+        border-radius: 10px;
+    }
+    
+    .action-buttons {
+        margin-top: 2rem;
     }
 </style>

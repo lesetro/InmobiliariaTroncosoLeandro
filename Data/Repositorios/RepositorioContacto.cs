@@ -300,5 +300,6 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
             return estadisticas;
         }
+        
     }
 }

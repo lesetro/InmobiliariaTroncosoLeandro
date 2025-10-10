@@ -1,0 +1,148 @@
+@model Usuario
+@{
+    ViewData["Title"] = "Editar Perfil - Propietario";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-pencil text-success"></i> Editar Mi Perfil
+    </h1>
+    <a asp-action="MiPerfil" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver al Perfil
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-person-gear"></i> Información Personal
+                </h6>
+            </div>
+            <div class="card-body">
+                <form asp-action="EditarPerfil" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="IdUsuario" />
+                    <input type="hidden" asp-for="Rol" />
+                    <input type="hidden" asp-for="Estado" />
+                    <input type="hidden" asp-for="Password" />
+                    <input type="hidden" asp-for="Email" />
+                    <input type="hidden" asp-for="Dni" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Nombre" class="font-weight-bold"></label>
+                                <input asp-for="Nombre" class="form-control" />
+                                <span asp-validation-for="Nombre" class="text-danger"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Apellido" class="font-weight-bold"></label>
+                                <input asp-for="Apellido" class="form-control" />
+                                <span asp-validation-for="Apellido" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label class="font-weight-bold">DNI</label>
+                                <input class="form-control" value="@Model.Dni" disabled />
+                                <small class="text-muted">El DNI no se puede modificar</small>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Telefono" class="font-weight-bold"></label>
+                                <input asp-for="Telefono" class="form-control" />
+                                <span asp-validation-for="Telefono" class="text-danger"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Email</label>
+                        <input class="form-control" value="@Model.Email" disabled />
+                        <small class="text-muted">El email no se puede modificar</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Direccion" class="font-weight-bold"></label>
+                        <textarea asp-for="Direccion" class="form-control" rows="3"></textarea>
+                        <span asp-validation-for="Direccion" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group">
+                        <label asp-for="Avatar" class="font-weight-bold"></label>
+                        <input type="text" asp-for="Avatar" class="form-control" placeholder="URL de imagen de perfil" />
+                        <small class="text-muted">O sube una imagen:</small>
+                        <input type="file" name="archivoAvatar" class="form-control-file mt-1" accept="image/*" />
+                        <span asp-validation-for="Avatar" class="text-danger"></span>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-success">
+                            <i class="bi bi-check-circle"></i> Guardar Cambios
+                        </button>
+                        <a asp-action="MiPerfil" class="btn btn-secondary">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-info-circle"></i> Información Importante
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-lightbulb"></i> Tips:</h6>
+                    <ul class="mb-0 pl-3">
+                        <li>Mantén tu información actualizada</li>
+                        <li>Usa una foto de perfil real</li>
+                        <li>Tu dirección debe ser precisa</li>
+                        <li>El teléfono debe estar actualizado</li>
+                    </ul>
+                </div>
+
+                <div class="text-center">
+                    <img class="img-fluid rounded-circle mb-3" 
+                         style="width: 150px; height: 150px; object-fit: cover;"
+                         src="@(Model.Avatar ?? "/img/default-avatar.png")" 
+                         alt="Vista previa">
+                    <p class="text-muted small">Vista previa de tu foto de perfil</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Vista previa de avatar
+            $('input[name="archivoAvatar"]').change(function(e) {
+                var file = e.target.files[0];
+                if (file) {
+                    var reader = new FileReader();
+                    reader.onload = function(e) {
+                        $('.rounded-circle').attr('src', e.target.result);
+                    }
+                    reader.readAsDataURL(file);
+                }
+            });
+        });
+    </script>
+}

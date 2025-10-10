@@ -143,6 +143,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: Contacto/CambiarEstado
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         
         public async Task<IActionResult> CambiarEstado(int id, string nuevoEstado)
@@ -230,11 +231,11 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        // Método para enviar notificación por email (implementar según tu servicio de email)
-        private async Task EnviarNotificacionEmailAsync(Contacto contacto)
-        {
-            try
-            {
+        // Método para enviar notificación por email para hacer mas adelante
+        //private async Task EnviarNotificacionEmailAsync(Contacto contacto)
+        //{
+            //try
+            //{
                 // Aquí implementarías el envío de email
                 // Ejemplo usando un servicio de email:
                 /*
@@ -255,12 +256,12 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     mensaje
                 );
                 */
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error al enviar notificación por email");
+           // }
+            //catch (Exception ex)
+            //{
+               // _logger.LogError(ex, "Error al enviar notificación por email");
                 // No fallar por esto
-            }
-        }
+            //}
+        //}
     }
 }

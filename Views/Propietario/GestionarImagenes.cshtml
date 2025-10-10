@@ -1,0 +1,359 @@
+@model Inmueble
+@{
+    ViewData["Title"] = "Gestionar Imágenes";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-images text-info"></i> Gestión de Imágenes
+    </h1>
+    <div>
+        <a asp-action="DetalleInmueble" asp-route-id="@Model.IdInmueble" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a Propiedad
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Imagen de Portada -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-star-fill"></i> Imagen de Portada
+                </h6>
+                <span class="badge bg-primary">Imagen Principal</span>
+            </div>
+            <div class="card-body">
+                <div class="row align-items-center">
+                    <div class="col-md-4 text-center">
+                        <img src="@Model.UrlPortadaODefault" 
+                             id="img-portada-actual"
+                             class="img-fluid rounded border"
+                             style="max-height: 200px; object-fit: cover;"
+                             alt="Portada actual"
+                             onerror="this.src='/images/default/no-image-inmueble.jpg'">
+                    </div>
+                    <div class="col-md-8">
+                        <h6>Actualizar Portada</h6>
+                        <p class="text-muted small mb-3">
+                            Esta imagen se mostrará como principal en listados y detalles de la propiedad.
+                        </p>
+                        <form id="form-actualizar-portada" enctype="multipart/form-data">
+                            <div class="input-group">
+                                <input type="file" class="form-control" id="portadaFile" 
+                                       name="portadaFile" accept="image/*">
+                                <button type="submit" class="btn btn-primary" id="btn-actualizar-portada">
+                                    <i class="bi bi-upload"></i> Actualizar
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Galería de Imágenes -->
+        <div class="card shadow">
+            <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-grid-3x3-gap"></i> Galería de Imágenes
+                </h6>
+                <span class="badge bg-info" id="contador-imagenes">@(Model.Imagenes?.Count ?? 0) imágenes</span>
+            </div>
+            <div class="card-body">
+                @if (Model.Imagenes != null && Model.Imagenes.Any())
+                {
+                    <div class="row" id="galeria-imagenes">
+                        @foreach (var imagen in Model.Imagenes)
+                        {
+                            <div class="col-lg-4 col-md-6 mb-4 imagen-item" data-imagen-id="@imagen.IdImagen">
+                                <div class="card h-100 border-0 shadow-sm">
+                                    <img src="@imagen.Url" 
+                                         class="card-img-top galeria-imagen" 
+                                         alt="Imagen de la propiedad"
+                                         style="height: 200px; object-fit: cover;"
+                                         onerror="this.src='/images/default/no-image-inmueble.jpg'">
+                                    <div class="card-footer bg-transparent text-center">
+                                        <button class="btn btn-outline-danger btn-sm btn-eliminar-imagen" 
+                                                data-imagen-id="@imagen.IdImagen"
+                                                data-inmueble-id="@Model.IdInmueble">
+                                            <i class="bi bi-trash"></i> Eliminar
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                }
+                else
+                {
+                    <div class="text-center py-5" id="sin-imagenes">
+                        <i class="bi bi-image text-muted" style="font-size: 4rem;"></i>
+                        <h5 class="text-muted mt-3">No hay imágenes en la galería</h5>
+                        <p class="text-muted">Agrega imágenes usando el formulario de la derecha</p>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Agregar a Galería -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-cloud-upload"></i> Agregar a Galería
+                </h6>
+            </div>
+            <div class="card-body">
+                <form id="form-cargar-imagenes" enctype="multipart/form-data">
+                    <div class="mb-3">
+                        <label class="form-label">Seleccionar imágenes</label>
+                        <input type="file" class="form-control" id="archivosImagenes" 
+                               name="archivos" multiple accept="image/*">
+                        <div class="form-text">
+                            Puedes seleccionar múltiples imágenes (JPEG, PNG, JPG)
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-text text-muted small">
+                            <i class="bi bi-info-circle"></i> Tamaño máximo por imagen: 5MB
+                        </div>
+                    </div>
+
+                    <button type="submit" class="btn btn-info w-100" id="btn-cargar">
+                        <i class="bi bi-upload"></i> Agregar a Galería
+                    </button>
+                </form>
+
+                <!-- Progress Bar -->
+                <div class="mt-3 d-none" id="progress-container">
+                    <div class="progress">
+                        <div class="progress-bar progress-bar-striped progress-bar-animated" 
+                             role="progressbar" style="width: 0%"></div>
+                    </div>
+                    <small class="text-muted text-center d-block mt-1" id="progress-text">0%</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información de la Propiedad -->
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-house"></i> Propiedad
+                </h6>
+            </div>
+            <div class="card-body">
+                <h6>@Model.Direccion</h6>
+                <p class="small text-muted mb-2">
+                    <i class="bi bi-tag"></i> @Model.TipoInmueble?.Nombre
+                </p>
+                <p class="small text-muted mb-2">
+                    <i class="bi bi-door-closed"></i> @Model.Ambientes ambientes
+                </p>
+                <p class="small text-muted mb-0">
+                    <i class="bi bi-currency-dollar"></i> $@Model.Precio.ToString("N0")
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmación -->
+<div class="modal fade" id="modalConfirmacion" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que quieres eliminar esta imagen de la galería?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="btn-confirmar-eliminar">Eliminar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .galeria-imagen {
+        transition: transform 0.3s ease;
+    }
+    .galeria-imagen:hover {
+        transform: scale(1.05);
+    }
+    .imagen-item {
+        transition: opacity 0.3s ease;
+    }
+    .imagen-item.eliminando {
+        opacity: 0.5;
+    }
+</style>
+
+@section Scripts {
+    <script>
+        let imagenAEliminar = null;
+
+        // Actualizar portada
+        $('#form-actualizar-portada').on('submit', function(e) {
+            e.preventDefault();
+            
+            const portadaFile = $('#portadaFile')[0].files[0];
+            if (!portadaFile) {
+                alert('Por favor selecciona una imagen para la portada');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('portadaFile', portadaFile);
+
+            $('#btn-actualizar-portada').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Actualizando...');
+
+            $.ajax({
+                url: '@Url.Action("ActualizarPortada", new { id = Model.IdInmueble })',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                success: function(response) {
+                    if (response.success) {
+                        // Actualizar imagen en la vista
+                        $('#img-portada-actual').attr('src', response.urlPortada + '?t=' + new Date().getTime());
+                        $('#portadaFile').val('');
+                        alert('Portada actualizada correctamente');
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error al actualizar la portada');
+                },
+                complete: function() {
+                    $('#btn-actualizar-portada').prop('disabled', false).html('<i class="bi bi-upload"></i> Actualizar');
+                }
+            });
+        });
+
+        // Cargar imágenes a galería
+        $('#form-cargar-imagenes').on('submit', function(e) {
+            e.preventDefault();
+            
+            const archivos = $('#archivosImagenes')[0].files;
+            if (archivos.length === 0) {
+                alert('Por favor selecciona al menos una imagen');
+                return;
+            }
+
+            const formData = new FormData();
+            for (let i = 0; i < archivos.length; i++) {
+                formData.append('archivos', archivos[i]);
+            }
+
+            // Mostrar progress bar
+            $('#progress-container').removeClass('d-none');
+            $('#btn-cargar').prop('disabled', true).html('<i class="bi bi-hourglass-split"></i> Cargando...');
+
+            $.ajax({
+                url: '@Url.Action("AgregarImagenGaleria", new { id = Model.IdInmueble })',
+                type: 'POST',
+                data: formData,
+                processData: false,
+                contentType: false,
+                xhr: function() {
+                    const xhr = new window.XMLHttpRequest();
+                    xhr.upload.addEventListener('progress', function(e) {
+                        if (e.lengthComputable) {
+                            const percent = Math.round((e.loaded / e.total) * 100);
+                            $('.progress-bar').css('width', percent + '%');
+                            $('#progress-text').text(percent + '%');
+                        }
+                    });
+                    return xhr;
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Recargar la página para mostrar las nuevas imágenes
+                        location.reload();
+                    } else {
+                        alert('Error: ' + response.message);
+                    }
+                },
+                error: function() {
+                    alert('Error al cargar las imágenes');
+                },
+                complete: function() {
+                    $('#progress-container').addClass('d-none');
+                    $('#btn-cargar').prop('disabled', false).html('<i class="bi bi-upload"></i> Agregar a Galería');
+                    $('.progress-bar').css('width', '0%');
+                    $('#progress-text').text('0%');
+                    $('#archivosImagenes').val('');
+                }
+            });
+        });
+
+        // Eliminar imagen de galería
+        $(document).on('click', '.btn-eliminar-imagen', function() {
+            const imagenId = $(this).data('imagen-id');
+            const inmuebleId = $(this).data('inmueble-id');
+            
+            imagenAEliminar = {
+                id: imagenId,
+                elemento: $(this).closest('.imagen-item')
+            };
+            
+            $('#modalConfirmacion').modal('show');
+        });
+
+        $('#btn-confirmar-eliminar').on('click', function() {
+            if (!imagenAEliminar) return;
+            
+            const { id, elemento } = imagenAEliminar;
+            
+            // Mostrar estado de eliminación
+            elemento.addClass('eliminando');
+            
+            $.ajax({
+                url: '@Url.Action("EliminarImagenGaleria")',
+                type: 'POST',
+                data: {
+                    idImagen: id,
+                    idInmueble: @Model.IdInmueble
+                },
+                success: function(response) {
+                    if (response.success) {
+                        // Eliminar elemento del DOM con animación
+                        elemento.fadeOut(300, function() {
+                            $(this).remove();
+                            
+                            // Actualizar contador
+                            const totalImagenes = $('.imagen-item').length;
+                            $('#contador-imagenes').text(totalImagenes + ' imágenes');
+                            
+                            // Verificar si no quedan imágenes
+                            if (totalImagenes === 0) {
+                                $('#sin-imagenes').removeClass('d-none');
+                            }
+                        });
+                    } else {
+                        alert('Error: ' + response.message);
+                        elemento.removeClass('eliminando');
+                    }
+                },
+                error: function() {
+                    alert('Error al eliminar la imagen');
+                    elemento.removeClass('eliminando');
+                }
+            });
+            
+            $('#modalConfirmacion').modal('hide');
+            imagenAEliminar = null;
+        });
+    </script>
+}

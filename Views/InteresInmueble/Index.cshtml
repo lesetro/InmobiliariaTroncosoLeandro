@@ -279,29 +279,28 @@
                                         </span>
                                     </td>
                                     <td>
-                                        <div class="btn-group-vertical btn-group-sm" role="group">
-                                            <div class="btn-group btn-group-sm">
-                                                <a asp-action="Details" asp-route-id="@item.IdInteres" 
-                                                   class="btn btn-outline-info btn-sm" title="Ver detalles">
-                                                    <i class="fas fa-eye"></i>
+                                        <div class="btn-group-vertical btn-group-lg" role="group">
+                                            <div class="btn-group btn-group-lg">
+                                               <a asp-action="Details" asp-controller="InteresInmueble" asp-route-id="@item.IdInteres" 
+                                                    class="btn btn-outline-info btn-lg" title="Ver detalles"><i class="fa-user-circle"></i>
                                                 </a>
                                                 @if (!item.Contactado)
                                                 {
-                                                    <button type="button" class="btn btn-outline-success btn-sm" 
+                                                    <button type="button" class="btn btn-outline-success btn-lg" 
                                                             onclick="marcarContactado(@item.IdInteres)" title="Marcar como contactado">
-                                                        <i class="fas fa-check"></i>
+                                                        <i class="fa-envelope"></i>
                                                     </button>
                                                 }
                                                 else
                                                 {
-                                                    <button type="button" class="btn btn-outline-secondary btn-sm" 
+                                                    <button type="button" class="btn btn-outline-secondary btn-lg" 
                                                             onclick="desmarcarContactado(@item.IdInteres)" title="Marcar como pendiente">
                                                         <i class="fas fa-undo"></i>
                                                     </button>
                                                 }
-                                                <button type="button" class="btn btn-outline-primary btn-sm" 
+                                                <button type="button" class="btn btn-outline-primary btn-lg" 
                                                         onclick="editarObservaciones(@item.IdInteres)" title="Editar observaciones">
-                                                    <i class="fas fa-edit"></i>
+                                                    <i class="fa-sticky-note"></i>
                                                 </button>
                                             </div>
                                         </div>
@@ -533,50 +532,83 @@
         }
 
         function editarObservaciones(id) {
-            interesSeleccionado = id;
-            
-            // Cargar observaciones actuales
-            fetch(`@Url.Action("ObtenerInfoRapida", "InteresInmueble")?id=${id}`)
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        $('#observacionesTexto').val(data.data.observaciones || '');
-                        $('#modalObservaciones').modal('show');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    mostrarMensaje('Error al cargar observaciones', 'error');
-                });
-        }
+    console.log('=== EDITAR OBSERVACIONES INICIADO ===');
+    console.log('ID recibido:', id);
+    
+    interesSeleccionado = id;
+    
+    const url = `@Url.Action("ObtenerInfoRapida", "InteresInmueble")?id=${id}`;
+    console.log('URL de fetch:', url);
 
-        function guardarObservaciones() {
-            const observaciones = $('#observacionesTexto').val();
-            
-            fetch('@Url.Action("ActualizarObservaciones", "InteresInmueble")', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded',
-                    'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
-                },
-                body: `id=${interesSeleccionado}&observaciones=${encodeURIComponent(observaciones)}`
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    mostrarMensaje(data.message, 'success');
-                    $('#modalObservaciones').modal('hide');
-                    location.reload();
-                } else {
-                    mostrarMensaje(data.message, 'error');
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                mostrarMensaje('Error al guardar observaciones', 'error');
-            });
-        }
+    fetch(url)
+        .then(response => {
+            console.log('Response status:', response.status);
+            console.log('Response ok:', response.ok);
+            return response.json();
+        })
+        .then(data => {
+            console.log('Datos recibidos:', data);
+            if (data.success) {
+                $('#observacionesTexto').val(data.data.observaciones || '');
+                $('#modalObservaciones').modal('show');
+            } else {
+                console.error('Error en data:', data.message);
+                mostrarMensaje('Error: ' + data.message, 'error');
+            }
+        })
+        .catch(error => {
+            console.error('Error en fetch:', error);
+            mostrarMensaje('Error al cargar observaciones', 'error');
+        });
+}
 
+function guardarObservaciones() {
+    console.log('=== GUARDAR OBSERVACIONES INICIADO ===');
+    console.log('ID seleccionado:', interesSeleccionado);
+    
+    const observaciones = $('#observacionesTexto').val();
+    console.log('Observaciones a guardar:', observaciones);
+    
+    const url = '@Url.Action("ActualizarObservaciones", "InteresInmueble")';
+    console.log('URL POST:', url);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+            'RequestVerificationToken': $('input[name="__RequestVerificationToken"]').val()
+        },
+        body: `id=${interesSeleccionado}&observaciones=${encodeURIComponent(observaciones)}`
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        return response.json();
+    })
+    .then(data => {
+        console.log('Respuesta del servidor:', data);
+        if (data.success) {
+            mostrarMensaje(data.message, 'success');
+            $('#modalObservaciones').modal('hide');
+            // En lugar de recargar toda la página, actualiza solo la fila
+            actualizarFilaEnTabla(interesSeleccionado, observaciones);
+        } else {
+            mostrarMensaje(data.message, 'error');
+        }
+    })
+    .catch(error => {
+        console.error('Error en guardar:', error);
+        mostrarMensaje('Error al guardar observaciones', 'error');
+    });
+}
+
+// Función para actualizar solo la fila sin recargar toda la página
+function actualizarFilaEnTabla(id, nuevasObservaciones) {
+    const fila = $(`[data-interes-id="${id}"]`);
+    if (fila.length) {
+        // Actualiza el texto de las observaciones en la tabla
+        fila.find('.observaciones-texto').text(nuevasObservaciones || 'Sin observaciones');
+    }
+}
         function marcarSeleccionadosContactados() {
             const seleccionados = $('.item-checkbox:checked').map(function() {
                 return parseInt($(this).val());

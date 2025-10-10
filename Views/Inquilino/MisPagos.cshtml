@@ -1,0 +1,272 @@
+@model IEnumerable<Pago>
+@{
+    ViewData["Title"] = "Mis Pagos";
+    Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+    
+    var pagosPagados = Model.Where(p => p.Estado?.ToLower() == "pagado").ToList();
+    var pagosPendientes = Model.Where(p => p.Estado?.ToLower() == "pendiente").ToList();
+    var totalPagado = pagosPagados.Sum(p => p.MontoTotal);
+    var totalPendiente = pagosPendientes.Sum(p => p.MontoTotal);
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-credit-card text-primary"></i> Mis Pagos
+    </h1>
+    <div>
+        <span class="badge bg-success me-2">
+            Pagado: $@totalPagado.ToString("N0")
+        </span>
+        <span class="badge bg-warning">
+            Pendiente: $@totalPendiente.ToString("N0")
+        </span>
+    </div>
+</div>
+
+<!-- Resumen de Pagos -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Pagado
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            $@totalPagado.ToString("N0")
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-wallet2 fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pendiente
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            $@totalPendiente.ToString("N0")
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Próximo Vencimiento
+                        </div>
+                        <div class="h6 mb-0 font-weight-bold text-gray-800">
+                            @{
+                                var proximoVencimiento = pagosPendientes
+                                    .Where(p => p.FechaVencimiento.HasValue)
+                                    .OrderBy(p => p.FechaVencimiento)
+                                    .FirstOrDefault();
+                            }
+                            @if (proximoVencimiento != null)
+                            {
+                                <text>@proximoVencimiento.FechaVencimiento?.ToString("dd/MM/yyyy")</text>
+                            }
+                            else
+                            {
+                                <text>-</text>
+                            }
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-3">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Pagos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @Model.Count()
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-list-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historial de Pagos -->
+<div class="card shadow">
+    <div class="card-header py-3 d-flex justify-content-between align-items-center">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="bi bi-list-ul"></i> Historial de Pagos
+        </h6>
+        <button class="btn btn-outline-primary btn-sm" onclick="realizarPago()">
+            <i class="bi bi-credit-card"></i> Realizar Pago
+        </button>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Concepto</th>
+                            <th>Período</th>
+                            <th>Monto</th>
+                            <th>Vencimiento</th>
+                            <th>Fecha Pago</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pago in Model.OrderByDescending(p => p.FechaVencimiento))
+                        {
+                            <tr>
+                                <td>@pago.Concepto</td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(pago.PeriodoPago))
+                                    {
+                                        @pago.PeriodoPago
+                                    }
+                                    else
+                                    {
+                                        <text>Pago @pago.NumeroPago</text>
+                                    }
+                                </td>
+                                <td class="font-weight-bold">
+                                    $@pago.MontoTotal.ToString("N0")
+                                    @if (pago.RecargoMora > 0)
+                                    {
+                                        <br><small class="text-danger">(+$@pago.RecargoMora.ToString("N0") mora)</small>
+                                    }
+                                </td>
+                                <td>@pago.FechaVencimiento?.ToString("dd/MM/yyyy")</td>
+                                <td>
+                                    @if (pago.Estado?.ToLower() == "pagado")
+                                    {
+                                        @pago.FechaPago.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @pago.EstadoBadgeClass">
+                                        @pago.Estado?.ToUpper()
+                                    </span>
+                                    @if (pago.DiasMora > 0)
+                                    {
+                                        <br><small class="text-danger">(@pago.DiasMora días mora)</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (pago.Estado?.ToLower() == "pendiente")
+                                    {
+                                        <button class="btn btn-success btn-sm" onclick="realizarPago(@pago.IdPago)">
+                                            <i class="bi bi-credit-card"></i> Pagar
+                                        </button>
+                                    }
+                                    else if (pago.Estado?.ToLower() == "pagado")
+                                    {
+                                        <button class="btn btn-outline-primary btn-sm" onclick="descargarComprobante(@pago.IdPago)">
+                                            <i class="bi bi-download"></i> Recibo
+                                        </button>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-credit-card text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No hay pagos registrados</h4>
+                <p class="text-muted">Los pagos aparecerán aquí según tu contrato de alquiler.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Información para Pagos -->
+<div class="card shadow mt-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="bi bi-info-circle"></i> Información para Pagos
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>💰 Transferencia Bancaria</h6>
+                <p class="mb-1"><strong>Banco:</strong> Banco de la Provincia</p>
+                <p class="mb-1"><strong>CBU:</strong> 1234567890123456789012</p>
+                <p class="mb-1"><strong>Alias:</strong> INMOBILIARIA.ALQUILER</p>
+                <p class="mb-0"><strong>Titular:</strong> Inmobiliaria Troncoso</p>
+            </div>
+            <div class="col-md-6">
+                <h6>💵 Efectivo</h6>
+                <p class="mb-1">Oficina Central</p>
+                <p class="mb-1">Calle Principal 123</p>
+                <p class="mb-1">Lunes a Viernes 9:00-18:00</p>
+                <p class="mb-0">Sábados 9:00-13:00</p>
+            </div>
+        </div>
+        <div class="mt-3 p-3 bg-light rounded">
+            <h6 class="text-warning">⚠️ Importante</h6>
+            <p class="mb-1 small">• Los pagos vencen el día 5 de cada mes</p>
+            <p class="mb-1 small">• Recargo por mora: $XXX por día de atraso</p>
+            <p class="mb-0 small">• Enviar comprobante a: pagos@inmobiliaria.com</p>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        function realizarPago(pagoId) {
+            if (pagoId) {
+                if (confirm('¿Deseas proceder con el pago de este alquiler?')) {
+                    // Aquí iría la integración con el sistema de pagos
+                    alert('Sistema de pagos por implementar. Realiza la transferencia a los datos proporcionados y envía el comprobante.');
+                }
+            } else {
+                alert('Selecciona un pago específico para realizar el pago.');
+            }
+        }
+
+        function descargarComprobante(pagoId) {
+            alert('Descargando comprobante del pago ' + pagoId);
+            // Aquí iría la lógica para descargar el comprobante
+        }
+    </script>
+}

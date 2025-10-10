@@ -191,11 +191,28 @@
                                             </div>
                                         </div>
                                         <div class="col-auto">
-                                            
-                                            <a asp-controller="Usuario" asp-action="Edit" class="btn btn-primary shadow-sm">
-                                                <i class="fas fa-edit"></i> Editar
-                                            </a>
-                                        </div>
+    @using System.Security.Claims
+    @{
+        var rol = User.Claims.FirstOrDefault(c => c.Type == ClaimTypes.Role)?.Value;
+        var controller = rol switch {
+            "empleado" => "Empleado",
+            "propietario" => "Propietario", 
+            "inquilino" => "Inquilino",
+            _ => "Usuario"
+        };
+        var action = rol switch {
+            "administrador" => "Perfil",
+            "empleado" => "Dashboard",
+            "propietario" => "EditarPerfil",
+            "inquilino" => "EditarPerfil",
+            _ => "Index"
+        };
+    }
+    
+    <a asp-controller="@controller" asp-action="@action" class="btn btn-primary shadow-sm">
+        <i class="fas fa-edit"></i> Editar
+    </a>
+</div>
                                     </div>
                                 </div>
                             </div>

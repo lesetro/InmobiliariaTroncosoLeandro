@@ -1,0 +1,229 @@
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
+@{
+    ViewData["Title"] = "Editar Propiedad";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-pencil text-success"></i> Editar Propiedad
+    </h1>
+    <a asp-action="DetalleInmueble" asp-route-id="@Model.IdInmueble" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-house"></i> Información Básica
+                </h6>
+            </div>
+            <div class="card-body">
+                <form asp-action="EditarInmueble" method="post" enctype="multipart/form-data">
+                    <input type="hidden" asp-for="IdInmueble" />
+                    <input type="hidden" asp-for="IdPropietario" />
+                    <input type="hidden" asp-for="Estado" />
+                    <input type="hidden" asp-for="FechaAlta" />
+                    <input type="hidden" asp-for="IdUsuarioCreador" />
+                    <input type="hidden" asp-for="UrlPortada" />
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="Direccion" class="form-label">📍 Dirección *</label>
+                                <input asp-for="Direccion" class="form-control" />
+                                <span asp-validation-for="Direccion" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label asp-for="IdTipoInmueble" class="form-label">🏠 Tipo de Propiedad *</label>
+                                <select asp-for="IdTipoInmueble" asp-items="ViewBag.TiposInmueble" class="form-control">
+                                    <option value="">Seleccionar tipo</option>
+                                </select>
+                                <span asp-validation-for="IdTipoInmueble" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Uso" class="form-label">🎯 Uso *</label>
+                                <select asp-for="Uso" class="form-control">
+                                    <option value="residencial">Residencial</option>
+                                    <option value="comercial">Comercial</option>
+                                    <option value="industrial">Industrial</option>
+                                </select>
+                                <span asp-validation-for="Uso" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Ambientes" class="form-label">🚪 Ambientes *</label>
+                                <input asp-for="Ambientes" type="number" min="1" max="20" class="form-control" />
+                                <span asp-validation-for="Ambientes" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label asp-for="Precio" class="form-label">💰 Precio *</label>
+                                <input asp-for="Precio" type="number" step="0.01" min="0" class="form-control" />
+                                <span asp-validation-for="Precio" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado Actual (solo lectura) -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group">
+                                <label class="form-label">📊 Estado Actual</label>
+                                <div>
+                                    <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span>
+                                </div>
+                                <small class="form-text text-muted">El estado se actualiza automáticamente según contratos y pagos.</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imágenes Actuales -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <label class="form-label">🖼️ Imágenes Actuales</label>
+                            @if (Model.Imagenes != null && Model.Imagenes.Any())
+                            {
+                                <div class="row">
+                                    @foreach (var imagen in Model.Imagenes.Take(6))
+                                    {
+                                        <div class="col-md-4 mb-3">
+                                            <div class="card">
+                                                <img src="@imagen.Url" class="card-img-top" style="height: 120px; object-fit: cover;" alt="Imagen propiedad">
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                                <small class="text-muted">@Model.Imagenes.Count imagen(es) en galería</small>
+                            }
+                            else
+                            {
+                                <div class="text-center py-3 border rounded bg-light">
+                                    <i class="bi bi-image text-muted" style="font-size: 2rem;"></i>
+                                    <p class="text-muted mb-0">No hay imágenes</p>
+                                </div>
+                            }
+                        </div>
+                    </div>
+
+                    <!-- Agregar Nuevas Imágenes -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="form-group">
+                                <label class="form-label">➕ Agregar Nuevas Imágenes</label>
+                                <input type="file" name="imagenes" multiple class="form-control" 
+                                       accept="image/*" 
+                                       data-max-files="@(10 - (Model.Imagenes?.Count ?? 0))" />
+                                <small class="form-text text-muted">
+                                    Máximo @(10 - (Model.Imagenes?.Count ?? 0)) imágenes adicionales. Formatos: JPG, PNG, WEBP
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-check-lg"></i> Guardar Cambios
+                                </button>
+                                <a asp-action="DetalleInmueble" asp-route-id="@Model.IdInmueble" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x"></i> Cancelar
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Información de la Propiedad -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-info-circle"></i> Resumen
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    @if (Model.TienePortada)
+                    {
+                        <img src="@Model.UrlPortadaODefault" class="img-fluid rounded" alt="Portada propiedad">
+                    }
+                    else
+                    {
+                        <div class="bg-light rounded py-4">
+                            <i class="bi bi-house text-muted" style="font-size: 2rem;"></i>
+                            <p class="text-muted mb-0 mt-2">Sin imagen principal</p>
+                        </div>
+                    }
+                </div>
+                
+                <ul class="list-group list-group-flush">
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>📅 Fecha Alta:</span>
+                        <span class="text-muted">@Model.FechaAlta.ToString("dd/MM/yyyy")</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>🖼️ Imágenes:</span>
+                        <span class="text-muted">@(Model.Imagenes?.Count ?? 0)/10</span>
+                    </li>
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>📊 Estado:</span>
+                        <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Ayuda -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-question-circle"></i> Ayuda
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p><strong>💡 Consejos:</strong></p>
+                    <ul class="mb-0">
+                        <li>Usa fotos de buena calidad</li>
+                        <li>Actualiza el precio según el mercado</li>
+                        <li>Verifica que la dirección sea correcta</li>
+                        <li>El estado cambia automáticamente</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+    
+    <script>
+        // Validación de archivos
+        document.querySelector('input[type="file"]').addEventListener('change', function(e) {
+            const maxFiles = parseInt(this.getAttribute('data-max-files'));
+            if (this.files.length > maxFiles) {
+                alert(`Solo puedes subir hasta ${maxFiles} imágenes adicionales.`);
+                this.value = '';
+            }
+        });
+    </script>
+}

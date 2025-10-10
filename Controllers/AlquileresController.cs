@@ -3,6 +3,7 @@ using Inmobiliaria_troncoso_leandro.Models;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Services;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
@@ -66,398 +67,422 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // POST: Alquileres/Create
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Create(Pago pago, IFormFile? ComprobanteArchivo)
-{
-    try
-    {
-        Console.WriteLine("=== DEBUG CREATE POST ===");
-        Console.WriteLine($"IdContrato: {pago.IdContrato}");
-        Console.WriteLine($"MontoBase: {pago.MontoBase}");
-        Console.WriteLine($"NumeroPago: {pago.NumeroPago}");
-
-        // Forzar valores específicos para alquileres
-        pago.TipoPago = "alquiler";
-        pago.IdUsuarioCreador = USUARIO_SISTEMA_TEMPORAL;
-
-        // Validaciones específicas de alquileres
-        if (!pago.IdContrato.HasValue || pago.IdContrato <= 0)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Create(Pago pago, IFormFile? ComprobanteArchivo)
         {
-            ModelState.AddModelError("IdContrato", "Debe seleccionar un contrato válido");
-        }
-
-        if (pago.MontoBase <= 0)
-        {
-            ModelState.AddModelError("MontoBase", "El monto debe ser mayor a 0");
-        }
-
-        if (pago.NumeroPago <= 0)
-        {
-            ModelState.AddModelError("NumeroPago", "El número de pago debe ser mayor a 0");
-        }
-
-        Console.WriteLine("Punto 1: Validaciones básicas OK");
-
-    
-        if (pago.IdContrato.HasValue)
-        {
-            Console.WriteLine("=== VALIDACIÓN EXTRA REFORZADA ===");
-            
-            var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(pago.IdContrato.Value);
-
-            if (datosContrato != null)
+            try
             {
-                Console.WriteLine($"InfoPagos: {datosContrato.InfoPagos}");
-                Console.WriteLine($"Próximo pago: {datosContrato.ProximoNumeroPago}, Total: {datosContrato.TotalMeses}");
-                Console.WriteLine($"Pagos realizados: {datosContrato.PagosRealizados}");
+                Console.WriteLine("=== DEBUG CREATE POST ===");
+                Console.WriteLine($"IdContrato: {pago.IdContrato}");
+                Console.WriteLine($"MontoBase: {pago.MontoBase}");
+                Console.WriteLine($"NumeroPago: {pago.NumeroPago}");
 
-               
-                if (pago.NumeroPago > datosContrato.TotalMeses)
+                // Forzar valores específicos para alquileres
+                pago.TipoPago = "alquiler";
+                pago.IdUsuarioCreador = USUARIO_SISTEMA_TEMPORAL;
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                var userName = User.FindFirst(ClaimTypes.Name)?.Value;
+                // Validaciones específicas de alquileres
+
+                if (string.IsNullOrEmpty(userIdClaim))
                 {
-                    ModelState.AddModelError("NumeroPago", 
-                        $" NO se puede crear el pago #{pago.NumeroPago}. " +
-                        $"El contrato solo permite {datosContrato.TotalMeses} pagos totales. " +
-                        $"*Nota: Los contratos se cobran por meses completos.*");
+                    ModelState.AddModelError("", "Usuario no autenticado. Debe iniciar sesión para registrar pagos.");
+                    return View(pago);
                 }
 
-                
-                if (datosContrato.PagosRealizados >= datosContrato.TotalMeses)
+                // Convertir el ID del claim a entero (si tu ID es numérico)
+                if (int.TryParse(userIdClaim, out int userId))
                 {
-                    ModelState.AddModelError("IdContrato", 
-                        $" CONTRATO COMPLETADO. " +
-                        $"Ya se registraron {datosContrato.PagosRealizados} de {datosContrato.TotalMeses} pagos. " +
-                        $"No se pueden registrar más pagos para este contrato.");
+                    pago.IdUsuarioCreador = userId;
+                }
+                else
+                {
+                    // Si el ID no es numérico, usar un valor por defecto o manejar el error
+                    ModelState.AddModelError("", "Error al identificar el usuario. Contacte al administrador.");
+                    return View(pago);
                 }
 
-                
-                if (pago.NumeroPago != datosContrato.ProximoNumeroPago)
+                if (!pago.IdContrato.HasValue || pago.IdContrato <= 0)
                 {
-                    ModelState.AddModelError("NumeroPago", 
-                        $" El número de pago debe ser {datosContrato.ProximoNumeroPago} " +
-                        $"(próximo pago pendiente). " +
-                        $"Actualmente: {datosContrato.PagosRealizados}/{datosContrato.TotalMeses} pagos.");
+                    ModelState.AddModelError("IdContrato", "Debe seleccionar un contrato válido");
                 }
 
-                
-                if (datosContrato.PagosRealizados == datosContrato.TotalMeses - 1)
+                if (pago.MontoBase <= 0)
                 {
-                    Console.WriteLine(" ADVERTENCIA: Este es el ÚLTIMO pago del contrato");
-                    // Puedes agregar un mensaje informativo si lo deseas
-                    TempData["InfoMessage"] = $" Este es el último pago del contrato ({datosContrato.TotalMeses}/{datosContrato.TotalMeses})";
+                    ModelState.AddModelError("MontoBase", "El monto debe ser mayor a 0");
                 }
 
-                
-                if (datosContrato.PagosRealizados > datosContrato.TotalMeses)
+                if (pago.NumeroPago <= 0)
                 {
-                    ModelState.AddModelError("", 
-                        $" ERROR CRÍTICO: El contrato tiene {datosContrato.PagosRealizados} pagos " +
-                        $"pero solo debería tener {datosContrato.TotalMeses}. " +
-                        $"Contacte al administrador del sistema.");
+                    ModelState.AddModelError("NumeroPago", "El número de pago debe ser mayor a 0");
+                }
+
+                Console.WriteLine("Punto 1: Validaciones básicas OK");
+
+
+                if (pago.IdContrato.HasValue)
+                {
+                    Console.WriteLine("=== VALIDACIÓN EXTRA REFORZADA ===");
+
+                    var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(pago.IdContrato.Value);
+
+                    if (datosContrato != null)
+                    {
+                        Console.WriteLine($"InfoPagos: {datosContrato.InfoPagos}");
+                        Console.WriteLine($"Próximo pago: {datosContrato.ProximoNumeroPago}, Total: {datosContrato.TotalMeses}");
+                        Console.WriteLine($"Pagos realizados: {datosContrato.PagosRealizados}");
+
+
+                        if (pago.NumeroPago > datosContrato.TotalMeses)
+                        {
+                            ModelState.AddModelError("NumeroPago",
+                                $" NO se puede crear el pago #{pago.NumeroPago}. " +
+                                $"El contrato solo permite {datosContrato.TotalMeses} pagos totales. " +
+                                $"*Nota: Los contratos se cobran por meses completos.*");
+                        }
+
+
+                        if (datosContrato.PagosRealizados >= datosContrato.TotalMeses)
+                        {
+                            ModelState.AddModelError("IdContrato",
+                                $" CONTRATO COMPLETADO. " +
+                                $"Ya se registraron {datosContrato.PagosRealizados} de {datosContrato.TotalMeses} pagos. " +
+                                $"No se pueden registrar más pagos para este contrato.");
+                        }
+
+
+                        if (pago.NumeroPago != datosContrato.ProximoNumeroPago)
+                        {
+                            ModelState.AddModelError("NumeroPago",
+                                $" El número de pago debe ser {datosContrato.ProximoNumeroPago} " +
+                                $"(próximo pago pendiente). " +
+                                $"Actualmente: {datosContrato.PagosRealizados}/{datosContrato.TotalMeses} pagos.");
+                        }
+
+
+                        if (datosContrato.PagosRealizados == datosContrato.TotalMeses - 1)
+                        {
+                            Console.WriteLine(" ADVERTENCIA: Este es el ÚLTIMO pago del contrato");
+                            // Puedes agregar un mensaje informativo si lo deseas
+                            TempData["InfoMessage"] = $" Este es el último pago del contrato ({datosContrato.TotalMeses}/{datosContrato.TotalMeses})";
+                        }
+
+
+                        if (datosContrato.PagosRealizados > datosContrato.TotalMeses)
+                        {
+                            ModelState.AddModelError("",
+                                $" ERROR CRÍTICO: El contrato tiene {datosContrato.PagosRealizados} pagos " +
+                                $"pero solo debería tener {datosContrato.TotalMeses}. " +
+                                $"Contacte al administrador del sistema.");
+                        }
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("IdContrato", "No se pudieron obtener los datos del contrato seleccionado.");
+                    }
+                }
+
+                // Validar que el contrato esté vigente
+                if (pago.IdContrato.HasValue)
+                {
+                    Console.WriteLine("Verificando si contrato está vigente...");
+                    var contratoVigente = await _repositorioAlquiler.ContratoVigenteAsync(pago.IdContrato.Value);
+                    Console.WriteLine($"Contrato vigente: {contratoVigente}");
+
+                    if (!contratoVigente)
+                    {
+                        ModelState.AddModelError("IdContrato", "El contrato seleccionado no está vigente o ha vencido");
+                    }
+                }
+
+
+
+                // Validar número de pago único para el contrato
+                if (pago.IdContrato.HasValue)
+                {
+                    Console.WriteLine("Verificando número de pago...");
+                    var existePago = await _repositorioAlquiler.ExistePagoMesContratoAsync(pago.IdContrato.Value, pago.NumeroPago);
+                    Console.WriteLine($"Existe pago: {existePago}");
+
+                    if (existePago)
+                    {
+                        ModelState.AddModelError("NumeroPago",
+                            $"Ya existe un pago con el número {pago.NumeroPago} para este contrato. " +
+                            $"Verifique el número de pago en el historial del contrato.");
+                    }
+                }
+
+                // Validar que el contrato permita más pagos (redundante pero segura)
+                if (pago.IdContrato.HasValue)
+                {
+                    Console.WriteLine("Verificando si permite más pagos...");
+                    var permiteMasPagos = await _repositorioAlquiler.ContratoPermiteMasPagosAsync(pago.IdContrato.Value);
+                    Console.WriteLine($"Permite más pagos: {permiteMasPagos}");
+
+                    if (!permiteMasPagos)
+                    {
+                        ModelState.AddModelError("IdContrato",
+                            "El contrato seleccionado ya tiene todos los pagos registrados o ha vencido. " +
+                            "No se permiten nuevos pagos.");
+                    }
+                }
+
+                Console.WriteLine("Punto 4: Validación más pagos OK");
+
+                // Procesar archivo de comprobante si se subió
+                if (ComprobanteArchivo != null && ComprobanteArchivo.Length > 0)
+                {
+                    Console.WriteLine($"Procesando comprobante: {ComprobanteArchivo.FileName}");
+                    var resultadoArchivo = await ProcesarComprobanteAsync(ComprobanteArchivo);
+                    Console.WriteLine($"Resultado comprobante: {resultadoArchivo.exito}");
+
+                    if (resultadoArchivo.exito)
+                    {
+                        pago.ComprobanteRuta = resultadoArchivo.ruta;
+                        pago.ComprobanteNombre = resultadoArchivo.nombre;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("ComprobanteArchivo", resultadoArchivo.error);
+                    }
+                }
+
+                Console.WriteLine("Punto 5: Comprobante procesado OK");
+
+                if (!ModelState.IsValid)
+                {
+                    Console.WriteLine("ModelState NO válido, errores:");
+                    foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
+                    {
+                        Console.WriteLine($"  - {error.ErrorMessage}");
+                    }
+
+                    // Cargar datos del contrato para mostrar en la vista
+                    if (pago.IdContrato.HasValue)
+                    {
+                        var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(pago.IdContrato.Value);
+                        if (datosContrato != null)
+                        {
+                            ViewBag.DatosContrato = datosContrato;
+                            ViewBag.InfoPagos = $"{datosContrato.PagosRealizados}/{datosContrato.TotalMeses}";
+                        }
+                    }
+
+                    return View(pago);
+                }
+
+                Console.WriteLine("Punto 6: ModelState válido, creando pago...");
+
+                var resultado = await _repositorioAlquiler.CrearPagoAlquilerAsync(pago);
+                Console.WriteLine($"Resultado crear pago: {resultado}");
+
+                if (resultado)
+                {
+                    // Actualizar el estado del contrato después del pago
+                    if (pago.IdContrato.HasValue)
+                    {
+                        await _repositorioAlquiler.ActualizarEstadoContratoAsync(pago.IdContrato.Value);
+                    }
+
+                    TempData["SuccessMessage"] = pago.DiasMora > 0
+                        ? $" Pago de alquiler #{pago.NumeroPago} registrado con mora de {pago.DiasMora} días (${pago.RecargoMora:N2})"
+                        : $" Pago de alquiler #{pago.NumeroPago} registrado exitosamente";
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    ModelState.AddModelError("",
+                        " Error al registrar el pago. " +
+                        "Verifique que el contrato esté vigente y los datos sean correctos.");
+                    return View(pago);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                ModelState.AddModelError("IdContrato", "No se pudieron obtener los datos del contrato seleccionado.");
-            }
-        }
-      
-        // Validar que el contrato esté vigente
-        if (pago.IdContrato.HasValue)
-        {
-            Console.WriteLine("Verificando si contrato está vigente...");
-            var contratoVigente = await _repositorioAlquiler.ContratoVigenteAsync(pago.IdContrato.Value);
-            Console.WriteLine($"Contrato vigente: {contratoVigente}");
+                Console.WriteLine($"=== ERROR COMPLETO ===");
+                Console.WriteLine($"Mensaje: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                Console.WriteLine($"InnerException: {ex.InnerException?.Message}");
 
-            if (!contratoVigente)
-            {
-                ModelState.AddModelError("IdContrato", "El contrato seleccionado no está vigente o ha vencido");
-            }
-        }
-
-       
-
-        // Validar número de pago único para el contrato
-        if (pago.IdContrato.HasValue)
-        {
-            Console.WriteLine("Verificando número de pago...");
-            var existePago = await _repositorioAlquiler.ExistePagoMesContratoAsync(pago.IdContrato.Value, pago.NumeroPago);
-            Console.WriteLine($"Existe pago: {existePago}");
-
-            if (existePago)
-            {
-                ModelState.AddModelError("NumeroPago", 
-                    $"Ya existe un pago con el número {pago.NumeroPago} para este contrato. " +
-                    $"Verifique el número de pago en el historial del contrato.");
-            }
-        }
-
-        // Validar que el contrato permita más pagos (redundante pero segura)
-        if (pago.IdContrato.HasValue)
-        {
-            Console.WriteLine("Verificando si permite más pagos...");
-            var permiteMasPagos = await _repositorioAlquiler.ContratoPermiteMasPagosAsync(pago.IdContrato.Value);
-            Console.WriteLine($"Permite más pagos: {permiteMasPagos}");
-
-            if (!permiteMasPagos)
-            {
-                ModelState.AddModelError("IdContrato", 
-                    "El contrato seleccionado ya tiene todos los pagos registrados o ha vencido. " +
-                    "No se permiten nuevos pagos.");
-            }
-        }
-
-        Console.WriteLine("Punto 4: Validación más pagos OK");
-
-        // Procesar archivo de comprobante si se subió
-        if (ComprobanteArchivo != null && ComprobanteArchivo.Length > 0)
-        {
-            Console.WriteLine($"Procesando comprobante: {ComprobanteArchivo.FileName}");
-            var resultadoArchivo = await ProcesarComprobanteAsync(ComprobanteArchivo);
-            Console.WriteLine($"Resultado comprobante: {resultadoArchivo.exito}");
-
-            if (resultadoArchivo.exito)
-            {
-                pago.ComprobanteRuta = resultadoArchivo.ruta;
-                pago.ComprobanteNombre = resultadoArchivo.nombre;
-            }
-            else
-            {
-                ModelState.AddModelError("ComprobanteArchivo", resultadoArchivo.error);
-            }
-        }
-
-        Console.WriteLine("Punto 5: Comprobante procesado OK");
-
-        if (!ModelState.IsValid)
-        {
-            Console.WriteLine("ModelState NO válido, errores:");
-            foreach (var error in ModelState.Values.SelectMany(v => v.Errors))
-            {
-                Console.WriteLine($"  - {error.ErrorMessage}");
-            }
-            
-            // Cargar datos del contrato para mostrar en la vista
-            if (pago.IdContrato.HasValue)
-            {
-                var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(pago.IdContrato.Value);
-                if (datosContrato != null)
-                {
-                    ViewBag.DatosContrato = datosContrato;
-                    ViewBag.InfoPagos = $"{datosContrato.PagosRealizados}/{datosContrato.TotalMeses}";
-                }
-            }
-            
-            return View(pago);
-        }
-
-        Console.WriteLine("Punto 6: ModelState válido, creando pago...");
-
-        var resultado = await _repositorioAlquiler.CrearPagoAlquilerAsync(pago);
-        Console.WriteLine($"Resultado crear pago: {resultado}");
-
-        if (resultado)
-        {
-            // Actualizar el estado del contrato después del pago
-            if (pago.IdContrato.HasValue)
-            {
-                await _repositorioAlquiler.ActualizarEstadoContratoAsync(pago.IdContrato.Value);
-            }
-
-            TempData["SuccessMessage"] = pago.DiasMora > 0
-                ? $" Pago de alquiler #{pago.NumeroPago} registrado con mora de {pago.DiasMora} días (${pago.RecargoMora:N2})"
-                : $" Pago de alquiler #{pago.NumeroPago} registrado exitosamente";
-            return RedirectToAction(nameof(Index));
-        }
-        else
-        {
-            ModelState.AddModelError("", 
-                " Error al registrar el pago. " +
-                "Verifique que el contrato esté vigente y los datos sean correctos.");
-            return View(pago);
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"=== ERROR COMPLETO ===");
-        Console.WriteLine($"Mensaje: {ex.Message}");
-        Console.WriteLine($"StackTrace: {ex.StackTrace}");
-        Console.WriteLine($"InnerException: {ex.InnerException?.Message}");
-
-        ModelState.AddModelError("", 
-            $" Error crítico al registrar pago de alquiler: {ex.Message}");
-        return View(pago);
-    }
-}
-
-// GET: Alquileres/Edit/5      
-[Authorize(Policy = "Administrador")]
-public async Task<IActionResult> Edit(int id)
-{
-    if (id <= 0) return NotFound();
-
-    var pago = await _repositorioAlquiler.ObtenerPagoAlquilerConDetallesAsync(id);
-    if (pago == null) return NotFound();
-
-    return View(pago);
-}
-
-        // POST: Alquileres/Edit/5
-[Authorize(Policy = "Administrador")]
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Edit(int id, Pago pago, IFormFile? ComprobanteArchivo)
-{
-    if (id != pago.IdPago) return NotFound();
-
-    // Validaciones básicas
-    if (pago.MontoBase <= 0)
-        ModelState.AddModelError("MontoBase", "El monto debe ser mayor a 0");
-
-    if (pago.NumeroPago <= 0)
-        ModelState.AddModelError("NumeroPago", "El número de pago debe ser mayor a 0");
-
-    // Validar que no exista otro pago con el mismo número
-    if (pago.IdContrato.HasValue && 
-        await _repositorioAlquiler.ExistePagoMesContratoAsync(pago.IdContrato.Value, pago.NumeroPago, pago.IdPago))
-    {
-        ModelState.AddModelError("NumeroPago", "Ya existe otro pago con este número para el contrato");
-    }
-
-    if (!ModelState.IsValid)
-        return View(pago);
-
-    try
-    {
-        // Procesar comprobante si se subió uno nuevo
-        if (ComprobanteArchivo != null && ComprobanteArchivo.Length > 0)
-        {
-            var resultadoArchivo = await ProcesarComprobanteAsync(ComprobanteArchivo);
-            if (resultadoArchivo.exito)
-            {
-                pago.ComprobanteRuta = resultadoArchivo.ruta;
-                pago.ComprobanteNombre = resultadoArchivo.nombre;
-            }
-            else
-            {
-                ModelState.AddModelError("ComprobanteArchivo", resultadoArchivo.error);
+                ModelState.AddModelError("",
+                    $" Error crítico al registrar pago de alquiler: {ex.Message}");
                 return View(pago);
             }
         }
 
-        var resultado = await _repositorioAlquiler.ActualizarPagoAlquilerAsync(pago);
+        // GET: Alquileres/Edit/5      
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> Edit(int id)
+        {
+            if (id <= 0) return NotFound();
 
-        if (resultado)
-        {
-            TempData["SuccessMessage"] = "Pago actualizado correctamente";
-            return RedirectToAction(nameof(Index));
-        }
-        else
-        {
-            ModelState.AddModelError("", "Error al actualizar el pago");
+            var pago = await _repositorioAlquiler.ObtenerPagoAlquilerConDetallesAsync(id);
+            if (pago == null) return NotFound();
+
             return View(pago);
         }
-    }
-    catch (Exception ex)
-    {
-        ModelState.AddModelError("", $"Error: {ex.Message}");
-        return View(pago);
-    }
-}
-      public async Task<IActionResult> Delete(int id)
-{
-    if (id <= 0)
-    {
-        return NotFound();
-    }
 
-    try
-    {
-        var pago = await _repositorioAlquiler.ObtenerPagoAlquilerConDetallesAsync(id);
-
-        if (pago == null)
+        // POST: Alquileres/Edit/5
+        
+        [HttpPost]
+        [Authorize(Policy = "Administrador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Pago pago, IFormFile? ComprobanteArchivo)
         {
-            TempData["ErrorMessage"] = "Pago de alquiler no encontrado";
+            if (id != pago.IdPago) return NotFound();
+
+            // Validaciones básicas
+            if (pago.MontoBase <= 0)
+                ModelState.AddModelError("MontoBase", "El monto debe ser mayor a 0");
+
+            if (pago.NumeroPago <= 0)
+                ModelState.AddModelError("NumeroPago", "El número de pago debe ser mayor a 0");
+
+            // Validar que no exista otro pago con el mismo número
+            if (pago.IdContrato.HasValue &&
+                await _repositorioAlquiler.ExistePagoMesContratoAsync(pago.IdContrato.Value, pago.NumeroPago, pago.IdPago))
+            {
+                ModelState.AddModelError("NumeroPago", "Ya existe otro pago con este número para el contrato");
+            }
+
+            if (!ModelState.IsValid)
+                return View(pago);
+
+            try
+            {
+                // Procesar comprobante si se subió uno nuevo
+                if (ComprobanteArchivo != null && ComprobanteArchivo.Length > 0)
+                {
+                    var resultadoArchivo = await ProcesarComprobanteAsync(ComprobanteArchivo);
+                    if (resultadoArchivo.exito)
+                    {
+                        pago.ComprobanteRuta = resultadoArchivo.ruta;
+                        pago.ComprobanteNombre = resultadoArchivo.nombre;
+                    }
+                    else
+                    {
+                        ModelState.AddModelError("ComprobanteArchivo", resultadoArchivo.error);
+                        return View(pago);
+                    }
+                }
+
+                var resultado = await _repositorioAlquiler.ActualizarPagoAlquilerAsync(pago);
+
+                if (resultado)
+                {
+                    TempData["SuccessMessage"] = "Pago actualizado correctamente";
+                    return RedirectToAction(nameof(Index));
+                }
+                else
+                {
+                    ModelState.AddModelError("", "Error al actualizar el pago");
+                    return View(pago);
+                }
+            }
+            catch (Exception ex)
+            {
+                ModelState.AddModelError("", $"Error: {ex.Message}");
+                return View(pago);
+            }
+        }
+
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> Delete(int id)
+        {
+            if (id <= 0)
+            {
+                return NotFound();
+            }
+
+            try
+            {
+                var pago = await _repositorioAlquiler.ObtenerPagoAlquilerConDetallesAsync(id);
+
+                if (pago == null)
+                {
+                    TempData["ErrorMessage"] = "Pago de alquiler no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar si ya está anulado
+                if (pago.Estado == "anulado")
+                {
+                    TempData["WarningMessage"] = "Este pago ya se encuentra anulado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Cargar datos del contrato para mostrar información
+                if (pago.IdContrato.HasValue)
+                {
+                    var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(pago.IdContrato.Value);
+                    ViewBag.DatosContrato = datosContrato;
+                }
+
+                return View(pago);
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al cargar pago de alquiler: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+        
+        // POST: Alquileres/Delete/5
+        [HttpPost, ActionName("Delete")]
+        [Authorize(Policy = "Administrador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> DeleteConfirmed(int id, string motivoAnulacion = "", int idUsuarioAnulador = USUARIO_SISTEMA_TEMPORAL)
+        {
+            try
+            {
+                // Verificar que el pago existe
+                var pago = await _repositorioAlquiler.ObtenerPagoAlquilerPorIdAsync(id);
+                if (pago == null)
+                {
+                    TempData["ErrorMessage"] = "Pago no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar que no esté ya anulado
+                if (pago.Estado == "anulado")
+                {
+                    TempData["WarningMessage"] = "El pago ya se encuentra anulado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Agregar motivo de anulación a observaciones
+                if (!string.IsNullOrEmpty(motivoAnulacion))
+                {
+                    pago.Observaciones = string.IsNullOrEmpty(pago.Observaciones)
+                        ? $"ANULADO - Motivo: {motivoAnulacion}"
+                        : $"{pago.Observaciones} | ANULADO - Motivo: {motivoAnulacion}";
+                }
+                else
+                {
+                    pago.Observaciones = string.IsNullOrEmpty(pago.Observaciones)
+                        ? "ANULADO - Sin motivo especificado"
+                        : $"{pago.Observaciones} | ANULADO";
+                }
+
+                var resultado = await _repositorioAlquiler.AnularPagoAlquilerAsync(id, idUsuarioAnulador);
+
+                if (resultado)
+                {
+                    TempData["SuccessMessage"] = $"Pago #{pago.NumeroPago} anulado exitosamente";
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "Error al anular el pago de alquiler";
+                }
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al anular pago de alquiler: {ex.Message}";
+            }
+
             return RedirectToAction(nameof(Index));
         }
-
-        // Verificar si ya está anulado
-        if (pago.Estado == "anulado")
-        {
-            TempData["WarningMessage"] = "Este pago ya se encuentra anulado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Cargar datos del contrato para mostrar información
-        if (pago.IdContrato.HasValue)
-        {
-            var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(pago.IdContrato.Value);
-            ViewBag.DatosContrato = datosContrato;
-        }
-
-        return View(pago);
-    }
-    catch (Exception ex)
-    {
-        TempData["ErrorMessage"] = $"Error al cargar pago de alquiler: {ex.Message}";
-        return RedirectToAction(nameof(Index));
-    }
-}
-
-// POST: Alquileres/Delete/5
-[HttpPost, ActionName("Delete")]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> DeleteConfirmed(int id, string motivoAnulacion = "", int idUsuarioAnulador = USUARIO_SISTEMA_TEMPORAL)
-{
-    try
-    {
-        // Verificar que el pago existe
-        var pago = await _repositorioAlquiler.ObtenerPagoAlquilerPorIdAsync(id);
-        if (pago == null)
-        {
-            TempData["ErrorMessage"] = "Pago no encontrado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Verificar que no esté ya anulado
-        if (pago.Estado == "anulado")
-        {
-            TempData["WarningMessage"] = "El pago ya se encuentra anulado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Agregar motivo de anulación a observaciones
-        if (!string.IsNullOrEmpty(motivoAnulacion))
-        {
-            pago.Observaciones = string.IsNullOrEmpty(pago.Observaciones) 
-                ? $"ANULADO - Motivo: {motivoAnulacion}"
-                : $"{pago.Observaciones} | ANULADO - Motivo: {motivoAnulacion}";
-        }
-        else
-        {
-            pago.Observaciones = string.IsNullOrEmpty(pago.Observaciones)
-                ? "ANULADO - Sin motivo especificado"
-                : $"{pago.Observaciones} | ANULADO";
-        }
-
-        var resultado = await _repositorioAlquiler.AnularPagoAlquilerAsync(id, idUsuarioAnulador);
-
-        if (resultado)
-        {
-            TempData["SuccessMessage"] = $"Pago #{pago.NumeroPago} anulado exitosamente";
-        }
-        else
-        {
-            TempData["ErrorMessage"] = "Error al anular el pago de alquiler";
-        }
-    }
-    catch (Exception ex)
-    {
-        TempData["ErrorMessage"] = $"Error al anular pago de alquiler: {ex.Message}";
-    }
-
-    return RedirectToAction(nameof(Index));
-}
         // GET: Alquileres/DetailsPago/5
         public async Task<IActionResult> Details(int id)
         {
@@ -488,161 +513,163 @@ public async Task<IActionResult> DeleteConfirmed(int id, string motivoAnulacion 
         }
 
         // GET: Alquileres/Historial/5
-public async Task<IActionResult> Historial(int contratoId)
-{
-    try
-    {
-        Console.WriteLine($"=== CARGANDO HISTORIAL PARA CONTRATO {contratoId} ===");
-
-        // Verificar que el contrato existe y es válido
-        var contratoExiste = await _repositorioAlquiler.ContratoVigenteAsync(contratoId);
-        if (!contratoExiste)
+        public async Task<IActionResult> Historial(int contratoId)
         {
-            TempData["ErrorMessage"] = "El contrato especificado no existe o no está vigente";
-            return RedirectToAction(nameof(Index));
+            try
+            {
+                Console.WriteLine($"=== CARGANDO HISTORIAL PARA CONTRATO {contratoId} ===");
+
+                // Verificar que el contrato existe y es válido
+                var contratoExiste = await _repositorioAlquiler.ContratoVigenteAsync(contratoId);
+                if (!contratoExiste)
+                {
+                    TempData["ErrorMessage"] = "El contrato especificado no existe o no está vigente";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Obtener el historial de pagos del contrato
+                var historialPagos = await _repositorioAlquiler.ObtenerHistorialPagosContratoAsync(contratoId);
+                Console.WriteLine($"Pagos encontrados: {historialPagos?.Count ?? 0}");
+
+                // Obtener datos COMPLETOS del contrato (con infoPagos)
+                var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(contratoId);
+                Console.WriteLine($"Datos contrato: {datosContrato?.InfoPagos ?? "No disponible"}");
+
+                // =============================================
+                // CÁLCULO DE ESTADÍSTICAS MEJORADAS
+                // =============================================
+                var pagosPagados = historialPagos.Count(p => p.Estado?.ToLower() == "pagado");
+                var pagosPendientes = historialPagos.Count(p => p.Estado?.ToLower() == "pendiente");
+                var pagosAnulados = historialPagos.Count(p => p.Estado?.ToLower() == "anulado");
+                var pagosConMora = historialPagos.Count(p => p.DiasMora > 0);
+                var totalPagos = historialPagos.Count;
+
+                // Calcular porcentajes (excluyendo anulados del total efectivo)
+                var totalEfectivo = pagosPagados + pagosPendientes;
+                var porcentajePagados = totalEfectivo > 0 ? (pagosPagados * 100.0 / totalEfectivo) : 0;
+                var porcentajeConMora = totalPagos > 0 ? (pagosConMora * 100.0 / totalPagos) : 0;
+                var porcentajeAnulados = totalPagos > 0 ? (pagosAnulados * 100.0 / totalPagos) : 0;
+
+                var estadisticas = new
+                {
+                    PagosPagados = pagosPagados,
+                    PagosPendientes = pagosPendientes,
+                    PagosAnulados = pagosAnulados,
+                    PagosConMora = pagosConMora,
+                    TotalPagos = totalPagos,
+                    TotalEfectivo = totalEfectivo,
+                    PorcentajePagados = Math.Round(porcentajePagados, 1),
+                    PorcentajeConMora = Math.Round(porcentajeConMora, 1),
+                    PorcentajeAnulados = Math.Round(porcentajeAnulados, 1),
+                    InfoPagos = datosContrato?.InfoPagos ?? "0/0",
+                    ProximoPago = datosContrato?.ProximoNumeroPago ?? 0,
+                    TotalMeses = datosContrato?.TotalMeses ?? 0,
+                    MontoTotalPagado = historialPagos.Where(p => p.Estado?.ToLower() == "pagado")
+                                                   .Sum(p => p.MontoTotal),
+                    MontoTotalMora = historialPagos.Sum(p => p.RecargoMora)
+                };
+
+                Console.WriteLine($"Estadísticas calculadas: {pagosPagados} pagados, {pagosPendientes} pendientes, {pagosAnulados} anulados");
+
+                // =============================================
+                //  PREPARAR DATOS PARA LA VISTA
+                // =============================================
+                ViewBag.ContratoDatos = datosContrato;
+                ViewBag.ContratoId = contratoId;
+                ViewBag.Estadisticas = estadisticas;
+                ViewBag.EsVigente = contratoExiste;
+
+                // Información para el modal o alertas
+                if (datosContrato != null)
+                {
+                    if (datosContrato.PagosRealizados >= datosContrato.TotalMeses)
+                    {
+                        ViewBag.MensajeEstado = "✅ CONTRATO COMPLETADO - Todos los pagos realizados";
+                        ViewBag.TipoMensaje = "success";
+                    }
+                    else if (pagosConMora > 0)
+                    {
+                        ViewBag.MensajeEstado = "⚠️ CONTRATO CON MORA - Hay pagos atrasados";
+                        ViewBag.TipoMensaje = "warning";
+                    }
+                    else
+                    {
+                        ViewBag.MensajeEstado = "📋 CONTRATO EN CURSO - Pagos al día";
+                        ViewBag.TipoMensaje = "info";
+                    }
+                }
+
+                return View(historialPagos);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"=== ERROR EN HISTORIAL: {ex.Message}");
+                Console.WriteLine($"Stack: {ex.StackTrace}");
+
+                TempData["ErrorMessage"] = $"Error al cargar el historial de pagos: {ex.Message}";
+                return RedirectToAction(nameof(Index));
+            }
         }
-
-        // Obtener el historial de pagos del contrato
-        var historialPagos = await _repositorioAlquiler.ObtenerHistorialPagosContratoAsync(contratoId);
-        Console.WriteLine($"Pagos encontrados: {historialPagos?.Count ?? 0}");
-
-        // Obtener datos COMPLETOS del contrato (con infoPagos)
-        var datosContrato = await _repositorioAlquiler.ObtenerDatosContratoParaPagoAsync(contratoId);
-        Console.WriteLine($"Datos contrato: {datosContrato?.InfoPagos ?? "No disponible"}");
-
-        // =============================================
-        // CÁLCULO DE ESTADÍSTICAS MEJORADAS
-        // =============================================
-        var pagosPagados = historialPagos.Count(p => p.Estado?.ToLower() == "pagado");
-        var pagosPendientes = historialPagos.Count(p => p.Estado?.ToLower() == "pendiente");
-        var pagosAnulados = historialPagos.Count(p => p.Estado?.ToLower() == "anulado");
-        var pagosConMora = historialPagos.Count(p => p.DiasMora > 0);
-        var totalPagos = historialPagos.Count;
-        
-        // Calcular porcentajes (excluyendo anulados del total efectivo)
-        var totalEfectivo = pagosPagados + pagosPendientes;
-        var porcentajePagados = totalEfectivo > 0 ? (pagosPagados * 100.0 / totalEfectivo) : 0;
-        var porcentajeConMora = totalPagos > 0 ? (pagosConMora * 100.0 / totalPagos) : 0;
-        var porcentajeAnulados = totalPagos > 0 ? (pagosAnulados * 100.0 / totalPagos) : 0;
-
-        var estadisticas = new
-        {
-            PagosPagados = pagosPagados,
-            PagosPendientes = pagosPendientes,
-            PagosAnulados = pagosAnulados,
-            PagosConMora = pagosConMora,
-            TotalPagos = totalPagos,
-            TotalEfectivo = totalEfectivo,
-            PorcentajePagados = Math.Round(porcentajePagados, 1),
-            PorcentajeConMora = Math.Round(porcentajeConMora, 1),
-            PorcentajeAnulados = Math.Round(porcentajeAnulados, 1),
-            InfoPagos = datosContrato?.InfoPagos ?? "0/0",
-            ProximoPago = datosContrato?.ProximoNumeroPago ?? 0,
-            TotalMeses = datosContrato?.TotalMeses ?? 0,
-            MontoTotalPagado = historialPagos.Where(p => p.Estado?.ToLower() == "pagado")
-                                           .Sum(p => p.MontoTotal),
-            MontoTotalMora = historialPagos.Sum(p => p.RecargoMora)
-        };
-
-        Console.WriteLine($"Estadísticas calculadas: {pagosPagados} pagados, {pagosPendientes} pendientes, {pagosAnulados} anulados");
-
-        // =============================================
-        //  PREPARAR DATOS PARA LA VISTA
-        // =============================================
-        ViewBag.ContratoDatos = datosContrato;
-        ViewBag.ContratoId = contratoId;
-        ViewBag.Estadisticas = estadisticas;
-        ViewBag.EsVigente = contratoExiste;
-
-        // Información para el modal o alertas
-        if (datosContrato != null)
-        {
-            if (datosContrato.PagosRealizados >= datosContrato.TotalMeses)
-            {
-                ViewBag.MensajeEstado = "✅ CONTRATO COMPLETADO - Todos los pagos realizados";
-                ViewBag.TipoMensaje = "success";
-            }
-            else if (pagosConMora > 0)
-            {
-                ViewBag.MensajeEstado = "⚠️ CONTRATO CON MORA - Hay pagos atrasados";
-                ViewBag.TipoMensaje = "warning";
-            }
-            else
-            {
-                ViewBag.MensajeEstado = "📋 CONTRATO EN CURSO - Pagos al día";
-                ViewBag.TipoMensaje = "info";
-            }
-        }
-
-        return View(historialPagos);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"=== ERROR EN HISTORIAL: {ex.Message}");
-        Console.WriteLine($"Stack: {ex.StackTrace}");
-        
-        TempData["ErrorMessage"] = $"Error al cargar el historial de pagos: {ex.Message}";
-        return RedirectToAction(nameof(Index));
-    }
-}
 
         // GET: Alquileres/MarcarComoPagado/5
-[HttpPost]
-public async Task<IActionResult> MarcarComoPagado(int idPago)
-{
-    try
-    {
-        var pago = await _repositorioAlquiler.ObtenerPagoAlquilerPorIdAsync(idPago);
-        if (pago == null)
+        [HttpPost]
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> MarcarComoPagado(int idPago)
         {
-            return Json(new { success = false, message = "Pago no encontrado" });
+            try
+            {
+                var pago = await _repositorioAlquiler.ObtenerPagoAlquilerPorIdAsync(idPago);
+                if (pago == null)
+                {
+                    return Json(new { success = false, message = "Pago no encontrado" });
+                }
+
+                if (pago.Estado.ToLower() == "pagado")
+                {
+                    return Json(new { success = false, message = "El pago ya está marcado como pagado" });
+                }
+
+                // Actualizar estado a pagado
+                pago.Estado = "pagado";
+                pago.FechaPago = DateTime.Now;
+
+                var resultado = await _repositorioAlquiler.ActualizarPagoAlquilerAsync(pago);
+
+                if (resultado)
+                {
+                    return Json(new { success = true, message = "Pago marcado como pagado correctamente" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Error al actualizar el pago" });
+                }
+            }
+            catch (Exception ex)
+            {
+                return Json(new { success = false, message = $"Error: {ex.Message}" });
+            }
         }
 
-        if (pago.Estado.ToLower() == "pagado")
+        // GET: Alquileres/ExportarHistorial
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> ExportarHistorial(int contratoId)
         {
-            return Json(new { success = false, message = "El pago ya está marcado como pagado" });
+            try
+            {
+                var historialPagos = await _repositorioAlquiler.ObtenerHistorialPagosContratoAsync(contratoId);
+                var contratoDatos = await _repositorioAlquiler.ObtenerDatosContratoAsync(contratoId);
+
+                // lógica para exportar a Excel, PDF, etc.
+                // Por ahora redirigimos al historial normal
+                TempData["InfoMessage"] = "Función de exportación en desarrollo";
+                return RedirectToAction("Historial", new { contratoId });
+            }
+            catch (Exception ex)
+            {
+                TempData["ErrorMessage"] = $"Error al exportar historial: {ex.Message}";
+                return RedirectToAction("Historial", new { contratoId });
+            }
         }
-
-        // Actualizar estado a pagado
-        pago.Estado = "pagado";
-        pago.FechaPago = DateTime.Now;
-
-        var resultado = await _repositorioAlquiler.ActualizarPagoAlquilerAsync(pago);
-        
-        if (resultado)
-        {
-            return Json(new { success = true, message = "Pago marcado como pagado correctamente" });
-        }
-        else
-        {
-            return Json(new { success = false, message = "Error al actualizar el pago" });
-        }
-    }
-    catch (Exception ex)
-    {
-        return Json(new { success = false, message = $"Error: {ex.Message}" });
-    }
-}
-
-// GET: Alquileres/ExportarHistorial
-public async Task<IActionResult> ExportarHistorial(int contratoId)
-{
-    try
-    {
-        var historialPagos = await _repositorioAlquiler.ObtenerHistorialPagosContratoAsync(contratoId);
-        var contratoDatos = await _repositorioAlquiler.ObtenerDatosContratoAsync(contratoId);
-
-        // lógica para exportar a Excel, PDF, etc.
-        // Por ahora redirigimos al historial normal
-        TempData["InfoMessage"] = "Función de exportación en desarrollo";
-        return RedirectToAction("Historial", new { contratoId });
-    }
-    catch (Exception ex)
-    {
-        TempData["ErrorMessage"] = $"Error al exportar historial: {ex.Message}";
-        return RedirectToAction("Historial", new { contratoId });
-    }
-}
 
 
         // ========================
@@ -934,6 +961,7 @@ public async Task<IActionResult> ExportarHistorial(int contratoId)
             }
         }
 
+    
         private async Task EliminarComprobanteAnteriorAsync(string rutaComprobante)
         {
             try

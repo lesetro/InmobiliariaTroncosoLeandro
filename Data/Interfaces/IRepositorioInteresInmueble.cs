@@ -35,8 +35,9 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         // Dashboard/Estadísticas
         Task<Dictionary<string, int>> ObtenerEstadisticasInteresesAsync();
         Task<IList<InteresInmueble>> ObtenerInteresesUrgentesAsync(); // Más de X días sin contactar
-        
+
         // Método para crear un nuevo interés
         Task<bool> CrearInteresAsync(InteresInmueble nuevoInteres);
+        
     }
 }

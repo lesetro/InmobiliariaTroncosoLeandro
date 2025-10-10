@@ -213,21 +213,26 @@
                                            class="btn btn-sm btn-outline-primary" title="Ver Detalles">
                                             <i class="bi bi-eye"></i>
                                         </a>
-                                        <a href="@Url.Action("Edit", new { id = pago.IdPago })" 
-                                           class="btn btn-sm btn-outline-warning" title="Editar">
-                                            <i class="bi bi-pencil"></i>
-                                        </a>
+                                        
                                         <button class="btn btn-sm btn-outline-info" 
                                                 onclick="verPagosInmueble(@pago.IdInmueble)" 
                                                 title="Ver Todos los Pagos del Inmueble">
                                             <i class="bi bi-building"></i>
                                         </button>
+                                        @if (User.IsInRole("administrador"))
+                                        {
+
+                                        <a href="@Url.Action("Edit", new { id = pago.IdPago })" 
+                                           class="btn btn-sm btn-outline-warning" title="Editar">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
                                         @if (pago.Estado != "anulado")
                                         {
                                             <a href="@Url.Action("Delete", new { id = pago.IdPago })" 
                                                class="btn btn-sm btn-outline-danger" title="Anular">
                                                 <i class="bi bi-x-circle"></i>
                                             </a>
+                                        }
                                         }
                                     </div>
                                 </td>

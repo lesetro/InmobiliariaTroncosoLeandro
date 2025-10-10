@@ -142,7 +142,6 @@ namespace Inmobiliaria_troncoso_leandro.Data
             using var connection = new MySqlConnection(_connectionString);
             await connection.OpenAsync();
 
-            // CONSULTA COMPLETA pero SIN ALIAS PROBLEMÁTICOS
             string query = @"
         SELECT 
             cv.id_contrato_venta,
@@ -164,17 +163,35 @@ namespace Inmobiliaria_troncoso_leandro.Data
             cv.fecha_modificacion,
             cv.observaciones,
             cv.motivo_cancelacion,
-            i.direccion AS inmueble_direccion,
-            i.precio AS inmueble_precio,
-            uc.nombre AS comprador_nombre,
-            uc.apellido AS comprador_apellido,
-            uc.dni AS comprador_dni,
-            p.id_propietario,
-            uv.nombre AS vendedor_nombre,
-            uv.apellido AS vendedor_apellido,
-            uv.dni AS vendedor_dni,
+            
+            -- Datos del Inmueble
+            i.id_inmueble AS inm_id_inmueble,
+            i.direccion AS inm_direccion,
+            i.precio AS inm_precio,
+            i.ambientes AS inm_ambientes,
+            i.uso AS inm_uso,
+            
+            -- Datos del Comprador (Usuario)
+            uc.id_usuario AS comp_id_usuario,
+            uc.nombre AS comp_nombre,
+            uc.apellido AS comp_apellido,
+            uc.dni AS comp_dni,
+            uc.telefono AS comp_telefono,
+            uc.email AS comp_email,
+            
+            -- Datos del Vendedor (Propietario + Usuario)
+            p.id_propietario AS vend_id_propietario,
+            uv.id_usuario AS vend_id_usuario,
+            uv.nombre AS vend_nombre,
+            uv.apellido AS vend_apellido,
+            uv.dni AS vend_dni,
+            uv.telefono AS vend_telefono,
+            
+            -- Datos del Usuario Creador
+            ucreador.id_usuario AS creador_id_usuario,
             ucreador.nombre AS creador_nombre,
             ucreador.apellido AS creador_apellido
+            
         FROM contrato_venta cv
         LEFT JOIN inmueble i ON cv.id_inmueble = i.id_inmueble
         LEFT JOIN usuario uc ON cv.id_comprador = uc.id_usuario
@@ -186,63 +203,118 @@ namespace Inmobiliaria_troncoso_leandro.Data
             using var command = new MySqlCommand(query, connection);
             command.Parameters.AddWithValue("@id", id);
 
-            using var reader = (MySqlDataReader)await command.ExecuteReaderAsync();
+            using var reader = await command.ExecuteReaderAsync();
 
             if (await reader.ReadAsync())
             {
+                // Obtener índices de columnas una sola vez
+                var idxIdContratoVenta = reader.GetOrdinal("id_contrato_venta");
+                var idxIdInmueble = reader.GetOrdinal("id_inmueble");
+                var idxIdComprador = reader.GetOrdinal("id_comprador");
+                var idxIdVendedor = reader.GetOrdinal("id_vendedor");
+                var idxFechaInicio = reader.GetOrdinal("fecha_inicio");
+                var idxFechaEscrituracion = reader.GetOrdinal("fecha_escrituracion");
+                var idxFechaCancelacion = reader.GetOrdinal("fecha_cancelacion");
+                var idxPrecioTotal = reader.GetOrdinal("precio_total");
+                var idxMontoSena = reader.GetOrdinal("monto_seña");
+                var idxMontoAnticipos = reader.GetOrdinal("monto_anticipos");
+                var idxMontoPagado = reader.GetOrdinal("monto_pagado");
+                var idxEstado = reader.GetOrdinal("estado");
+                var idxPorcentajePagado = reader.GetOrdinal("porcentaje_pagado");
+                var idxIdUsuarioCreador = reader.GetOrdinal("id_usuario_creador");
+                var idxIdUsuarioCancelador = reader.GetOrdinal("id_usuario_cancelador");
+                var idxFechaCreacion = reader.GetOrdinal("fecha_creacion");
+                var idxFechaModificacion = reader.GetOrdinal("fecha_modificacion");
+                var idxObservaciones = reader.GetOrdinal("observaciones");
+                var idxMotivoCancelacion = reader.GetOrdinal("motivo_cancelacion");
+
                 var contrato = new ContratoVenta
                 {
-                    IdContratoVenta = reader.GetInt32("id_contrato_venta"),
-                    IdInmueble = reader.GetInt32("id_inmueble"),
-                    IdComprador = reader.GetInt32("id_comprador"),
-                    IdVendedor = reader.GetInt32("id_vendedor"),
-                    FechaInicio = reader.GetDateTime("fecha_inicio"),
-                    FechaEscrituracion = reader.IsDBNull("fecha_escrituracion") ? null : reader.GetDateTime("fecha_escrituracion"),
-                    FechaCancelacion = reader.IsDBNull("fecha_cancelacion") ? null : reader.GetDateTime("fecha_cancelacion"),
-                    PrecioTotal = reader.GetDecimal("precio_total"),
-                    MontoSeña = reader.GetDecimal("monto_seña"),
-                    MontoAnticipos = reader.GetDecimal("monto_anticipos"),
-                    MontoPagado = reader.GetDecimal("monto_pagado"),
-                    Estado = reader.GetString("estado"),
-                    PorcentajePagado = reader.GetDecimal("porcentaje_pagado"),
-                    IdUsuarioCreador = reader.GetInt32("id_usuario_creador"),
-                    IdUsuarioCancelador = reader.IsDBNull("id_usuario_cancelador") ? null : reader.GetInt32("id_usuario_cancelador"),
-                    FechaCreacion = reader.GetDateTime("fecha_creacion"),
-                    FechaModificacion = reader.GetDateTime("fecha_modificacion"),
-                    Observaciones = reader.IsDBNull("observaciones") ? null : reader.GetString("observaciones"),
-                    MotivoCancelacion = reader.IsDBNull("motivo_cancelacion") ? null : reader.GetString("motivo_cancelacion"),
+                    IdContratoVenta = reader.GetInt32(idxIdContratoVenta),
+                    IdInmueble = reader.GetInt32(idxIdInmueble),
+                    IdComprador = reader.GetInt32(idxIdComprador),
+                    IdVendedor = reader.GetInt32(idxIdVendedor),
+                    FechaInicio = reader.GetDateTime(idxFechaInicio),
+                    FechaEscrituracion = reader.IsDBNull(idxFechaEscrituracion) ? null : reader.GetDateTime(idxFechaEscrituracion),
+                    FechaCancelacion = reader.IsDBNull(idxFechaCancelacion) ? null : reader.GetDateTime(idxFechaCancelacion),
+                    PrecioTotal = reader.GetDecimal(idxPrecioTotal),
+                    MontoSeña = reader.GetDecimal(idxMontoSena),
+                    MontoAnticipos = reader.GetDecimal(idxMontoAnticipos),
+                    MontoPagado = reader.GetDecimal(idxMontoPagado),
+                    Estado = reader.GetString(idxEstado),
+                    PorcentajePagado = reader.GetDecimal(idxPorcentajePagado),
+                    IdUsuarioCreador = reader.GetInt32(idxIdUsuarioCreador),
+                    IdUsuarioCancelador = reader.IsDBNull(idxIdUsuarioCancelador) ? null : reader.GetInt32(idxIdUsuarioCancelador),
+                    FechaCreacion = reader.GetDateTime(idxFechaCreacion),
+                    FechaModificacion = reader.GetDateTime(idxFechaModificacion),
+                    Observaciones = reader.IsDBNull(idxObservaciones) ? null : reader.GetString(idxObservaciones),
+                    MotivoCancelacion = reader.IsDBNull(idxMotivoCancelacion) ? null : reader.GetString(idxMotivoCancelacion)
+                };
 
-                    Inmueble = new Inmueble
+                // Cargar Inmueble si existe
+                var idxInmIdInmueble = reader.GetOrdinal("inm_id_inmueble");
+                if (!reader.IsDBNull(idxInmIdInmueble))
+                {
+                    contrato.Inmueble = new Inmueble
                     {
-                        IdInmueble = reader.GetInt32("id_inmueble"),
-                        Direccion = reader.GetString("inmueble_direccion"),
-                        Precio = reader.GetDecimal("inmueble_precio")
-                    },
-                    Comprador = new Usuario
+                        IdInmueble = reader.GetInt32(idxInmIdInmueble),
+                        Direccion = reader.GetString(reader.GetOrdinal("inm_direccion")),
+                        Precio = reader.GetDecimal(reader.GetOrdinal("inm_precio")),
+                        Ambientes = reader.GetInt32(reader.GetOrdinal("inm_ambientes")),
+                        Uso = reader.GetString(reader.GetOrdinal("inm_uso"))
+                    };
+                }
+
+                // Cargar Comprador si existe
+                var idxCompIdUsuario = reader.GetOrdinal("comp_id_usuario");
+                if (!reader.IsDBNull(idxCompIdUsuario))
+                {
+                    contrato.Comprador = new Usuario
                     {
-                        IdUsuario = reader.GetInt32("id_comprador"),
-                        Nombre = reader.GetString("comprador_nombre"),
-                        Apellido = reader.GetString("comprador_apellido"),
-                        Dni = reader.GetString("comprador_dni")
-                    },
-                    Vendedor = new Propietario
+                        IdUsuario = reader.GetInt32(idxCompIdUsuario),
+                        Nombre = reader.GetString(reader.GetOrdinal("comp_nombre")),
+                        Apellido = reader.GetString(reader.GetOrdinal("comp_apellido")),
+                        Dni = reader.GetString(reader.GetOrdinal("comp_dni")),
+                        Telefono = reader.IsDBNull(reader.GetOrdinal("comp_telefono")) ? null : reader.GetString(reader.GetOrdinal("comp_telefono")),
+                        Email = reader.IsDBNull(reader.GetOrdinal("comp_email")) ? null : reader.GetString(reader.GetOrdinal("comp_email"))
+                    };
+                }
+
+                // Cargar Vendedor si existe
+                var idxVendIdPropietario = reader.GetOrdinal("vend_id_propietario");
+                if (!reader.IsDBNull(idxVendIdPropietario))
+                {
+                    contrato.Vendedor = new Propietario
                     {
-                        IdPropietario = reader.GetInt32("id_propietario"),
+                        IdPropietario = reader.GetInt32(idxVendIdPropietario),
                         Usuario = new Usuario
                         {
-                            IdUsuario = reader.GetInt32("id_vendedor"),
-                            Nombre = reader.GetString("vendedor_nombre"),
-                            Apellido = reader.GetString("vendedor_apellido"),
-                            Dni = reader.GetString("vendedor_dni")
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("vend_id_usuario")),
+                            Nombre = reader.GetString(reader.GetOrdinal("vend_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("vend_apellido")),
+                            Dni = reader.GetString(reader.GetOrdinal("vend_dni")),
+                            Telefono = reader.IsDBNull(reader.GetOrdinal("vend_telefono")) ? null : reader.GetString(reader.GetOrdinal("vend_telefono"))
                         }
-                    },
-                    UsuarioCreador = new Usuario
+                    };
+                }
+
+                // Cargar UsuarioCreador si existe
+                var idxCreadorIdUsuario = reader.GetOrdinal("creador_id_usuario");
+                if (!reader.IsDBNull(idxCreadorIdUsuario))
+                {
+                    contrato.UsuarioCreador = new Usuario
                     {
-                        IdUsuario = reader.GetInt32("id_usuario_creador"),
-                        Nombre = reader.GetString("creador_nombre"),
-                        Apellido = reader.GetString("creador_apellido")
-                    }
-                };
+                        IdUsuario = reader.GetInt32(idxCreadorIdUsuario),
+                        Nombre = reader.GetString(reader.GetOrdinal("creador_nombre")),
+                        Apellido = reader.GetString(reader.GetOrdinal("creador_apellido"))
+                    };
+                }
+
+                Console.WriteLine($"🔍 REPOSITORIO - Contrato cargado: {contrato.IdContratoVenta}");
+                Console.WriteLine($"🔍 REPOSITORIO - Inmueble: {(contrato.Inmueble == null ? "NULL" : "CARGADO")}");
+                Console.WriteLine($"🔍 REPOSITORIO - Comprador: {(contrato.Comprador == null ? "NULL" : "CARGADO")}");
+                Console.WriteLine($"🔍 REPOSITORIO - Vendedor: {(contrato.Vendedor == null ? "NULL" : "CARGADO")}");
+                Console.WriteLine($"🔍 REPOSITORIO - UsuarioCreador: {(contrato.UsuarioCreador == null ? "NULL" : "CARGADO")}");
 
                 // Cargar pagos
                 contrato.Pagos = await ObtenerPagosPorContratoVentaAsync(id);
@@ -251,9 +323,9 @@ namespace Inmobiliaria_troncoso_leandro.Data
                 return contrato;
             }
 
+            Console.WriteLine($"❌ REPOSITORIO - Contrato no encontrado ID: {id}");
             return null;
         }
-
         public async Task CrearAsync(ContratoVenta contratoVenta)
         {
             using var connection = new MySqlConnection(_connectionString);
@@ -289,8 +361,17 @@ namespace Inmobiliaria_troncoso_leandro.Data
             command.Parameters.AddWithValue("@fecha_modificacion", contratoVenta.FechaModificacion);
             command.Parameters.AddWithValue("@observaciones", contratoVenta.Observaciones ?? (object)DBNull.Value);
 
-            var id = Convert.ToInt32(await command.ExecuteScalarAsync());
+            Console.WriteLine($"🔍 EJECUTANDO INSERT EN CONTRATO_VENTA...");
+
+            var result = await command.ExecuteScalarAsync();
+            Console.WriteLine($"🔍 RESULTADO ExecuteScalar: {result} (Tipo: {result?.GetType()})");
+
+            var id = Convert.ToInt32(result);
             contratoVenta.IdContratoVenta = id;
+
+            Console.WriteLine($"✅ ID ASIGNADO: {contratoVenta.IdContratoVenta}");
+
+
         }
 
         public async Task ActualizarAsync(ContratoVenta contratoVenta)

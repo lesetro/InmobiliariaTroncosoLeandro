@@ -479,5 +479,26 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
             return Convert.ToInt32(await command.ExecuteScalarAsync()) > 0;
         }
+        public async Task<int> ObtenerIdInquilinoPorUsuarioAsync(int idUsuario)
+{
+    try
+    {
+        using var connection = new MySqlConnection(_connectionString);
+        await connection.OpenAsync();
+
+        string query = "SELECT id_inquilino FROM inquilino WHERE id_usuario = @idUsuario";
+        
+        using var command = new MySqlCommand(query, connection);
+        command.Parameters.AddWithValue("@idUsuario", idUsuario);
+
+        var result = await command.ExecuteScalarAsync();
+        return result != null ? Convert.ToInt32(result) : 0;
+    }
+    catch (Exception ex)
+    {
+        Console.WriteLine($"Error en ObtenerIdInquilinoPorUsuarioAsync: {ex.Message}");
+        return 0;
+    }
+}
     }
 }

@@ -1,0 +1,144 @@
+@model Usuario
+@{
+    ViewData["Title"] = "Mi Perfil - Inquilino";
+    Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-person text-info"></i> Mi Perfil
+    </h1>
+    <div>
+        <a asp-action="EditarPerfil" class="btn btn-info btn-sm">
+            <i class="bi bi-pencil"></i> Editar Perfil
+        </a>
+        <a asp-action="Index" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-4 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-image"></i> Foto de Perfil
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <img class="img-fluid rounded-circle mb-3" 
+                     style="width: 200px; height: 200px; object-fit: cover;"
+                     src="@(Model.Avatar ?? "/img/default-avatar.png")" 
+                     alt="Avatar de @Model.NombreCompleto">
+                <p class="text-muted small">
+                    Para cambiar tu foto, edita tu perfil.
+                </p>
+            </div>
+        </div>
+
+        <div class="card shadow mt-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-info-circle"></i> Información de Cuenta
+                </h6>
+            </div>
+            <div class="card-body">
+                <p class="mb-2">
+                    <strong>Rol:</strong> 
+                    <span class="badge badge-info">INQUILINO</span>
+                </p>
+                <p class="mb-2">
+                    <strong>Estado:</strong> 
+                    <span class="badge badge-success">@Model.Estado?.ToUpper()</span>
+                </p>
+                <p class="mb-0">
+                    <strong>Miembro desde:</strong> 
+                    <span class="text-muted">@DateTime.Now.ToString("dd/MM/yyyy")</span>
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-8 mb-4">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-info">
+                    <i class="bi bi-person-lines-fill"></i> Información Personal
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Nombre</label>
+                            <p class="form-control-plaintext">@Model.Nombre</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Apellido</label>
+                            <p class="form-control-plaintext">@Model.Apellido</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="font-weight-bold">DNI</label>
+                            <p class="form-control-plaintext">@Model.Dni</p>
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="form-group">
+                            <label class="font-weight-bold">Teléfono</label>
+                            <p class="form-control-plaintext">@(Model.Telefono ?? "No especificado")</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="font-weight-bold">Email</label>
+                            <p class="form-control-plaintext">@Model.Email</p>
+                </div>
+
+                <div class="form-group">
+                    <label class="font-weight-bold">Dirección</label>
+                    <p class="form-control-plaintext">@(Model.Direccion ?? "No especificada")</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información del Contrato Actual -->
+        @if (ViewBag.Contrato != null)
+        {
+            var contrato = ViewBag.Contrato as Contrato;
+            
+            <div class="card shadow mt-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-info">
+                        <i class="bi bi-house-door"></i> Contrato Actual
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Propiedad:</strong> @contrato.Inmueble?.Direccion</p>
+                            <p><strong>Propietario:</strong> @contrato.Propietario?.IdPropietario</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Alquiler:</strong> <span class="text-success">$@contrato.MontoMensual.ToString("N0")</span></p>
+                            <p><strong>Vence:</strong> @contrato.FechaFin.ToString("dd/MM/yyyy")</p>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <a asp-action="MiContrato" class="btn btn-outline-info btn-sm">
+                            <i class="bi bi-file-text"></i> Ver Detalles del Contrato
+                        </a>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

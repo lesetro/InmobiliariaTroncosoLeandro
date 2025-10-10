@@ -1,0 +1,212 @@
+@{
+    ViewData["Title"] = "Reportar Problema";
+    Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-tools text-danger"></i> Reportar Problema
+    </h1>
+    <a asp-action="Index" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver al Dashboard
+    </a>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-danger">
+                    <i class="bi bi-exclamation-triangle"></i> Formulario de Reporte
+                </h6>
+            </div>
+            <div class="card-body">
+                <form id="reporteForm">
+                    <div class="form-group">
+                        <label class="font-weight-bold">Tipo de Problema</label>
+                        <select class="form-control" id="tipoProblema" required>
+                            <option value="">Seleccionar tipo...</option>
+                            <option value="electricidad">Problema Eléctrico</option>
+                            <option value="plomeria">Problema de Plomería</option>
+                            <option value="gas">Problema de Gas</option>
+                            <option value="estructura">Problema Estructural</option>
+                            <option value="limpieza">Limpieza/Mantenimiento</option>
+                            <option value="ruido">Ruido/Molestias</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Urgencia</label>
+                        <div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="urgencia" id="baja" value="baja">
+                                <label class="form-check-label" for="baja">
+                                    <span class="badge badge-success">Baja</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="urgencia" id="media" value="media" checked>
+                                <label class="form-check-label" for="media">
+                                    <span class="badge badge-warning">Media</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="urgencia" id="alta" value="alta">
+                                <label class="form-check-label" for="alta">
+                                    <span class="badge badge-danger">Alta</span>
+                                </label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" name="urgencia" id="emergencia" value="emergencia">
+                                <label class="form-check-label" for="emergencia">
+                                    <span class="badge badge-dark">Emergencia</span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Descripción del Problema</label>
+                        <textarea class="form-control" id="descripcion" rows="5" 
+                                  placeholder="Describe detalladamente el problema, incluyendo ubicación exacta, síntomas, y cualquier información relevante..."
+                                  required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Evidencia (Fotos/Videos)</label>
+                        <input type="file" class="form-control-file" id="evidencia" multiple accept="image/*,video/*">
+                        <small class="text-muted">Puedes subir hasta 5 archivos (fotos o videos)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="font-weight-bold">Contacto Preferido</label>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <input type="tel" class="form-control" id="telefonoContacto" 
+                                       placeholder="Teléfono de contacto">
+                            </div>
+                            <div class="col-md-6">
+                                <input type="email" class="form-control" id="emailContacto" 
+                                       placeholder="Email de contacto">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group form-check">
+                        <input type="checkbox" class="form-check-input" id="permisoAcceso" required>
+                        <label class="form-check-label" for="permisoAcceso">
+                            Autorizo el acceso a mi vivienda para la reparación, coordinando previamente el horario.
+                        </label>
+                    </div>
+
+                    <div class="form-group mt-4">
+                        <button type="submit" class="btn btn-danger">
+                            <i class="bi bi-send"></i> Enviar Reporte
+                        </button>
+                        <button type="reset" class="btn btn-secondary">
+                            <i class="bi bi-arrow-clockwise"></i> Limpiar
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Información de Contacto de Emergencia -->
+        <div class="card shadow mb-4 border-danger">
+            <div class="card-header py-3 bg-danger text-white">
+                <h6 class="m-0 font-weight-bold">
+                    <i class="bi bi-telephone"></i> Contactos de Emergencia
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger">
+                    <h6><i class="bi bi-exclamation-triangle"></i> EMERGENCIAS INMEDIATAS</h6>
+                    <p class="mb-2"><strong>Bomberos:</strong> 100</p>
+                    <p class="mb-2"><strong>Policía:</strong> 101</p>
+                    <p class="mb-2"><strong>Ambulancia:</strong> 107</p>
+                    <p class="mb-0"><strong>Emergencias:</strong> 911</p>
+                </div>
+
+                <h6 class="font-weight-bold mt-3">Servicios Públicos</h6>
+                <p class="mb-1"><strong>Gas:</strong> 0800-999-0810</p>
+                <p class="mb-1"><strong>Electricidad:</strong> 0800-333-3000</p>
+                <p class="mb-1"><strong>Agua:</strong> 0810-777-24827</p>
+
+                <h6 class="font-weight-bold mt-3">Inmobiliaria CIMA</h6>
+                <p class="mb-1"><strong>Teléfono:</strong> +54 266 4-123456</p>
+                <p class="mb-1"><strong>Email:</strong> emergencias@cima.com</p>
+                <p class="mb-0"><strong>Horario:</strong> 24/7</p>
+            </div>
+        </div>
+
+        <!-- Tips para Reportes -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-danger">
+                    <i class="bi bi-lightbulb"></i> Consejos para Reportes
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="list-unstyled">
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success"></i> 
+                        <strong>Se específico</strong> en la descripción
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success"></i> 
+                        <strong>Incluye fotos</strong> como evidencia
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success"></i> 
+                        <strong>Menciona ubicación</strong> exacta
+                    </li>
+                    <li class="mb-2">
+                        <i class="bi bi-check text-success"></i> 
+                        <strong>Usa urgencia correcta</strong>
+                    </li>
+                    <li class="mb-0">
+                        <i class="bi bi-check text-success"></i> 
+                        <strong>Proporciona contacto</strong> disponible
+                    </li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            $('#reporteForm').submit(function(e) {
+                e.preventDefault();
+                
+                // Validación básica
+                const tipoProblema = $('#tipoProblema').val();
+                const descripcion = $('#descripcion').val();
+                const permisoAcceso = $('#permisoAcceso').is(':checked');
+
+                if (!tipoProblema || !descripcion || !permisoAcceso) {
+                    alert('Por favor completa todos los campos obligatorios.');
+                    return;
+                }
+
+                // Simular envío del reporte
+                if (confirm('¿Estás seguro de que quieres enviar este reporte?')) {
+                    // Aquí iría la llamada AJAX para enviar el reporte
+                    alert('Reporte enviado correctamente. Nos contactaremos contigo pronto.');
+                    $('#reporteForm')[0].reset();
+                }
+            });
+
+            // Mostrar alerta para emergencias
+            $('input[name="urgencia"]').change(function() {
+                if ($(this).val() === 'emergencia') {
+                    alert('⚠️ EMERGENCIA: Si es una situación de peligro inminente, llama inmediatamente a los números de emergencia.');
+                }
+            });
+        });
+    </script>
+}

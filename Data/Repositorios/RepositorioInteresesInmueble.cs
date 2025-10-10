@@ -54,18 +54,17 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             await connection.OpenAsync();
 
             var query = @"
-                SELECT ii.id_interes, ii.id_inmueble, ii.nombre, ii.email, ii.telefono, ii.fecha,
-                       ii.contactado, ii.fecha_contacto, ii.observaciones,
-                       i.direccion, i.precio, i.uso, i.ambientes,
-                       ti.nombre as tipo_inmueble,
-                       p.nombre as propietario_nombre, p.apellido as propietario_apellido,
-                       u.nombre as usuario_nombre, u.apellido as usuario_apellido
-                FROM interes_inmueble ii
-                INNER JOIN inmueble i ON ii.id_inmueble = i.id_inmueble
-                INNER JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
-                INNER JOIN propietario p ON i.id_propietario = p.id_propietario
-                INNER JOIN usuario u ON p.id_usuario = u.id_usuario
-                WHERE ii.id_interes = @id";
+        SELECT ii.id_interes, ii.id_inmueble, ii.nombre, ii.email, ii.telefono, ii.fecha,
+               ii.contactado, ii.fecha_contacto, ii.observaciones,
+               i.direccion, i.precio, i.uso, i.ambientes,
+               ti.nombre as tipo_inmueble,
+               u.nombre as usuario_nombre, u.apellido as usuario_apellido
+        FROM interes_inmueble ii
+        INNER JOIN inmueble i ON ii.id_inmueble = i.id_inmueble
+        INNER JOIN tipo_inmueble ti ON i.id_tipo_inmueble = ti.id_tipo_inmueble
+        INNER JOIN propietario p ON i.id_propietario = p.id_propietario
+        INNER JOIN usuario u ON p.id_usuario = u.id_usuario
+        WHERE ii.id_interes = @id";
 
             using var command = new MySqlCommand(query, connection);
             command.Parameters.AddWithValue("@id", id);
@@ -111,7 +110,6 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
             return null;
         }
-
         public async Task<(IList<InteresInmueble> intereses, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
             int pagina, string buscar, string estado, int? idInmueble, DateTime? fechaDesde, DateTime? fechaHasta, int itemsPorPagina)
         {
@@ -668,5 +666,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 throw new Exception($"Error al crear interés en inmueble: {ex.Message}", ex);
             }
         }
+
+
     }
 }

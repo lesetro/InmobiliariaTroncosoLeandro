@@ -250,7 +250,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        
+
         // ========================
         // ENDPOINTS AJAX MODIFICADOS
         // ========================
@@ -267,8 +267,10 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             {
 
                 return Json(new List<SearchResultVenta>());
+                return Json(new { success = false, error = $"Error al buscar inmuebles: {ex.Message}" });
             }
         }
+
 
         [HttpGet]
         public async Task<IActionResult> ObtenerInfoContratoVenta(int idInmueble)
@@ -448,303 +450,307 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 _ => "application/octet-stream"
             };
         }
-       // GET: Ventas/Details/5
-[HttpGet]
-public async Task<IActionResult> Details(int? id)
-{
-    try
-    {
-        if (id == null)
+        // GET: Ventas/Details/5
+        [HttpGet]
+        public async Task<IActionResult> Details(int? id)
         {
-            TempData["ErrorMessage"] = "ID de pago no especificado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        var pago = await _repositorioVenta.ObtenerPagoVentaConDetallesAsync(id.Value);
-        if (pago == null)
-        {
-            TempData["ErrorMessage"] = "Pago no encontrado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Cargar datos adicionales para la vista
-        await CargarDatosAdicionales(pago);
-
-        return View(pago);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en Details: {ex.Message}");
-        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
-        
-        TempData["ErrorMessage"] = "Error al cargar los detalles del pago";
-        return RedirectToAction(nameof(Index));
-    }
-}
-
-// GET: Ventas/Edit/5
-[HttpGet]
-public async Task<IActionResult> Edit(int? id)
-{
-    try
-    {
-        if (id == null)
-        {
-            TempData["ErrorMessage"] = "ID de pago no especificado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        var pago = await _repositorioVenta.ObtenerPagoVentaConDetallesAsync(id.Value);
-        if (pago == null)
-        {
-            TempData["ErrorMessage"] = "Pago no encontrado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Verificar si está anulado
-        if (pago.Estado.ToLower() == "anulado")
-        {
-            TempData["ErrorMessage"] = "No se puede editar un pago anulado";
-            return RedirectToAction(nameof(Details), new { id = id });
-        }
-
-        await CargarViewBagParaFormulario(pago.IdInmueble);
-        return View(pago);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en Edit (GET): {ex.Message}");
-        TempData["ErrorMessage"] = "Error al cargar el formulario de edición";
-        return RedirectToAction(nameof(Index));
-    }
-}
-
-// POST: Ventas/Edit/5
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Edit(int id, Pago pago)
-{
-    try
-    {
-        if (id != pago.IdPago)
-        {
-            TempData["ErrorMessage"] = "ID de pago no coincide";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Validar número de pago único
-        if (await _repositorioVenta.ExisteNumeroPagoVentaAsync(pago.IdInmueble, pago.NumeroPago, pago.IdPago))
-        {
-            ModelState.AddModelError("NumeroPago", "Ya existe un pago con este número para el inmueble seleccionado");
-        }
-
-        if (ModelState.IsValid)
-        {
-            var resultado = await _repositorioVenta.ActualizarPagoVentaAsync(pago);
-            if (resultado)
+            try
             {
-                TempData["SuccessMessage"] = "Pago actualizado correctamente";
-                return RedirectToAction(nameof(Details), new { id = pago.IdPago });
+                if (id == null)
+                {
+                    TempData["ErrorMessage"] = "ID de pago no especificado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var pago = await _repositorioVenta.ObtenerPagoVentaConDetallesAsync(id.Value);
+                if (pago == null)
+                {
+                    TempData["ErrorMessage"] = "Pago no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Cargar datos adicionales para la vista
+                await CargarDatosAdicionales(pago);
+
+                return View(pago);
             }
-            else
+            catch (Exception ex)
             {
+                Console.WriteLine($" ERROR en Details: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+                TempData["ErrorMessage"] = "Error al cargar los detalles del pago";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // GET: Ventas/Edit/5
+        [HttpGet]
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> Edit(int? id)
+        {
+            try
+            {
+                if (id == null)
+                {
+                    TempData["ErrorMessage"] = "ID de pago no especificado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                var pago = await _repositorioVenta.ObtenerPagoVentaConDetallesAsync(id.Value);
+                if (pago == null)
+                {
+                    TempData["ErrorMessage"] = "Pago no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar si está anulado
+                if (pago.Estado.ToLower() == "anulado")
+                {
+                    TempData["ErrorMessage"] = "No se puede editar un pago anulado";
+                    return RedirectToAction(nameof(Details), new { id = id });
+                }
+
+                await CargarViewBagParaFormulario(pago.IdInmueble);
+                return View(pago);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en Edit (GET): {ex.Message}");
+                TempData["ErrorMessage"] = "Error al cargar el formulario de edición";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: Ventas/Edit/5
+        [HttpPost]
+        [Authorize(Policy = "Administrador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Edit(int id, Pago pago)
+        {
+            try
+            {
+                if (id != pago.IdPago)
+                {
+                    TempData["ErrorMessage"] = "ID de pago no coincide";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Validar número de pago único
+                if (await _repositorioVenta.ExisteNumeroPagoVentaAsync(pago.IdInmueble, pago.NumeroPago, pago.IdPago))
+                {
+                    ModelState.AddModelError("NumeroPago", "Ya existe un pago con este número para el inmueble seleccionado");
+                }
+
+                if (ModelState.IsValid)
+                {
+                    var resultado = await _repositorioVenta.ActualizarPagoVentaAsync(pago);
+                    if (resultado)
+                    {
+                        TempData["SuccessMessage"] = "Pago actualizado correctamente";
+                        return RedirectToAction(nameof(Details), new { id = pago.IdPago });
+                    }
+                    else
+                    {
+                        TempData["ErrorMessage"] = "Error al actualizar el pago";
+                    }
+                }
+
+                await CargarViewBagParaFormulario(pago.IdInmueble);
+                return View(pago);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en Edit (POST): {ex.Message}");
                 TempData["ErrorMessage"] = "Error al actualizar el pago";
+
+                await CargarViewBagParaFormulario(pago.IdInmueble);
+                return View(pago);
             }
         }
 
-        await CargarViewBagParaFormulario(pago.IdInmueble);
-        return View(pago);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en Edit (POST): {ex.Message}");
-        TempData["ErrorMessage"] = "Error al actualizar el pago";
-        
-        await CargarViewBagParaFormulario(pago.IdInmueble);
-        return View(pago);
-    }
-}
-
-// GET: Ventas/Delete/5
-[HttpGet]
-public async Task<IActionResult> Delete(int? id)
-{
-    try
-    {
-        if (id == null)
+        // GET: Ventas/Delete/5
+        [HttpGet]
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> Delete(int? id)
         {
-            TempData["ErrorMessage"] = "ID de pago no especificado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        var pago = await _repositorioVenta.ObtenerPagoVentaConDetallesAsync(id.Value);
-        if (pago == null)
-        {
-            TempData["ErrorMessage"] = "Pago no encontrado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Cargar datos adicionales para la vista
-        await CargarDatosAdicionales(pago);
-
-        return View(pago);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en Delete (GET): {ex.Message}");
-        TempData["ErrorMessage"] = "Error al cargar la página de anulación";
-        return RedirectToAction(nameof(Index));
-    }
-}
-
-// POST: Ventas/Delete/5
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> Delete(int id, string motivoAnulacion, string impactoInmueble)
-{
-    try
-    {
-        var pago = await _repositorioVenta.ObtenerPagoVentaPorIdAsync(id);
-        if (pago == null)
-        {
-            TempData["ErrorMessage"] = "Pago no encontrado";
-            return RedirectToAction(nameof(Index));
-        }
-
-        // Verificar que no esté ya anulado
-        if (pago.Estado.ToLower() == "anulado")
-        {
-            TempData["ErrorMessage"] = "El pago ya está anulado";
-            return RedirectToAction(nameof(Details), new { id = id });
-        }
-
-        // Obtener ID del usuario actual
-        var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
-
-        // Anular el pago
-        var resultado = await _repositorioVenta.AnularPagoVentaAsync(id, userId);
-
-        if (resultado)
-        {
-            // Manejar el impacto en el inmueble según la selección
-            await ManejarImpactoInmueble(pago.IdInmueble, impactoInmueble);
-
-            TempData["SuccessMessage"] = "Pago anulado correctamente";
-            return RedirectToAction(nameof(Details), new { id = id });
-        }
-        else
-        {
-            TempData["ErrorMessage"] = "No se pudo anular el pago";
-            return RedirectToAction(nameof(Delete), new { id = id });
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en Delete (POST): {ex.Message}");
-        TempData["ErrorMessage"] = "Error al anular el pago";
-        return RedirectToAction(nameof(Delete), new { id = id });
-    }
-}
-
-// MÉTODOS PRIVADOS AUXILIARES
-
-private async Task CargarDatosAdicionales(Pago pago)
-{
-    try
-    {
-        // Obtener estadísticas del inmueble
-        var totalPagado = await _repositorioVenta.ObtenerTotalPagadoVentaAsync(pago.IdInmueble);
-        
-        // Buscar información del contrato de venta para este inmueble
-        var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(pago.IdInmueble);
-        
-        ViewBag.EstadisticasInmueble = new
-        {
-            TotalPagos = await ObtenerCantidadPagosInmueble(pago.IdInmueble),
-            MontoPagado = totalPagado,
-            PrecioTotal = contrato?.PrecioTotal ?? 0,
-            SaldoPendiente = contrato?.PrecioTotal - totalPagado ?? 0,
-            PorcentajePagado = contrato?.PrecioTotal > 0 ? 
-                (totalPagado / contrato.PrecioTotal) * 100 : 0,
-            ContratoActivo = contrato != null && (contrato.Estado == "activo" || contrato.Estado == "seña_pagada")
-        };
-
-        // Obtener estado actual del inmueble desde el contrato
-        if (contrato != null)
-        {
-            ViewBag.EstadoInmueble = contrato.Estado switch
+            try
             {
-                "activo" => "Reservado",
-                "seña_pagada" => "Señado",
-                "cancelada" => "Disponible",
-                "finalizada" => "Vendido",
-                _ => "Disponible"
-            };
-        }
-        else
-        {
-            ViewBag.EstadoInmueble = "Disponible";
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en CargarDatosAdicionales: {ex.Message}");
-        // En caso de error, establecer valores por defecto
-        ViewBag.EstadisticasInmueble = new
-        {
-            TotalPagos = 1,
-            MontoPagado = pago.MontoTotal,
-            PrecioTotal = 0,
-            SaldoPendiente = 0,
-            PorcentajePagado = 0,
-            ContratoActivo = false
-        };
-        ViewBag.EstadoInmueble = "Desconocido";
-    }
-}
+                if (id == null)
+                {
+                    TempData["ErrorMessage"] = "ID de pago no especificado";
+                    return RedirectToAction(nameof(Index));
+                }
 
-private async Task CargarViewBagParaFormulario(int idInmueble)
-{
-    try
-    {
-        // Obtener último pago para sugerir número de pago
-        var ultimoPago = await _repositorioVenta.ObtenerUltimoPagoVentaAsync(idInmueble);
-        ViewBag.SiguienteNumeroPago = (ultimoPago?.NumeroPago ?? 0) + 1;
-        
-        // Obtener contrato para validaciones
-        var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(idInmueble);
-        ViewBag.PrecioTotalContrato = contrato?.PrecioTotal ?? 0;
-        ViewBag.TotalPagado = await _repositorioVenta.ObtenerTotalPagadoVentaAsync(idInmueble);
-        ViewBag.SaldoPendiente = (contrato?.PrecioTotal ?? 0) - ViewBag.TotalPagado;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en CargarViewBagParaFormulario: {ex.Message}");
-        ViewBag.SiguienteNumeroPago = 1;
-        ViewBag.PrecioTotalContrato = 0;
-        ViewBag.TotalPagado = 0;
-        ViewBag.SaldoPendiente = 0;
-    }
-}
+                var pago = await _repositorioVenta.ObtenerPagoVentaConDetallesAsync(id.Value);
+                if (pago == null)
+                {
+                    TempData["ErrorMessage"] = "Pago no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
 
-private async Task<int> ObtenerCantidadPagosInmueble(int idInmueble)
-{
-    try
-    {
-        // Usar el método de paginación para obtener todos los pagos del inmueble
-        var (pagos, totalRegistros) = await _repositorioVenta
-            .ObtenerPagosVentaConPaginacionAsync(1, "", "", 1000);
-        
-        // Filtrar por inmueble específico
-        var pagosInmueble = pagos?.Where(p => p.IdInmueble == idInmueble).ToList();
-        return pagosInmueble?.Count ?? 1;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en ObtenerCantidadPagosInmueble: {ex.Message}");
-        return 1;
-    }
-}
+                // Cargar datos adicionales para la vista
+                await CargarDatosAdicionales(pago);
+
+                return View(pago);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en Delete (GET): {ex.Message}");
+                TempData["ErrorMessage"] = "Error al cargar la página de anulación";
+                return RedirectToAction(nameof(Index));
+            }
+        }
+
+        // POST: Ventas/Delete/5
+        [HttpPost]
+        [Authorize(Policy = "Administrador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> Delete(int id, string motivoAnulacion, string impactoInmueble)
+        {
+            try
+            {
+                var pago = await _repositorioVenta.ObtenerPagoVentaPorIdAsync(id);
+                if (pago == null)
+                {
+                    TempData["ErrorMessage"] = "Pago no encontrado";
+                    return RedirectToAction(nameof(Index));
+                }
+
+                // Verificar que no esté ya anulado
+                if (pago.Estado.ToLower() == "anulado")
+                {
+                    TempData["ErrorMessage"] = "El pago ya está anulado";
+                    return RedirectToAction(nameof(Details), new { id = id });
+                }
+
+                // Obtener ID del usuario actual
+                var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+                // Anular el pago
+                var resultado = await _repositorioVenta.AnularPagoVentaAsync(id, userId);
+
+                if (resultado)
+                {
+                    // Manejar el impacto en el inmueble según la selección
+                    await ManejarImpactoInmueble(pago.IdInmueble, impactoInmueble);
+
+                    TempData["SuccessMessage"] = "Pago anulado correctamente";
+                    return RedirectToAction(nameof(Details), new { id = id });
+                }
+                else
+                {
+                    TempData["ErrorMessage"] = "No se pudo anular el pago";
+                    return RedirectToAction(nameof(Delete), new { id = id });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en Delete (POST): {ex.Message}");
+                TempData["ErrorMessage"] = "Error al anular el pago";
+                return RedirectToAction(nameof(Delete), new { id = id });
+            }
+        }
+
+        // MÉTODOS PRIVADOS AUXILIARES
+
+        private async Task CargarDatosAdicionales(Pago pago)
+        {
+            try
+            {
+                // Obtener estadísticas del inmueble
+                var totalPagado = await _repositorioVenta.ObtenerTotalPagadoVentaAsync(pago.IdInmueble);
+
+                // Buscar información del contrato de venta para este inmueble
+                var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(pago.IdInmueble);
+
+                ViewBag.EstadisticasInmueble = new
+                {
+                    TotalPagos = await ObtenerCantidadPagosInmueble(pago.IdInmueble),
+                    MontoPagado = totalPagado,
+                    PrecioTotal = contrato?.PrecioTotal ?? 0,
+                    SaldoPendiente = contrato?.PrecioTotal - totalPagado ?? 0,
+                    PorcentajePagado = contrato?.PrecioTotal > 0 ?
+                        (totalPagado / contrato.PrecioTotal) * 100 : 0,
+                    ContratoActivo = contrato != null && (contrato.Estado == "activo" || contrato.Estado == "seña_pagada")
+                };
+
+                // Obtener estado actual del inmueble desde el contrato
+                if (contrato != null)
+                {
+                    ViewBag.EstadoInmueble = contrato.Estado switch
+                    {
+                        "activo" => "Reservado",
+                        "seña_pagada" => "Señado",
+                        "cancelada" => "Disponible",
+                        "finalizada" => "Vendido",
+                        _ => "Disponible"
+                    };
+                }
+                else
+                {
+                    ViewBag.EstadoInmueble = "Disponible";
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en CargarDatosAdicionales: {ex.Message}");
+                // En caso de error, establecer valores por defecto
+                ViewBag.EstadisticasInmueble = new
+                {
+                    TotalPagos = 1,
+                    MontoPagado = pago.MontoTotal,
+                    PrecioTotal = 0,
+                    SaldoPendiente = 0,
+                    PorcentajePagado = 0,
+                    ContratoActivo = false
+                };
+                ViewBag.EstadoInmueble = "Desconocido";
+            }
+        }
+
+        private async Task CargarViewBagParaFormulario(int idInmueble)
+        {
+            try
+            {
+                // Obtener último pago para sugerir número de pago
+                var ultimoPago = await _repositorioVenta.ObtenerUltimoPagoVentaAsync(idInmueble);
+                ViewBag.SiguienteNumeroPago = (ultimoPago?.NumeroPago ?? 0) + 1;
+
+                // Obtener contrato para validaciones
+                var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(idInmueble);
+                ViewBag.PrecioTotalContrato = contrato?.PrecioTotal ?? 0;
+                ViewBag.TotalPagado = await _repositorioVenta.ObtenerTotalPagadoVentaAsync(idInmueble);
+                ViewBag.SaldoPendiente = (contrato?.PrecioTotal ?? 0) - ViewBag.TotalPagado;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en CargarViewBagParaFormulario: {ex.Message}");
+                ViewBag.SiguienteNumeroPago = 1;
+                ViewBag.PrecioTotalContrato = 0;
+                ViewBag.TotalPagado = 0;
+                ViewBag.SaldoPendiente = 0;
+            }
+        }
+
+        private async Task<int> ObtenerCantidadPagosInmueble(int idInmueble)
+        {
+            try
+            {
+                // Usar el método de paginación para obtener todos los pagos del inmueble
+                var (pagos, totalRegistros) = await _repositorioVenta
+                    .ObtenerPagosVentaConPaginacionAsync(1, "", "", 1000);
+
+                // Filtrar por inmueble específico
+                var pagosInmueble = pagos?.Where(p => p.IdInmueble == idInmueble).ToList();
+                return pagosInmueble?.Count ?? 1;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en ObtenerCantidadPagosInmueble: {ex.Message}");
+                return 1;
+            }
+        }
 
         private async Task ManejarImpactoInmueble(int idInmueble, string impactoInmueble)
         {
@@ -773,208 +779,210 @@ private async Task<int> ObtenerCantidadPagosInmueble(int idInmueble)
                 Console.WriteLine($" ERROR en ManejarImpactoInmueble: {ex.Message}");
             }
         }
-//Por Inmueble 
+        //Por Inmueble 
 
- // GET: Ventas/PorInmueble
-[HttpGet]
-public async Task<IActionResult> PorInmueble(int inmuebleId)
-{
-    try
-    {
-        Console.WriteLine($"=== DEBUG POR INMUEBLE ===");
-        Console.WriteLine($"Inmueble ID: {inmuebleId}");
-
-        // Obtener todos los pagos del inmueble usando paginación con límite alto
-        var (pagos, totalRegistros) = await _repositorioVenta
-            .ObtenerPagosVentaConPaginacionAsync(1, "", "", 1000);
-
-        // Filtrar por inmueble específico
-        var pagosInmueble = pagos?.Where(p => p.IdInmueble == inmuebleId).ToList();
-
-        Console.WriteLine($"Pagos encontrados para inmueble {inmuebleId}: {pagosInmueble?.Count ?? 0}");
-
-        if (pagosInmueble == null || !pagosInmueble.Any())
+        // GET: Ventas/PorInmueble
+        [HttpGet]
+        public async Task<IActionResult> PorInmueble(int inmuebleId)
         {
-            Console.WriteLine("No se encontraron pagos para este inmueble");
-            ViewBag.InmuebleId = inmuebleId;
-            return View(new List<Pago>());
+            try
+            {
+                Console.WriteLine($"=== DEBUG POR INMUEBLE ===");
+                Console.WriteLine($"Inmueble ID: {inmuebleId}");
+
+                // Obtener todos los pagos del inmueble usando paginación con límite alto
+                var (pagos, totalRegistros) = await _repositorioVenta
+                    .ObtenerPagosVentaConPaginacionAsync(1, "", "", 1000);
+
+                // Filtrar por inmueble específico
+                var pagosInmueble = pagos?.Where(p => p.IdInmueble == inmuebleId).ToList();
+
+                Console.WriteLine($"Pagos encontrados para inmueble {inmuebleId}: {pagosInmueble?.Count ?? 0}");
+
+                if (pagosInmueble == null || !pagosInmueble.Any())
+                {
+                    Console.WriteLine("No se encontraron pagos para este inmueble");
+                    ViewBag.InmuebleId = inmuebleId;
+                    return View(new List<Pago>());
+                }
+
+                // Obtener información del contrato de venta
+                var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(inmuebleId);
+
+                // CALCULAR ESTADOS DEL PROCESO DE VENTA
+                var tieneSeña = pagosInmueble.Any(p =>
+                    p.Concepto.ToLower().Contains("seña") &&
+                    p.Estado.ToLower() == "pagado");
+
+                var tieneAnticipo = pagosInmueble.Any(p =>
+                    p.Concepto.ToLower().Contains("anticipo") &&
+                    p.Estado.ToLower() == "pagado");
+
+                var tieneTotal = pagosInmueble.Any(p =>
+                    (p.Concepto.ToLower().Contains("total") || p.Concepto.ToLower().Contains("completo")) &&
+                    p.Estado.ToLower() == "pagado");
+
+                var estaVendido = contrato?.Estado?.ToLower() == "finalizada" ||
+                                 ViewBag.EstadoInmueble?.ToString().ToLower() == "vendido";
+
+                // Cargar datos para la vista
+                ViewBag.InmuebleId = inmuebleId;
+                ViewBag.EstadoInmueble = contrato?.Estado ?? "Disponible";
+                ViewBag.TieneSeña = tieneSeña;
+                ViewBag.TieneAnticipo = tieneAnticipo;
+                ViewBag.TieneTotal = tieneTotal;
+                ViewBag.EstaVendido = estaVendido;
+
+                // Obtener datos del inmueble desde el primer pago
+                var primerPago = pagosInmueble.First();
+                ViewBag.InmuebleDatos = new
+                {
+                    Direccion = primerPago.Inmueble?.Direccion,
+                    Precio = contrato?.PrecioTotal ?? 0,
+                    TipoInmueble = primerPago.Inmueble?.TipoInmueble?.Nombre ?? "No especificado",
+
+                };
+
+                Console.WriteLine($"Proceso de venta - Seña: {tieneSeña}, Anticipo: {tieneAnticipo}, Total: {tieneTotal}, Vendido: {estaVendido}");
+                Console.WriteLine($"=== FIN DEBUG ===");
+
+                return View(pagosInmueble);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en PorInmueble: {ex.Message}");
+                Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+
+                TempData["ErrorMessage"] = "Error al cargar el historial de pagos del inmueble";
+                ViewBag.InmuebleId = inmuebleId;
+                return View(new List<Pago>());
+            }
         }
 
-        // Obtener información del contrato de venta
-        var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(inmuebleId);
-        
-        // CALCULAR ESTADOS DEL PROCESO DE VENTA
-        var tieneSeña = pagosInmueble.Any(p => 
-            p.Concepto.ToLower().Contains("seña") && 
-            p.Estado.ToLower() == "pagado");
-        
-        var tieneAnticipo = pagosInmueble.Any(p => 
-            p.Concepto.ToLower().Contains("anticipo") && 
-            p.Estado.ToLower() == "pagado");
-        
-        var tieneTotal = pagosInmueble.Any(p => 
-            (p.Concepto.ToLower().Contains("total") || p.Concepto.ToLower().Contains("completo")) && 
-            p.Estado.ToLower() == "pagado");
-        
-        var estaVendido = contrato?.Estado?.ToLower() == "finalizada" || 
-                         ViewBag.EstadoInmueble?.ToString().ToLower() == "vendido";
-
-        // Cargar datos para la vista
-        ViewBag.InmuebleId = inmuebleId;
-        ViewBag.EstadoInmueble = contrato?.Estado ?? "Disponible";
-        ViewBag.TieneSeña = tieneSeña;
-        ViewBag.TieneAnticipo = tieneAnticipo;
-        ViewBag.TieneTotal = tieneTotal;
-        ViewBag.EstaVendido = estaVendido;
-        
-        // Obtener datos del inmueble desde el primer pago
-        var primerPago = pagosInmueble.First();
-        ViewBag.InmuebleDatos = new
+        // POST: Ventas/MarcarComoPagado
+        [HttpPost]
+        [Authorize(Policy = "Administrador")]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> MarcarComoPagado(int idPago)
         {
-            Direccion = primerPago.Inmueble?.Direccion,
-            Precio = contrato?.PrecioTotal ?? 0,
-            TipoInmueble = primerPago.Inmueble?.TipoInmueble?.Nombre ?? "No especificado",
-            
-        };
+            try
+            {
+                var pago = await _repositorioVenta.ObtenerPagoVentaPorIdAsync(idPago);
+                if (pago == null)
+                {
+                    return Json(new { success = false, message = "Pago no encontrado" });
+                }
 
-        Console.WriteLine($"Proceso de venta - Seña: {tieneSeña}, Anticipo: {tieneAnticipo}, Total: {tieneTotal}, Vendido: {estaVendido}");
-        Console.WriteLine($"=== FIN DEBUG ===");
+                // Verificar que no esté anulado
+                if (pago.Estado.ToLower() == "anulado")
+                {
+                    return Json(new { success = false, message = "No se puede marcar como pagado un pago anulado" });
+                }
 
-        return View(pagosInmueble);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en PorInmueble: {ex.Message}");
-        Console.WriteLine($"Stack Trace: {ex.StackTrace}");
+                // Actualizar estado a pagado
+                pago.Estado = "pagado";
+                var resultado = await _repositorioVenta.ActualizarPagoVentaAsync(pago);
 
-        TempData["ErrorMessage"] = "Error al cargar el historial de pagos del inmueble";
-        ViewBag.InmuebleId = inmuebleId;
-        return View(new List<Pago>());
-    }
-}
+                if (resultado)
+                {
+                    // Verificar si con este pago se completa la venta
+                    await VerificarCompletacionVenta(pago.IdInmueble);
 
-// POST: Ventas/MarcarComoPagado
-[HttpPost]
-[ValidateAntiForgeryToken]
-public async Task<IActionResult> MarcarComoPagado(int idPago)
-{
-    try
-    {
-        var pago = await _repositorioVenta.ObtenerPagoVentaPorIdAsync(idPago);
-        if (pago == null)
-        {
-            return Json(new { success = false, message = "Pago no encontrado" });
+                    return Json(new { success = true, message = "Pago marcado como pagado correctamente" });
+                }
+                else
+                {
+                    return Json(new { success = false, message = "Error al actualizar el pago" });
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en MarcarComoPagado: {ex.Message}");
+                return Json(new { success = false, message = "Error interno del servidor" });
+            }
         }
 
-        // Verificar que no esté anulado
-        if (pago.Estado.ToLower() == "anulado")
+        // GET: Ventas/ExportarPorInmueble
+        [HttpGet]
+        [Authorize(Policy = "Administrador")]
+        public async Task<IActionResult> ExportarPorInmueble(int inmuebleId)
         {
-            return Json(new { success = false, message = "No se puede marcar como pagado un pago anulado" });
+            try
+            {
+                // Obtener todos los pagos del inmueble
+                var (pagos, totalRegistros) = await _repositorioVenta
+                    .ObtenerPagosVentaConPaginacionAsync(1, "", "", 1000);
+
+                var pagosInmueble = pagos?.Where(p => p.IdInmueble == inmuebleId).ToList();
+
+                if (pagosInmueble == null || !pagosInmueble.Any())
+                {
+                    TempData["ErrorMessage"] = "No hay datos para exportar";
+                    return RedirectToAction(nameof(PorInmueble), new { inmuebleId });
+                }
+
+                // Crear contenido CSV
+                var csv = new System.Text.StringBuilder();
+                csv.AppendLine("ID;Fecha;Concepto;Monto;Estado;Tipo;Observaciones");
+
+                foreach (var pago in pagosInmueble.OrderBy(p => p.FechaPago))
+                {
+                    csv.AppendLine($"{pago.IdPago};{pago.FechaPago:dd/MM/yyyy};{pago.Concepto};{pago.MontoTotal};{pago.Estado};{GetTipoPagoFromConcepto(pago.Concepto)};{pago.Observaciones}");
+                }
+
+                // Obtener información del inmueble
+                var primerPago = pagosInmueble.First();
+                var nombreArchivo = $"Pagos_Inmueble_{inmuebleId}_{primerPago.Inmueble?.Direccion?.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv";
+
+                return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", nombreArchivo);
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en ExportarPorInmueble: {ex.Message}");
+                TempData["ErrorMessage"] = "Error al exportar los datos";
+                return RedirectToAction(nameof(PorInmueble), new { inmuebleId });
+            }
         }
 
-        // Actualizar estado a pagado
-        pago.Estado = "pagado";
-        var resultado = await _repositorioVenta.ActualizarPagoVentaAsync(pago);
+        // MÉTODOS PRIVADOS AUXILIARES
 
-        if (resultado)
+        private async Task VerificarCompletacionVenta(int idInmueble)
         {
-            // Verificar si con este pago se completa la venta
-            await VerificarCompletacionVenta(pago.IdInmueble);
-            
-            return Json(new { success = true, message = "Pago marcado como pagado correctamente" });
-        }
-        else
-        {
-            return Json(new { success = false, message = "Error al actualizar el pago" });
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en MarcarComoPagado: {ex.Message}");
-        return Json(new { success = false, message = "Error interno del servidor" });
-    }
-}
+            try
+            {
+                // Obtener contrato de venta
+                var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(idInmueble);
+                if (contrato == null) return;
 
-// GET: Ventas/ExportarPorInmueble
-[HttpGet]
-public async Task<IActionResult> ExportarPorInmueble(int inmuebleId)
-{
-    try
-    {
-        // Obtener todos los pagos del inmueble
-        var (pagos, totalRegistros) = await _repositorioVenta
-            .ObtenerPagosVentaConPaginacionAsync(1, "", "", 1000);
+                // Obtener total pagado
+                var totalPagado = await _repositorioVenta.ObtenerTotalPagadoVentaAsync(idInmueble);
 
-        var pagosInmueble = pagos?.Where(p => p.IdInmueble == inmuebleId).ToList();
+                // Si se pagó el total, marcar como vendido
+                if (totalPagado >= contrato.PrecioTotal)
+                {
+                    await _repositorioVenta.MarcarInmuebleComoVendidoAsync(idInmueble);
 
-        if (pagosInmueble == null || !pagosInmueble.Any())
-        {
-            TempData["ErrorMessage"] = "No hay datos para exportar";
-            return RedirectToAction(nameof(PorInmueble), new { inmuebleId });
+                    // También podrías actualizar el estado del contrato aquí
+                    Console.WriteLine($"Inmueble {idInmueble} marcado como vendido - Total pagado: {totalPagado}, Precio: {contrato.PrecioTotal}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($" ERROR en VerificarCompletacionVenta: {ex.Message}");
+            }
         }
 
-        // Crear contenido CSV
-        var csv = new System.Text.StringBuilder();
-        csv.AppendLine("ID;Fecha;Concepto;Monto;Estado;Tipo;Observaciones");
-
-        foreach (var pago in pagosInmueble.OrderBy(p => p.FechaPago))
+        private string GetTipoPagoFromConcepto(string concepto)
         {
-            csv.AppendLine($"{pago.IdPago};{pago.FechaPago:dd/MM/yyyy};{pago.Concepto};{pago.MontoTotal};{pago.Estado};{GetTipoPagoFromConcepto(pago.Concepto)};{pago.Observaciones}");
+            var conceptoLower = concepto?.ToLower() ?? "";
+
+            if (conceptoLower.Contains("seña")) return "SEÑA";
+            if (conceptoLower.Contains("anticipo")) return "ANTICIPO";
+            if (conceptoLower.Contains("total") || conceptoLower.Contains("completo")) return "TOTAL";
+            if (conceptoLower.Contains("reserva")) return "RESERVA";
+
+            return "VENTA";
         }
-
-        // Obtener información del inmueble
-        var primerPago = pagosInmueble.First();
-        var nombreArchivo = $"Pagos_Inmueble_{inmuebleId}_{primerPago.Inmueble?.Direccion?.Replace(" ", "_")}_{DateTime.Now:yyyyMMdd}.csv";
-
-        return File(System.Text.Encoding.UTF8.GetBytes(csv.ToString()), "text/csv", nombreArchivo);
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en ExportarPorInmueble: {ex.Message}");
-        TempData["ErrorMessage"] = "Error al exportar los datos";
-        return RedirectToAction(nameof(PorInmueble), new { inmuebleId });
-    }
-}
-
-// MÉTODOS PRIVADOS AUXILIARES
-
-private async Task VerificarCompletacionVenta(int idInmueble)
-{
-    try
-    {
-        // Obtener contrato de venta
-        var contrato = await _repositorioContratoVenta.ObtenerContratoPorInmuebleAsync(idInmueble);
-        if (contrato == null) return;
-
-        // Obtener total pagado
-        var totalPagado = await _repositorioVenta.ObtenerTotalPagadoVentaAsync(idInmueble);
-
-        // Si se pagó el total, marcar como vendido
-        if (totalPagado >= contrato.PrecioTotal)
-        {
-            await _repositorioVenta.MarcarInmuebleComoVendidoAsync(idInmueble);
-            
-            // También podrías actualizar el estado del contrato aquí
-            Console.WriteLine($"Inmueble {idInmueble} marcado como vendido - Total pagado: {totalPagado}, Precio: {contrato.PrecioTotal}");
-        }
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($" ERROR en VerificarCompletacionVenta: {ex.Message}");
-    }
-}
-
-private string GetTipoPagoFromConcepto(string concepto)
-{
-    var conceptoLower = concepto?.ToLower() ?? "";
-    
-    if (conceptoLower.Contains("seña")) return "SEÑA";
-    if (conceptoLower.Contains("anticipo")) return "ANTICIPO";
-    if (conceptoLower.Contains("total") || conceptoLower.Contains("completo")) return "TOTAL";
-    if (conceptoLower.Contains("reserva")) return "RESERVA";
-    
-    return "VENTA";
-}
 
     }
 }

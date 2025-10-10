@@ -172,6 +172,20 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         [AllowAnonymous]
         public IActionResult AccessDenied()
         {
+            // Agregar debug para ver qué claims están disponibles
+            Console.WriteLine("=== DEBUG ACCESS DENIED ===");
+            foreach (var claim in User.Claims)
+            {
+                Console.WriteLine($"Claim: {claim.Type} = {claim.Value}");
+            }
+
+            // Pasar información a la vista
+            ViewBag.UserRole = User.FindFirst(ClaimTypes.Role)?.Value;
+            ViewBag.UserName = User.FindFirst("FullName")?.Value;
+            ViewBag.UserEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            ViewBag.UserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+
             return View();
         }
 
@@ -295,7 +309,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         // Método privado para redirección según rol
         private IActionResult RedirectToDashboardByRole(string rol)
         {
-            return rol.ToLower() switch
+            return rol?.ToLower() switch
             {
                 "administrador" => RedirectToAction("Index", "Admin"),
                 "empleado" => RedirectToAction("Index", "Empleado"),

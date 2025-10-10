@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
@@ -113,6 +114,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: TipoInmuebles/Edit/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
@@ -123,7 +125,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             try
             {
                 var tipoInmueble = await _repositorioTipoInmueble.ObtenerTipoInmueblePorIdAsync(id);
-                
+
                 if (tipoInmueble == null)
                 {
                     return NotFound();
@@ -140,6 +142,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: TipoInmuebles/Edit/5
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, TipoInmueble tipoInmueble)
         {
@@ -181,6 +184,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: TipoInmuebles/Delete/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0)
@@ -212,6 +216,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: TipoInmuebles/Delete/5
         [HttpPost, ActionName("Delete")]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> DeleteConfirmed(int id)
         {
@@ -270,12 +275,13 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // Acción para cambiar el estado (activar/desactivar)
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         public async Task<JsonResult> CambiarEstado(int id)
         {
             try
             {
                 var tipoInmueble = await _repositorioTipoInmueble.ObtenerTipoInmueblePorIdAsync(id);
-                
+
                 if (tipoInmueble == null)
                 {
                     return Json(new { success = false, message = "Tipo de inmueble no encontrado" });
@@ -287,9 +293,10 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     var inmueblesAsociados = await _repositorioTipoInmueble.ContarInmueblesAsociadosAsync(id);
                     if (inmueblesAsociados > 0)
                     {
-                        return Json(new { 
-                            success = false, 
-                            message = $"No se puede desactivar el tipo de inmueble porque tiene {inmueblesAsociados} inmueble(s) asociado(s)." 
+                        return Json(new
+                        {
+                            success = false,
+                            message = $"No se puede desactivar el tipo de inmueble porque tiene {inmueblesAsociados} inmueble(s) asociado(s)."
                         });
                     }
                 }
@@ -301,8 +308,9 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 if (resultado)
                 {
                     var nuevoEstado = tipoInmueble.Estado ? "activado" : "desactivado";
-                    return Json(new { 
-                        success = true, 
+                    return Json(new
+                    {
+                        success = true,
                         message = $"Tipo de inmueble {nuevoEstado} exitosamente",
                         nuevoEstado = tipoInmueble.Estado
                     });

@@ -46,7 +46,7 @@ builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationSc
     {
         options.LoginPath = "/Account/Login";        // Ruta para login
         options.LogoutPath = "/Account/Logout";      // Ruta para logout
-        options.AccessDeniedPath = "/Home/Restringido"; // Ruta para acceso denegado
+        options.AccessDeniedPath = "/Account/AccessDenied"; // Ruta para acceso denegado
         options.ExpireTimeSpan = TimeSpan.FromHours(8); // Duración de la sesión
         options.SlidingExpiration = true; // Renovar automáticamente
     });
@@ -60,6 +60,8 @@ builder.Services.AddAuthorization(options =>
 
     options.AddPolicy("AdminOEmpleado", policy =>
         policy.RequireClaim(ClaimTypes.Role, "administrador", "empleado"));
+    options.AddPolicy("Empleado", policy =>
+        policy.RequireClaim(ClaimTypes.Role, "empleado"));
 
     options.AddPolicy("Propietario", policy =>
         policy.RequireClaim(ClaimTypes.Role, "propietario"));
@@ -88,7 +90,6 @@ builder.Services.AddCors(options =>
               .AllowAnyHeader();
     });
 });
-
 
 
 var app = builder.Build();

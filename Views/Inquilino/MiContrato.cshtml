@@ -1,0 +1,188 @@
+@model Contrato
+@{
+    ViewData["Title"] = "Mi Contrato";
+    Layout = "~/Views/Shared/_LayoutInquilino.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-file-text text-primary"></i> Mi Contrato de Alquiler
+    </h1>
+    <div>
+        <button class="btn btn-outline-primary btn-sm" onclick="window.print()">
+            <i class="bi bi-printer"></i> Imprimir
+        </button>
+        <a asp-action="Index" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="bi bi-file-earmark-text"></i> Contrato N° @Model.IdContrato
+        </h6>
+    </div>
+    <div class="card-body">
+        <!-- Encabezado del Contrato -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h5 class="text-dark">CONTRATO DE ALQUILER</h5>
+                <p class="text-muted mb-0">Número: <strong>@Model.IdContrato</strong></p>
+                <p class="text-muted mb-0">Estado: <span class="badge bg-success">@Model.Estado?.ToUpper()</span></p>
+            </div>
+            <div class="col-md-6 text-end">
+                <p class="mb-1"><strong>Fecha de Inicio:</strong> @Model.FechaInicio.ToString("dd/MM/yyyy")</p>
+                <p class="mb-1"><strong>Fecha de Fin:</strong> @Model.FechaFin.ToString("dd/MM/yyyy")</p>
+                <p class="mb-0"><strong>Duración:</strong> @Model.TotalMeses meses</p>
+            </div>
+        </div>
+
+        <hr>
+
+        <!-- Partes del Contrato -->
+        <div class="row mb-4">
+            <div class="col-md-6">
+                <h6 class="font-weight-bold text-primary">PROPIETARIO</h6>
+                <p class="mb-1">@Model.Propietario?.Usuario?.NombreCompleto</p>
+                <p class="mb-1 text-muted small">DNI: @Model.Propietario?.Usuario?.Dni</p>
+                <p class="mb-1 text-muted small">Tel: @Model.Propietario?.Usuario?.Telefono</p>
+                <p class="mb-0 text-muted small">Email: @Model.Propietario?.Usuario?.Email</p>
+            </div>
+            <div class="col-md-6">
+                <h6 class="font-weight-bold text-primary">INQUILINO</h6>
+                <p class="mb-1">@Model.Inquilino?.Usuario?.NombreCompleto</p>
+                <p class="mb-1 text-muted small">DNI: @Model.Inquilino?.Usuario?.Dni</p>
+                <p class="mb-1 text-muted small">Tel: @Model.Inquilino?.Usuario?.Telefono</p>
+                <p class="mb-0 text-muted small">Email: @Model.Inquilino?.Usuario?.Email</p>
+            </div>
+        </div>
+
+        <!-- Propiedad -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <h6 class="font-weight-bold text-primary">PROPIEDAD ALQUILADA</h6>
+                <div class="border rounded p-3">
+                    <h6 class="text-dark">@Model.Inmueble?.Direccion</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Tipo:</strong> @Model.Inmueble?.TipoInmueble?.Nombre</p>
+                            <p class="mb-1"><strong>Uso:</strong> @Model.Inmueble?.Uso</p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Ambientes:</strong> @Model.Inmueble?.Ambientes</p>
+                            <p class="mb-1"><strong>Estado:</strong> <span class="badge bg-primary">@Model.Inmueble?.Estado?.ToUpper()</span></p>
+                        </div>
+                        <div class="col-md-4">
+                            <p class="mb-1"><strong>Alquiler Mensual:</strong> <span class="text-success font-weight-bold">$@Model.MontoMensual.ToString("N0")</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Términos del Contrato -->
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="font-weight-bold text-primary">TÉRMINOS FINANCIEROS</h6>
+                <div class="border rounded p-3">
+                    <p class="mb-2"><strong>Monto de Alquiler:</strong> $@Model.MontoMensual.ToString("N0")</p>
+                    <p class="mb-2"><strong>Moneda:</strong> Pesos Argentinos</p>
+                    <p class="mb-2"><strong>Forma de Pago:</strong> Transferencia/Déposito</p>
+                    <p class="mb-0"><strong>Día de Vencimiento:</strong> 5 de cada mes</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="font-weight-bold text-primary">GARANTÍAS Y DEPÓSITOS</h6>
+                <div class="border rounded p-3">
+                    <p class="mb-2"><strong>Depósito de Garantía:</strong> $@((Model.MontoMensual * 2).ToString("N0"))</p>
+                    <p class="mb-2"><strong>Estado del Depósito:</strong> <span class="badge bg-success">PAGADO</span></p>
+                    <p class="mb-0"><strong>Devolución:</strong> Al finalizar el contrato</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Información Adicional -->
+        <div class="row mt-4">
+            <div class="col-md-6">
+                <h6 class="font-weight-bold text-primary">INFORMACIÓN ADICIONAL</h6>
+                <div class="border rounded p-3">
+                    <p class="mb-2"><strong>Días Restantes:</strong> @Model.DiasRestantes días</p>
+                    <p class="mb-2"><strong>Estado Actual:</strong> <span class="badge @GetEstadoBadgeClass(Model.EstadoContrato)">@Model.EstadoContrato?.ToUpper()</span></p>
+                    <p class="mb-0"><strong>Tipo de Contrato:</strong> @Model.TipoContrato</p>
+                </div>
+            </div>
+            <div class="col-md-6">
+                <h6 class="font-weight-bold text-primary">MULTA POR RESCISIÓN</h6>
+                <div class="border rounded p-3">
+                    <p class="mb-2"><strong>Multa Aplicada:</strong> $@Model.MultaAplicada.ToString("N0")</p>
+                    <p class="mb-0 text-muted small">Aplicada en caso de finalización anticipada del contrato</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firmas -->
+        <div class="row mt-5">
+            <div class="col-md-6 text-center">
+                <div class="border-top pt-3">
+                    <p class="mb-1">_________________________</p>
+                    <p class="text-muted small">Firma del Propietario</p>
+                    <p class="mb-0"><strong>@Model.Propietario?.Usuario?.NombreCompleto</strong></p>
+                </div>
+            </div>
+            <div class="col-md-6 text-center">
+                <div class="border-top pt-3">
+                    <p class="mb-1">_________________________</p>
+                    <p class="text-muted small">Firma del Inquilino</p>
+                    <p class="mb-0"><strong>@Model.Inquilino?.Usuario?.NombreCompleto</strong></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Información de Contacto -->
+<div class="card shadow mt-4">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-primary">
+            <i class="bi bi-telephone"></i> Contacto de Emergencia
+        </h6>
+    </div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6>Propietario</h6>
+                <p class="mb-1"><i class="bi bi-telephone"></i> @Model.Propietario?.Usuario?.Telefono</p>
+                <p class="mb-0"><i class="bi bi-envelope"></i> @Model.Propietario?.Usuario?.Email</p>
+            </div>
+            <div class="col-md-6">
+                <h6>Inmobiliaria</h6>
+                <p class="mb-1"><i class="bi bi-telephone"></i> +54 266 4-123456</p>
+                <p class="mb-0"><i class="bi bi-envelope"></i> info@inmobiliaria.com</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    @@media print {
+        .btn { display: none !important; }
+        .card-header { background-color: #ffffff !important; }
+        .badge { border: 1px solid #000 !important; }
+    }
+</style>
+
+@functions {
+    public string GetEstadoBadgeClass(string estado)
+    {
+        return estado?.ToLower() switch
+        {
+            "vigente" => "bg-success",
+            "finalizado" => "bg-secondary",
+            "pendiente" => "bg-warning",
+            "vencido" => "bg-danger",
+            _ => "bg-secondary"
+        };
+    }
+}

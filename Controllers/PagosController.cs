@@ -174,6 +174,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         [HttpGet]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> EstadisticasRapidas()
         {
             try
@@ -266,7 +267,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
             return RedirectToAction(nameof(Index));
         }
-
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> ExportarDatos(string formato = "csv")
         {
             try
@@ -308,7 +309,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         // ========================
         // CONFIGURACIÓN
         // ========================
-
+        [Authorize(Policy = "Administrador")]
         public IActionResult Configuracion()
         {
             var config = new

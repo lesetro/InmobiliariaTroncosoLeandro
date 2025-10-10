@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
+using System.Security.Claims;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
@@ -44,8 +45,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
-        // POST: ContratoVenta/Create
-        [HttpPost]
+
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(ContratoVenta contratoVenta)
@@ -53,61 +53,47 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             try
             {
 
-                var usuarioEmail = User.Identity?.Name;
-                if (usuarioEmail == null)
+                var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
                 {
-                    return RedirectToAction("Login", "Usuarios");
+                    ModelState.AddModelError("", "Usuario no autenticado.");
+                    return View(contratoVenta);
                 }
-
-                var usuario = await _repositorioUsuario.GetByEmailAsync(usuarioEmail);
-                if (usuario == null)
-                {
-                    TempData["ErrorMessage"] = "Usuario no encontrado";
-                    return RedirectToAction("Index", "Contratos");
-                }
+                contratoVenta.IdUsuarioCreador = userId;
 
 
-                contratoVenta.IdUsuarioCreador = usuario.IdUsuario;
-                Console.WriteLine($" USUARIO CREADOR ASIGNADO: {usuario.NombreCompleto} (ID: {usuario.IdUsuario})");
-
-
-                ModelState.Remove("IdUsuarioCreador");
+                TempData["DebugInfo"] = $"Usuario Creador: {userId}, Inmueble: {contratoVenta.IdInmueble}";
 
                 Console.WriteLine($"📥 DATOS RECIBIDOS EN POST:");
                 Console.WriteLine($"   IdInmueble: {contratoVenta.IdInmueble}");
                 Console.WriteLine($"   IdVendedor: {contratoVenta.IdVendedor}");
                 Console.WriteLine($"   IdComprador: {contratoVenta.IdComprador}");
                 Console.WriteLine($"   IdUsuarioCreador: {contratoVenta.IdUsuarioCreador}");
-                Console.WriteLine($"   PrecioTotal: {contratoVenta.PrecioTotal}");
-                Console.WriteLine($"   MontoSeña: {contratoVenta.MontoSeña}");
-                Console.WriteLine($"   FechaInicio: {contratoVenta.FechaInicio}");
-
 
                 Console.WriteLine($" MODEL STATE VALID: {ModelState.IsValid}");
 
                 if (!ModelState.IsValid)
                 {
+                    Console.WriteLine("❌ MODELSTATE INVÁLIDO - Errores:");
                     foreach (var key in ModelState.Keys)
                     {
                         var errors = ModelState[key].Errors;
                         if (errors.Count > 0)
                         {
-                            Console.WriteLine($" ERROR en {key}:");
+                            Console.WriteLine($"   {key}:");
                             foreach (var error in errors)
                             {
-                                Console.WriteLine($"   - {error.ErrorMessage}");
+                                Console.WriteLine($"     - {error.ErrorMessage}");
                             }
                         }
                     }
-
                     return View(contratoVenta);
                 }
 
-                // Resto de las validaciones (comprador, vendedor, inmueble)...
+
                 var comprador = await _repositorioUsuario.GetByIdAsync(contratoVenta.IdComprador);
                 if (comprador == null)
                 {
-                    Console.WriteLine($" COMPRADOR NO ENCONTRADO: ID {contratoVenta.IdComprador}");
                     ModelState.AddModelError("IdComprador", "El comprador seleccionado no existe en el sistema");
                     return View(contratoVenta);
                 }
@@ -115,7 +101,6 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 var vendedor = await _repositorioPropietario.ObtenerPropietarioPorIdAsync(contratoVenta.IdVendedor);
                 if (vendedor == null)
                 {
-                    Console.WriteLine($" VENDEDOR NO ENCONTRADO: ID {contratoVenta.IdVendedor}");
                     ModelState.AddModelError("IdVendedor", "El vendedor seleccionado no existe en el sistema");
                     return View(contratoVenta);
                 }
@@ -123,7 +108,6 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 var inmueble = await _repositorioInmueble.ObtenerInmueblePorIdAsync(contratoVenta.IdInmueble);
                 if (inmueble == null)
                 {
-                    Console.WriteLine($" INMUEBLE NO ENCONTRADO: ID {contratoVenta.IdInmueble}");
                     ModelState.AddModelError("IdInmueble", "El inmueble seleccionado no existe en el sistema");
                     return View(contratoVenta);
                 }
@@ -132,7 +116,6 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 var inmuebleDisponible = await _repositorioInmueble.VerificarDisponibilidadParaVenta(contratoVenta.IdInmueble);
                 if (!inmuebleDisponible)
                 {
-                    Console.WriteLine($" INMUEBLE NO DISPONIBLE: ID {contratoVenta.IdInmueble}");
                     ModelState.AddModelError("IdInmueble", "El inmueble seleccionado no está disponible para venta");
                     return View(contratoVenta);
                 }
@@ -148,32 +131,32 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     contratoVenta.Estado = "seña_pagada";
                 }
 
-                Console.WriteLine($" CREANDO CONTRATO CON DATOS:");
+                Console.WriteLine($"✅ CREANDO CONTRATO CON DATOS:");
                 Console.WriteLine($"   Inmueble: {inmueble.Direccion} (ID: {contratoVenta.IdInmueble})");
                 Console.WriteLine($"   Vendedor: {vendedor.Usuario?.NombreCompleto} (ID: {contratoVenta.IdVendedor})");
                 Console.WriteLine($"   Comprador: {comprador.NombreCompleto} (ID: {contratoVenta.IdComprador})");
-                Console.WriteLine($"   Usuario Creador: {usuario.NombreCompleto} (ID: {contratoVenta.IdUsuarioCreador})");
-                Console.WriteLine($"   Precio: {contratoVenta.PrecioTotal}");
-                Console.WriteLine($"   Seña: {contratoVenta.MontoSeña}");
+                Console.WriteLine($"   Usuario Creador: {contratoVenta.IdUsuarioCreador}");
 
                 await _repositorioContratoVenta.CrearAsync(contratoVenta);
 
-                Console.WriteLine($" CONTRATO CREADO EXITOSAMENTE - ID: {contratoVenta.IdContratoVenta}");
+                Console.WriteLine($"🎉 CONTRATO CREADO EXITOSAMENTE - ID: {contratoVenta.IdContratoVenta}");
 
                 TempData["SuccessMessage"] = "Contrato de venta creado exitosamente";
-                return RedirectToAction("Details", new { id = contratoVenta.IdContratoVenta });
+                return RedirectToAction("Details", "ContratoVenta", new { id = contratoVenta.IdContratoVenta });
             }
             catch (Exception ex)
             {
-                Console.WriteLine($" ERROR CRÍTICO: {ex.Message}");
-                Console.WriteLine($" STACK TRACE: {ex.StackTrace}");
+                Console.WriteLine($"💥 ERROR CRÍTICO: {ex.Message}");
+                Console.WriteLine($"📝 STACK TRACE: {ex.StackTrace}");
 
                 TempData["ErrorMessage"] = $"Error al crear el contrato de venta: {ex.Message}";
                 return View(contratoVenta);
             }
-
         }
+
+
         // GET: ContratoVenta/Delete/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             try
@@ -289,7 +272,8 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Error al buscar inmuebles" });
+
+                return Json(new { success = false, error = $"Error al buscar inmuebles: {ex.Message}" });
             }
         }
 
@@ -328,7 +312,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Error al buscar vendedores" });
+                return Json(new { success = false, error = $"Error al buscar vendedores: {ex.Message}" });
             }
         }
 
@@ -367,7 +351,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Error al buscar compradores" });
+                return Json(new { success = false, error = $"Error al buscar compradores{ex.Message}" });
             }
         }
 
@@ -397,7 +381,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Error al obtener inmuebles del vendedor" });
+                return Json(new { success = false, error = $"Error al obtener inmuebles del vendedor: {ex.Message}" });
             }
         }
 
@@ -439,43 +423,45 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
             catch (Exception ex)
             {
-                return Json(new { success = false, error = "Error al obtener vendedor" });
+                return Json(new { success = false, error = $"Error al obtener vendedor: {ex.Message}" });
             }
         }
 
         // GET: ContratoVenta/Details/5
         public async Task<IActionResult> Details(int id)
         {
+            Console.WriteLine($" DETAILS SOLICITADO - ID: {id}");
+
+            if (id <= 0)
+            {
+                Console.WriteLine($" ID INVÁLIDO EN DETAILS: {id}");
+                TempData["ErrorMessage"] = $"ID de contrato inválido: {id}";
+                return RedirectToAction("Index", "Contratos");
+            }
+
             try
             {
-                if (id <= 0)
-                {
-                    TempData["ErrorMessage"] = "ID de contrato inválido";
-                    return RedirectToAction("Index", "Contratos");
-                }
-
                 var contrato = await _repositorioContratoVenta.ObtenerCompletoPorIdAsync(id);
 
                 if (contrato == null)
                 {
+                    Console.WriteLine($" CONTRATO NO ENCONTRADO - ID: {id}");
                     TempData["ErrorMessage"] = "Contrato de venta no encontrado";
                     return RedirectToAction("Index", "Contratos");
                 }
 
-                // Calcular montos adicionales para la vista
-                ViewBag.SaldoPendiente = contrato.SaldoPendiente;
-                ViewBag.PorcentajeCompletado = contrato.PorcentajePagado;
-                ViewBag.EstaCompleto = contrato.EstaCompleta;
-
+                Console.WriteLine($" CONTRATO ENCONTRADO - ID: {contrato.IdContratoVenta}");
                 return View(contrato);
             }
             catch (Exception ex)
             {
+                Console.WriteLine($" ERROR EN DETAILS: {ex.Message}");
                 TempData["ErrorMessage"] = $"Error al cargar contrato: {ex.Message}";
                 return RedirectToAction("Index", "Contratos");
             }
         }
         // GET: ContratoVenta/Edit/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -488,18 +474,18 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                     return RedirectToAction("Index", "Contratos");
                 }
 
-                Console.WriteLine($"📋 Buscando contrato con ID: {id}");
+                Console.WriteLine($" Buscando contrato con ID: {id}");
 
                 var contrato = await _repositorioContratoVenta.ObtenerCompletoPorIdAsync(id);
 
                 if (contrato == null)
                 {
-                    Console.WriteLine($"❌ CONTRATO NO ENCONTRADO - ID: {id}");
+                    Console.WriteLine($" CONTRATO NO ENCONTRADO - ID: {id}");
                     TempData["ErrorMessage"] = "Contrato de venta no encontrado";
                     return RedirectToAction("Index", "Contratos");
                 }
 
-                Console.WriteLine($"✅ CONTRATO ENCONTRADO:");
+                Console.WriteLine($"  CONTRATO ENCONTRADO:");
                 Console.WriteLine($"   ID: {contrato.IdContratoVenta}");
                 Console.WriteLine($"   Inmueble: {contrato.Inmueble?.Direccion}");
                 Console.WriteLine($"   Vendedor: {contrato.Vendedor?.Usuario?.NombreCompleto}");
@@ -510,22 +496,22 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 // Validar que el contrato no esté cancelado o escriturado
                 if (contrato.Estado == "cancelada" || contrato.Estado == "escriturada")
                 {
-                    Console.WriteLine($"🚫 CONTRATO NO EDITABLE - Estado: {contrato.Estado}");
+                    Console.WriteLine($" CONTRATO NO EDITABLE - Estado: {contrato.Estado}");
                     TempData["ErrorMessage"] = "No se puede editar un contrato cancelado o escriturado";
                     return RedirectToAction("Details", new { id });
                 }
 
-                Console.WriteLine($"✅ CONTRATO ES EDITABLE");
+                Console.WriteLine($" CONTRATO ES EDITABLE");
 
                 // Cargar datos para los dropdowns en ViewBag
                 await CargarDatosParaFormulario(contrato);
 
-                Console.WriteLine($"📦 DATOS CARGADOS - Redirigiendo a vista Edit");
+                Console.WriteLine($" DATOS CARGADOS - Redirigiendo a vista Edit");
                 return View(contrato);
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"💥 ERROR CRÍTICO: {ex.Message}");
+                Console.WriteLine($" ERROR CRÍTICO: {ex.Message}");
                 Console.WriteLine($"Stack Trace: {ex.StackTrace}");
                 TempData["ErrorMessage"] = $"Error al cargar contrato: {ex.Message}";
                 return RedirectToAction("Index", "Contratos");
@@ -551,6 +537,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
         // POST: ContratoVenta/Edit/5
+        [Authorize(Policy = "Administrador")]
         [HttpPost]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, ContratoVenta contratoVenta)

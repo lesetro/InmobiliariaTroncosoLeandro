@@ -180,7 +180,11 @@
             <h5 class="card-title mb-0">
                 <i class="bi bi-clock-history me-2"></i>Historial de Pagos - @Model.Count() registros
             </h5>
+            @if (User.IsInRole("administrador"))
+            {
+
             <div class="btn-group" role="group">
+
                 <button type="button" class="btn btn-sm btn-outline-primary" onclick="exportarHistorial()">
                     <i class="bi bi-download me-1"></i>Exportar
                 </button>
@@ -188,6 +192,7 @@
                     <i class="bi bi-printer me-1"></i>Imprimir
                 </button>
             </div>
+            }
         </div>
         <div class="card-body p-0">
             <div class="table-responsive">
@@ -265,10 +270,14 @@
                                         </a>
                                         @if (pago.Estado != "anulado")
                                         {
+                                            @if (User.IsInRole("administrador"))
+                                            {
+
                                             <a href="@Url.Action("Edit", new { id = pago.IdPago })" 
                                                class="btn btn-sm btn-outline-warning" title="Editar">
                                                 <i class="bi bi-pencil"></i>
                                             </a>
+                                            }
                                             @if (pago.Estado == "pendiente")
                                             {
                                                 <button class="btn btn-sm btn-outline-success" 

@@ -152,6 +152,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: ImagenesInmueble/Edit
+        
         public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
@@ -162,7 +163,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             try
             {
                 var imagen = await _repositorioImagen.ObtenerImagenPorIdAsync(id);
-                
+
                 if (imagen == null)
                 {
                     TempData["ErrorMessage"] = "Imagen no encontrada";

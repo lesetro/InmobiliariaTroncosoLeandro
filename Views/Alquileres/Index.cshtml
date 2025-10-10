@@ -35,7 +35,7 @@
                     <i class="bi bi-exclamation-triangle me-2 text-danger"></i>Con Mora
                 </a></li>
                 <li><hr class="dropdown-divider"></li>
-                <li><a class="dropdown-item" href="@Url.Action("AlertasMora", "Alquileres")">
+                <li><a class="dropdown-item" href="@Url.Action("Alertas", "Reportes")">
                     <i class="bi bi-bell me-2 text-danger"></i>Ver Alertas
                 </a></li>
             </ul>
@@ -193,15 +193,13 @@
                                            class="btn btn-sm btn-outline-primary" title="Ver Detalles">
                                             <i class="bi bi-eye"></i>
                                         </a>
+                                         @if (User.IsInRole("administrador"))
+                                        {
                                         <a href="@Url.Action("Edit", new { id = pago.IdPago })" 
                                            class="btn btn-sm btn-outline-warning" title="Editar">
                                             <i class="bi bi-pencil"></i>
+
                                         </a>
-                                        <button class="btn btn-sm btn-outline-info" 
-                                                onclick="verHistorialContrato(@pago.IdContrato)" 
-                                                title="Ver Historial Completo">
-                                            <i class="bi bi-clock-history"></i>
-                                        </button>
                                         @if (pago.Estado != "anulado")
                                         {
                                             <a href="@Url.Action("Delete", new { id = pago.IdPago })" 
@@ -209,6 +207,13 @@
                                                 <i class="bi bi-x-circle"></i>
                                             </a>
                                         }
+                                        }
+                                        <button class="btn btn-sm btn-outline-info" 
+                                                onclick="verHistorialContrato(@pago.IdContrato)" 
+                                                title="Ver Historial Completo">
+                                            <i class="bi bi-clock-history"></i>
+                                        </button>
+                                        
                                     </div>
                                 </td>
                             </tr>

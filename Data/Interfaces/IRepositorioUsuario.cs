@@ -49,20 +49,21 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         // Métodos para estadísticas
         Task<Dictionary<string, int>> GetEstadisticasPorRolAsync();
         Task<IEnumerable<Usuario>> GetUsuariosRecientesAsync(int cantidad = 5);
-        
+
         //  MÉTODO PRINCIPAL DE PAGINACIÓN (UNIFICADO)
         /// <summary>
         /// Obtiene usuarios con paginación, búsqueda, filtro por rol y estado
         /// </summary>
         Task<(IList<Usuario> usuarios, int totalRegistros)> ObtenerConPaginacionBusquedaYRolAsync(
-            int pagina, 
-            string buscar, 
-            string rol, 
-            int itemsPorPagina, 
+            int pagina,
+            string buscar,
+            string rol,
+            int itemsPorPagina,
             string estadoFiltro = "activos");
 
         // Otros métodos útiles
         Task<int> GetTotalUsuariosInactivosAsync();
+        Task<Usuario?> GetUsuarioPorPropietarioIdAsync(int idPropietario);
         
     }
 }

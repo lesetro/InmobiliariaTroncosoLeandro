@@ -17,5 +17,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         // Método para Index con paginación y búsqueda completa
         Task<(IList<Inquilino> inquilinos, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
             int pagina, string buscar, int itemsPorPagina,string estadoFiltro = "activos");
+
+        Task<int> ObtenerIdInquilinoPorUsuarioAsync(int idUsuario);
     }
 }

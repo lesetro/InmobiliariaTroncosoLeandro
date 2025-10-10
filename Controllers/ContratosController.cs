@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Security.Claims;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
@@ -187,7 +188,19 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create(Contrato contrato)
         {
-            // Validaciones adicionales de negocio
+
+            var userIdClaim = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(userIdClaim) || !int.TryParse(userIdClaim, out int userId))
+            {
+                ModelState.AddModelError("", "Usuario no autenticado.");
+                return View(contrato);
+            }
+            contrato.IdUsuarioCreador = userId;
+
+
+            ModelState.Remove("IdUsuarioCreador");
+
+
             if (contrato.FechaFin <= contrato.FechaInicio)
             {
                 ModelState.AddModelError("FechaFin", "La fecha de fin debe ser posterior a la fecha de inicio");
@@ -203,7 +216,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 ModelState.AddModelError("FechaInicio", "La fecha de inicio no puede ser anterior a hoy");
             }
 
-            // Verificar existencia de registros relacionados
+
             if (contrato.IdInmueble > 0)
             {
                 if (!await _repositorioContrato.ExisteInmuebleDisponibleAsync(contrato.IdInmueble, contrato.FechaInicio, contrato.FechaFin))
@@ -220,11 +233,6 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             if (contrato.IdPropietario > 0 && !await _repositorioContrato.ExistePropietarioActivoAsync(contrato.IdPropietario))
             {
                 ModelState.AddModelError("IdPropietario", "El propietario seleccionado no existe o no está activo");
-            }
-
-            if (contrato.IdUsuarioCreador > 0 && !await _repositorioContrato.ExisteUsuarioActivoAsync(contrato.IdUsuarioCreador))
-            {
-                ModelState.AddModelError("IdUsuarioCreador", "El usuario seleccionado no existe o no está activo");
             }
 
             if (!ModelState.IsValid)
@@ -258,6 +266,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Contratos/Edit/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             if (id <= 0)
@@ -287,6 +296,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
 
         // POST: Contratos/Edit
         [HttpPost]
+        [Authorize(Policy = "Administrador")]
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Edit(int id, Contrato contrato)
         {
@@ -347,6 +357,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Contratos/Delete/5
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Delete(int id)
         {
             if (id <= 0)

@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
@@ -6,7 +7,7 @@ using System.Security.Claims;
 
 namespace Inmobiliaria_troncoso_leandro.Controllers
 {
-    [Authorize(Policy = "Administrador")]
+    [Authorize(Policy = "AdminOEmpleado")] 
     public class AdminController : Controller
     {
         private readonly IRepositorioAdmin _repositorioAdmin;
@@ -31,6 +32,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             }
         }
 
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Estadisticas()
         {
             try
@@ -58,7 +60,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return View();
             }
         }
-
+        [Authorize(Policy = "Administrador")]
         // GET: Admin/Configuracion - Configuración del sistema
         public IActionResult Configuracion()
         {
@@ -134,7 +136,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
             ViewBag.OpcionesGestion = opcionesGestion;
             return View();
         }
-
+        [Authorize(Policy = "Administrador")]
         // GET: Admin/Reportes - Vista de reportes
         public async Task<IActionResult> Reportes()
         {
@@ -150,7 +152,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return View();
             }
         }
-
+        
         // GET: Admin/SistemaInfo - Información del sistema
         public IActionResult SistemaInfo()
         {
@@ -319,7 +321,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
                 return Json(new { error = ex.Message });
             }
         }
-        //Configuracion y sistema 
+        
 
     }
 }

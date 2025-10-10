@@ -1,0 +1,259 @@
+@model IEnumerable<Pago>
+@{
+    ViewData["Title"] = "Mis Ingresos";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+    
+    var pagosPagados = Model.Where(p => p.Estado?.ToLower() == "pagado").ToList();
+    var pagosPendientes = Model.Where(p => p.Estado?.ToLower() == "pendiente").ToList();
+    var totalCobrado = pagosPagados.Sum(p => p.MontoTotal);
+    var totalPendiente = pagosPendientes.Sum(p => p.MontoBase);
+    var pagosEsteMes = pagosPagados.Count(p => p.FechaPago.Month == DateTime.Now.Month && p.FechaPago.Year == DateTime.Now.Year);
+    var pagosVencidos = Model.Count(p => p.FechaVencimiento.HasValue && p.FechaVencimiento.Value < DateTime.Today && p.Estado?.ToLower() == "pendiente");
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-currency-dollar text-success"></i> Mis Ingresos
+    </h1>
+    <div>
+        <span class="badge bg-success me-2">
+            Cobrado: $@totalCobrado.ToString("N0")
+        </span>
+        <span class="badge bg-warning">
+            Pendiente: $@totalPendiente.ToString("N0")
+        </span>
+    </div>
+</div>
+
+<!-- Estadísticas -->
+<div class="row mb-4">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Total Cobrado
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            $@totalCobrado.ToString("N0")
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-wallet2 fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Pendiente
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            $@totalPendiente.ToString("N0")
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            Este Mes
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @pagosEsteMes
+                        </div>
+                        <div class="text-xs text-muted">
+                            $@pagosPagados.Where(p => p.FechaPago.Month == DateTime.Now.Month).Sum(p => p.MontoTotal).ToString("N0")
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-calendar-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-danger shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-danger text-uppercase mb-1">
+                            Vencidos
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            @pagosVencidos
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="bi bi-exclamation-triangle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Historial de Pagos -->
+<div class="card shadow">
+    <div class="card-header py-3">
+        <h6 class="m-0 font-weight-bold text-success">
+            <i class="bi bi-list-ul"></i> Historial de Pagos
+        </h6>
+    </div>
+    <div class="card-body">
+        @if (Model.Any())
+        {
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Inmueble</th>
+                            <th>Inquilino</th>
+                            <th>Concepto</th>
+                            <th>Fecha Pago</th>
+                            <th>Monto</th>
+                            <th>Estado</th>
+                            <th>Período</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var pago in Model.OrderByDescending(p => p.FechaPago))
+                        {
+                            <tr>
+                                <td>
+                                    @pago.Contrato?.Inmueble?.Direccion
+                                    @if (pago.EsVenta)
+                                    {
+                                        <span class="badge bg-purple ms-1">VENTA</span>
+                                    }
+                                </td>
+                                <td>
+                                    @pago.Contrato?.Inquilino?.Usuario?.NombreCompleto
+                                    @if (pago.EsVenta)
+                                    {
+                                        <br><small class="text-muted">Comprador</small>
+                                    }
+                                </td>
+                                <td>@pago.Concepto</td>
+                                <td>
+                                    @if (pago.Estado?.ToLower() == "pagado")
+                                    {
+                                        @pago.FechaPago.ToString("dd/MM/yyyy")
+                                    }
+                                    else
+                                    {
+                                        <span class="text-muted">-</span>
+                                    }
+                                </td>
+                                <td class="font-weight-bold">
+                                    $@pago.MontoTotal.ToString("N0")
+                                    @if (pago.RecargoMora > 0)
+                                    {
+                                        <br><small class="text-danger">(+$@pago.RecargoMora.ToString("N0") mora)</small>
+                                    }
+                                </td>
+                                <td>
+                                    <span class="badge @pago.EstadoBadgeClass">
+                                        @pago.Estado?.ToUpper()
+                                    </span>
+                                    @if (pago.DiasMora > 0)
+                                    {
+                                        <br><small class="text-danger">(@pago.DiasMora días)</small>
+                                    }
+                                </td>
+                                <td>
+                                    @if (!string.IsNullOrEmpty(pago.PeriodoPago))
+                                    {
+                                        @pago.PeriodoPago
+                                    }
+                                    else if (pago.EsVenta)
+                                    {
+                                        <text>Venta</text>
+                                    }
+                                    else
+                                    {
+                                        <text>Pago @pago.NumeroPago</text>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        }
+        else
+        {
+            <div class="text-center py-5">
+                <i class="bi bi-currency-dollar text-muted" style="font-size: 4rem;"></i>
+                <h4 class="text-muted mt-3">No hay pagos registrados</h4>
+                <p class="text-muted">Los pagos aparecerán aquí cuando los inquilinos paguen el alquiler.</p>
+            </div>
+        }
+    </div>
+</div>
+
+<!-- Resumen por Tipo -->
+<div class="row mt-4">
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-pie-chart"></i> Resumen por Tipo
+                </h6>
+            </div>
+            <div class="card-body">
+                @{
+                    var alquileres = Model.Where(p => p.EsAlquiler).ToList();
+                    var ventas = Model.Where(p => p.EsVenta).ToList();
+                }
+                <div class="row">
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Alquileres:</strong></p>
+                        <p class="mb-1 text-success">$@alquileres.Where(p => p.Estado == "pagado").Sum(p => p.MontoTotal).ToString("N0")</p>
+                        <p class="mb-0 text-muted small">@alquileres.Count pagos</p>
+                    </div>
+                    <div class="col-6">
+                        <p class="mb-1"><strong>Ventas:</strong></p>
+                        <p class="mb-1 text-info">$@ventas.Where(p => p.Estado == "pagado").Sum(p => p.MontoTotal).ToString("N0")</p>
+                        <p class="mb-0 text-muted small">@ventas.Count pagos</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">
+                    <i class="bi bi-info-circle"></i> Información
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="small">
+                    <p class="mb-2">💡 <strong>Total Cobrado:</strong> Suma de todos los pagos con estado "Pagado"</p>
+                    <p class="mb-2">⏰ <strong>Pendiente:</strong> Pagos que están pendientes de pago</p>
+                    <p class="mb-0">⚠️ <strong>Vencidos:</strong> Pagos pendientes que superaron la fecha de vencimiento</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

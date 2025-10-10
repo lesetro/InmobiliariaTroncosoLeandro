@@ -163,8 +163,17 @@ namespace Inmobiliaria_troncoso_leandro.Data.Interfaces
         /// Obtiene todos los datos necesarios de un contrato para crear un pago
         /// </summary>
         Task<DatosContratoParaPago?> ObtenerDatosContratoParaPagoAsync(int idContrato);
-        
-        
+
+        //Propietario 
+
+        Task<IList<Pago>> ObtenerPagosPorPropietarioAsync(int propietarioId, DateTime? fechaInicio = null, DateTime? fechaFin = null);
+        Task<IList<Contrato>> ObtenerContratosPorPropietarioAsync(int propietarioId);
+        // NUEVOS MÉTODOS PARA INQUILINOS
+        Task<Contrato?> ObtenerContratoVigentePorInquilinoAsync(int inquilinoId);
+        Task<Pago?> ObtenerProximoPagoAsync(int inquilinoId);
+        Task<IList<Pago>> ObtenerPagosPendientesPorInquilinoAsync(int inquilinoId);
+        Task<IList<Pago>> ObtenerPagosPorInquilinoAsync(int inquilinoId);
+        Task<int> ObtenerIdInquilinoPorUsuarioAsync(int idUsuario);
     }
     
 }

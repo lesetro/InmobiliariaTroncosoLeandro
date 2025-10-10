@@ -1,6 +1,8 @@
 using Inmobiliaria_troncoso_leandro.Data.Interfaces;
 using Inmobiliaria_troncoso_leandro.Models;
 using MySql.Data.MySqlClient;
+using Dapper;
+using MySql.Data.MySqlClient;
 
 namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 {
@@ -139,7 +141,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                         {
                             idInmueble = Convert.ToInt32(inmuebleResult);
                         }
-                        
+
                     }
 
                     // Finalizar contrato (soft delete)
@@ -277,19 +279,19 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
         public async Task<(IList<Contrato> contratos, int totalRegistros)> ObtenerConPaginacionYBusquedaAsync(
     int pagina, string buscar, string estado, string tipoContrato, int itemsPorPagina) // Agregar tipoContrato
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
-
-        // Construir WHERE dinámico
-        var whereConditions = new List<string>();
-        var parameters = new List<MySqlParameter>();
-
-        if (!string.IsNullOrEmpty(buscar))
         {
-            whereConditions.Add(@"(i.direccion LIKE @buscar 
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Construir WHERE dinámico
+                var whereConditions = new List<string>();
+                var parameters = new List<MySqlParameter>();
+
+                if (!string.IsNullOrEmpty(buscar))
+                {
+                    whereConditions.Add(@"(i.direccion LIKE @buscar 
                                   OR ui.nombre LIKE @buscar 
                                   OR ui.apellido LIKE @buscar 
                                   OR ui.dni LIKE @buscar
@@ -297,28 +299,28 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                                   OR up.apellido LIKE @buscar
                                   OR CONCAT(ui.apellido, ', ', ui.nombre) LIKE @buscar
                                   OR CONCAT(up.apellido, ', ', up.nombre) LIKE @buscar)");
-            parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
-        }
+                    parameters.Add(new MySqlParameter("@buscar", $"%{buscar}%"));
+                }
 
-        if (!string.IsNullOrEmpty(estado))
-        {
-            whereConditions.Add("c.estado = @estado");
-            parameters.Add(new MySqlParameter("@estado", estado));
-        }
+                if (!string.IsNullOrEmpty(estado))
+                {
+                    whereConditions.Add("c.estado = @estado");
+                    parameters.Add(new MySqlParameter("@estado", estado));
+                }
 
-        // AGREGAR FILTRO POR TIPO DE CONTRATO
-        if (!string.IsNullOrEmpty(tipoContrato))
-        {
-            whereConditions.Add("c.tipo_contrato = @tipoContrato");
-            parameters.Add(new MySqlParameter("@tipoContrato", tipoContrato));
-        }
+                // AGREGAR FILTRO POR TIPO DE CONTRATO
+                if (!string.IsNullOrEmpty(tipoContrato))
+                {
+                    whereConditions.Add("c.tipo_contrato = @tipoContrato");
+                    parameters.Add(new MySqlParameter("@tipoContrato", tipoContrato));
+                }
 
-        string whereClause = whereConditions.Count > 0
-            ? "WHERE " + string.Join(" AND ", whereConditions)
-            : "";
+                string whereClause = whereConditions.Count > 0
+                    ? "WHERE " + string.Join(" AND ", whereConditions)
+                    : "";
 
-        // 1. Contar total de registros
-        string countQuery = $@"
+                // 1. Contar total de registros
+                string countQuery = $@"
             SELECT COUNT(*) 
             FROM contrato c
             INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
@@ -328,19 +330,19 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             INNER JOIN usuario up ON prop.id_usuario = up.id_usuario
             {whereClause}";
 
-        int totalRegistros;
-        using (var countCommand = new MySqlCommand(countQuery, connection))
-        {
-            foreach (var param in parameters)
-            {
-                countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-            }
-            totalRegistros = Convert.ToInt32(await countCommand.ExecuteScalarAsync());
-        }
+                int totalRegistros;
+                using (var countCommand = new MySqlCommand(countQuery, connection))
+                {
+                    foreach (var param in parameters)
+                    {
+                        countCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
+                    }
+                    totalRegistros = Convert.ToInt32(await countCommand.ExecuteScalarAsync());
+                }
 
-        // 2. Obtener registros con paginación
-        int offset = (pagina - 1) * itemsPorPagina;
-        string dataQuery = $@"
+                // 2. Obtener registros con paginación
+                int offset = (pagina - 1) * itemsPorPagina;
+                string dataQuery = $@"
             SELECT c.id_contrato, c.fecha_inicio, c.fecha_fin, c.monto_mensual, c.estado, 
                    c.tipo_contrato,  -- AGREGAR ESTA COLUMNA
                    i.direccion AS inmueble_direccion,
@@ -356,30 +358,30 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             ORDER BY c.id_contrato DESC
             LIMIT @limit OFFSET @offset";
 
-        var contratos = new List<Contrato>();
-        using (var dataCommand = new MySqlCommand(dataQuery, connection))
-        {
-            foreach (var param in parameters)
-            {
-                dataCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
-            }
-            dataCommand.Parameters.AddWithValue("@limit", itemsPorPagina);
-            dataCommand.Parameters.AddWithValue("@offset", offset);
+                var contratos = new List<Contrato>();
+                using (var dataCommand = new MySqlCommand(dataQuery, connection))
+                {
+                    foreach (var param in parameters)
+                    {
+                        dataCommand.Parameters.Add(new MySqlParameter(param.ParameterName, param.Value));
+                    }
+                    dataCommand.Parameters.AddWithValue("@limit", itemsPorPagina);
+                    dataCommand.Parameters.AddWithValue("@offset", offset);
 
-            using var reader = await dataCommand.ExecuteReaderAsync();
-            while (await reader.ReadAsync())
+                    using var reader = await dataCommand.ExecuteReaderAsync();
+                    while (await reader.ReadAsync())
+                    {
+                        contratos.Add(MapearContratoParaIndex(reader));
+                    }
+                }
+
+                return (contratos, totalRegistros);
+            }
+            catch (Exception ex)
             {
-                contratos.Add(MapearContratoParaIndex(reader));
+                throw new Exception($"Error al obtener contratos con paginación: {ex.Message}", ex);
             }
         }
-
-        return (contratos, totalRegistros);
-    }
-    catch (Exception ex)
-    {
-        throw new Exception($"Error al obtener contratos con paginación: {ex.Message}", ex);
-    }
-}
 
         // ========================================
         // MÉTODOS PRIVADOS DE MAPEO
@@ -822,7 +824,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 throw new Exception($"Error al obtener usuarios activos: {ex.Message}", ex);
             }
         }
-        
+
         // MÉTODOS DE CONSULTA ESPECÍFICOS
         // ========================================
 
@@ -834,11 +836,11 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 await connection.OpenAsync();
 
                 var inmuebles = new List<Inmueble>();
-                
-                string whereClause = soloDisponibles 
-                    ? "WHERE i.estado = 'disponible'" 
+
+                string whereClause = soloDisponibles
+                    ? "WHERE i.estado = 'disponible'"
                     : "WHERE i.estado != 'inactivo'";
-                
+
                 string query = $@"
                     SELECT i.id_inmueble, i.direccion, i.precio, i.ambientes, i.uso, i.estado,
                            t.nombre AS tipo_nombre
@@ -849,7 +851,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
                 using var command = new MySqlCommand(query, connection);
                 using var reader = await command.ExecuteReaderAsync();
-                
+
                 while (await reader.ReadAsync())
                 {
                     inmuebles.Add(new Inmueble
@@ -902,7 +904,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 await connection.OpenAsync();
 
                 var contratos = new List<Contrato>();
-                
+
                 string query = @"
                     SELECT c.id_contrato, c.fecha_inicio, c.fecha_fin, c.monto_mensual, c.estado,
                            i.direccion AS inmueble_direccion
@@ -913,7 +915,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
 
                 using var command = new MySqlCommand(query, connection);
                 command.Parameters.AddWithValue("@id_inquilino", idInquilino);
-                
+
                 using var reader = await command.ExecuteReaderAsync();
                 while (await reader.ReadAsync())
                 {
@@ -943,74 +945,64 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
         {
             try
             {
+                Console.WriteLine($"=== REPOSITORIO: Buscando contratos para propietario {idPropietario} ===");
+
                 using var connection = new MySqlConnection(_connectionString);
                 await connection.OpenAsync();
 
                 var contratos = new List<Contrato>();
-                
+
                 string query = @"
-                    SELECT c.id_contrato, c.fecha_inicio, c.fecha_fin, c.monto_mensual, c.estado,
-                           i.direccion AS inmueble_direccion,
-                           u.nombre AS inquilino_nombre, u.apellido AS inquilino_apellido
-                    FROM contrato c
-                    INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
-                    INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
-                    INNER JOIN usuario u ON inq.id_usuario = u.id_usuario
-                    WHERE c.id_propietario = @id_propietario
-                    ORDER BY c.fecha_inicio DESC";
+            SELECT c.id_contrato, c.fecha_inicio, c.fecha_fin, c.monto_mensual, c.estado,
+                   i.id_inmueble, i.direccion AS inmueble_direccion, i.id_propietario,
+                   u.id_usuario, u.nombre AS inquilino_nombre, u.apellido AS inquilino_apellido
+            FROM contrato c
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario u ON inq.id_usuario = u.id_usuario
+            WHERE i.id_propietario = @id_propietario
+            ORDER BY c.fecha_inicio DESC";
 
                 using var command = new MySqlCommand(query, connection);
                 command.Parameters.AddWithValue("@id_propietario", idPropietario);
-                
+
+                Console.WriteLine($"=== REPOSITORIO: Ejecutando query ===");
+
                 using var reader = await command.ExecuteReaderAsync();
+                int count = 0;
+
                 while (await reader.ReadAsync())
                 {
-                    contratos.Add(new Contrato
-                    {
-                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
-                        FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
-                        FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
-                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
-                        Estado = reader.GetString(reader.GetOrdinal("estado")),
-                        Inmueble = new Inmueble
-                        {
-                            Direccion = reader.GetString(reader.GetOrdinal("inmueble_direccion"))
-                        },
-                        Inquilino = new Inquilino
-                        {
-                            Usuario = new Usuario
-                            {
-                                Nombre = reader.GetString(reader.GetOrdinal("inquilino_nombre")),
-                                Apellido = reader.GetString(reader.GetOrdinal("inquilino_apellido"))
-                            }
-                        }
-                    });
+                    count++;
+                    // ... resto del código
                 }
 
+                Console.WriteLine($"=== REPOSITORIO: Se encontraron {count} contratos ===");
                 return contratos;
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"=== ERROR EN REPOSITORIO: {ex.Message} ===");
                 throw new Exception($"Error al obtener contratos del propietario: {ex.Message}", ex);
             }
         }
- 
 
-// MÉTODOS ESPECÍFICOS PARA AUTOCOMPLETADO EN CONTRATOS
 
-/// <summary>
-/// Busca inmuebles DISPONIBLES para autocompletado (3+ caracteres)
-/// </summary>
-public async Task<List<dynamic>> BuscarInmueblesParaContratoAsync(string termino, int limite = 10)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+        // MÉTODOS ESPECÍFICOS PARA AUTOCOMPLETADO EN CONTRATOS
 
-        var inmuebles = new List<dynamic>();
-        
-        string query = @"
+        /// <summary>
+        /// Busca inmuebles DISPONIBLES para autocompletado (3+ caracteres)
+        /// </summary>
+        public async Task<List<dynamic>> BuscarInmueblesParaContratoAsync(string termino, int limite = 10)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                var inmuebles = new List<dynamic>();
+
+                string query = @"
             SELECT i.id_inmueble, i.direccion, i.precio, i.id_propietario,
                    t.nombre as tipo_nombre,
                    u.nombre as propietario_nombre, u.apellido as propietario_apellido, u.dni as propietario_dni
@@ -1027,49 +1019,49 @@ public async Task<List<dynamic>> BuscarInmueblesParaContratoAsync(string termino
             ORDER BY i.direccion
             LIMIT @limite";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@termino", $"%{termino}%");
-        command.Parameters.AddWithValue("@limite", limite);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@termino", $"%{termino}%");
+                command.Parameters.AddWithValue("@limite", limite);
 
-        Console.WriteLine(command.CommandText); // Debug: Ver el comando SQL
+                Console.WriteLine(command.CommandText); // Debug: Ver el comando SQL
 
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            inmuebles.Add(new
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    inmuebles.Add(new
+                    {
+                        id = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        texto = $"{reader.GetString(reader.GetOrdinal("direccion"))} - {reader.GetString(reader.GetOrdinal("tipo_nombre"))} ({reader.GetDecimal(reader.GetOrdinal("precio")):C})",
+                        direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+                        propietarioId = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        propietarioNombre = $"{reader.GetString(reader.GetOrdinal("propietario_apellido"))}, {reader.GetString(reader.GetOrdinal("propietario_nombre"))}",
+                        propietarioDni = reader.GetString(reader.GetOrdinal("propietario_dni"))
+                    });
+                    Console.WriteLine($"Found inmueble: {inmuebles[^1].texto}"); // Debug: Ver cada inmueble encontrado
+                }
+
+                return inmuebles;
+            }
+            catch
             {
-                id = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
-                texto = $"{reader.GetString(reader.GetOrdinal("direccion"))} - {reader.GetString(reader.GetOrdinal("tipo_nombre"))} ({reader.GetDecimal(reader.GetOrdinal("precio")):C})",
-                direccion = reader.GetString(reader.GetOrdinal("direccion")),
-                precio = reader.GetDecimal(reader.GetOrdinal("precio")),
-                propietarioId = reader.GetInt32(reader.GetOrdinal("id_propietario")),
-                propietarioNombre = $"{reader.GetString(reader.GetOrdinal("propietario_apellido"))}, {reader.GetString(reader.GetOrdinal("propietario_nombre"))}",
-                propietarioDni = reader.GetString(reader.GetOrdinal("propietario_dni"))
-            });
-            Console.WriteLine($"Found inmueble: {inmuebles[^1].texto}"); // Debug: Ver cada inmueble encontrado
+                return new List<dynamic>();
+            }
         }
 
-        return inmuebles;
-    }
-    catch
-    {
-        return new List<dynamic>();
-    }
-}
+        /// <summary>
+        /// Busca propietarios para autocompletado (3+ caracteres)
+        /// </summary>
+        public async Task<List<dynamic>> BuscarPropietariosParaContratoAsync(string termino, int limite = 10)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-/// <summary>
-/// Busca propietarios para autocompletado (3+ caracteres)
-/// </summary>
-public async Task<List<dynamic>> BuscarPropietariosParaContratoAsync(string termino, int limite = 10)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+                var propietarios = new List<dynamic>();
 
-        var propietarios = new List<dynamic>();
-        
-        string query = @"
+                string query = @"
             SELECT p.id_propietario, u.nombre, u.apellido, u.dni
             FROM propietario p
             INNER JOIN usuario u ON p.id_usuario = u.id_usuario
@@ -1081,44 +1073,44 @@ public async Task<List<dynamic>> BuscarPropietariosParaContratoAsync(string term
             ORDER BY u.apellido, u.nombre
             LIMIT @limite";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@termino", $"%{termino}%");
-        command.Parameters.AddWithValue("@limite", limite);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@termino", $"%{termino}%");
+                command.Parameters.AddWithValue("@limite", limite);
 
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            propietarios.Add(new
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    propietarios.Add(new
+                    {
+                        id = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        texto = $"{reader.GetString(reader.GetOrdinal("apellido"))}, {reader.GetString(reader.GetOrdinal("nombre"))} - DNI: {reader.GetString(reader.GetOrdinal("dni"))}",
+                        nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                        apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                        dni = reader.GetString(reader.GetOrdinal("dni"))
+                    });
+                }
+
+                return propietarios;
+            }
+            catch
             {
-                id = reader.GetInt32(reader.GetOrdinal("id_propietario")),
-                texto = $"{reader.GetString(reader.GetOrdinal("apellido"))}, {reader.GetString(reader.GetOrdinal("nombre"))} - DNI: {reader.GetString(reader.GetOrdinal("dni"))}",
-                nombre = reader.GetString(reader.GetOrdinal("nombre")),
-                apellido = reader.GetString(reader.GetOrdinal("apellido")),
-                dni = reader.GetString(reader.GetOrdinal("dni"))
-            });
+                return new List<dynamic>();
+            }
         }
 
-        return propietarios;
-    }
-    catch
-    {
-        return new List<dynamic>();
-    }
-}
+        /// <summary>
+        /// Busca inquilinos para autocompletado (3+ caracteres)
+        /// </summary>
+        public async Task<List<dynamic>> BuscarInquilinosParaContratoAsync(string termino, int limite = 10)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-/// <summary>
-/// Busca inquilinos para autocompletado (3+ caracteres)
-/// </summary>
-public async Task<List<dynamic>> BuscarInquilinosParaContratoAsync(string termino, int limite = 10)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+                var inquilinos = new List<dynamic>();
 
-        var inquilinos = new List<dynamic>();
-        
-        string query = @"
+                string query = @"
             SELECT inq.id_inquilino, u.nombre, u.apellido, u.dni
             FROM inquilino inq
             INNER JOIN usuario u ON inq.id_usuario = u.id_usuario
@@ -1130,45 +1122,45 @@ public async Task<List<dynamic>> BuscarInquilinosParaContratoAsync(string termin
             ORDER BY u.apellido, u.nombre
             LIMIT @limite";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@termino", $"%{termino}%");
-        command.Parameters.AddWithValue("@limite", limite);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@termino", $"%{termino}%");
+                command.Parameters.AddWithValue("@limite", limite);
 
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            inquilinos.Add(new
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    inquilinos.Add(new
+                    {
+                        id = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        texto = $"{reader.GetString(reader.GetOrdinal("apellido"))}, {reader.GetString(reader.GetOrdinal("nombre"))} - DNI: {reader.GetString(reader.GetOrdinal("dni"))}",
+                        nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                        apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                        dni = reader.GetString(reader.GetOrdinal("dni"))
+                    });
+                }
+
+                return inquilinos;
+            }
+            catch
             {
-                id = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
-                texto = $"{reader.GetString(reader.GetOrdinal("apellido"))}, {reader.GetString(reader.GetOrdinal("nombre"))} - DNI: {reader.GetString(reader.GetOrdinal("dni"))}",
-                nombre = reader.GetString(reader.GetOrdinal("nombre")),
-                apellido = reader.GetString(reader.GetOrdinal("apellido")),
-                dni = reader.GetString(reader.GetOrdinal("dni"))
-            });
+                return new List<dynamic>();
+            }
         }
 
-        return inquilinos;
-    }
-    catch
-    {
-        return new List<dynamic>();
-    }
-}
+        /// <summary>
+        /// Obtiene SOLO inmuebles DISPONIBLES de un propietario específico
+        /// </summary>
+        public async Task<List<dynamic>> ObtenerInmueblesPorPropietarioAsync(int propietarioId, int limite = 15)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-/// <summary>
-/// Obtiene SOLO inmuebles DISPONIBLES de un propietario específico
-/// </summary>
-public async Task<List<dynamic>> ObtenerInmueblesPorPropietarioAsync(int propietarioId, int limite = 15)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+                var inmuebles = new List<dynamic>();
 
-        var inmuebles = new List<dynamic>();
-        
-        // CONSULTA CON DEBUG INFORMACIÓN
-        string query = @"
+                // CONSULTA CON DEBUG INFORMACIÓN
+                string query = @"
             SELECT i.id_inmueble, i.direccion, i.precio, i.estado,
                    t.nombre as tipo_nombre,
                    p.id_propietario,
@@ -1181,100 +1173,120 @@ public async Task<List<dynamic>> ObtenerInmueblesPorPropietarioAsync(int propiet
             ORDER BY i.direccion
             LIMIT @limite";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@propietarioId", propietarioId);
-        command.Parameters.AddWithValue("@limite", limite);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@propietarioId", propietarioId);
+                command.Parameters.AddWithValue("@limite", limite);
 
-        Console.WriteLine($"=== DEBUG INMUEBLES POR PROPIETARIO ===");
-        Console.WriteLine($"Propietario ID: {propietarioId}");
-        Console.WriteLine($"Límite: {limite}");
-        Console.WriteLine($"Query: {query}");
+                Console.WriteLine($"=== DEBUG INMUEBLES POR PROPIETARIO ===");
+                Console.WriteLine($"Propietario ID: {propietarioId}");
+                Console.WriteLine($"Límite: {limite}");
+                Console.WriteLine($"Query: {query}");
 
-        using var reader = await command.ExecuteReaderAsync();
-        int contador = 0;
-        
-        while (await reader.ReadAsync())
-        {
-            contador++;
-            var inmueble = new
-            {
-                id = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
-                texto = $"{reader.GetString(reader.GetOrdinal("direccion"))} - {reader.GetString(reader.GetOrdinal("tipo_nombre"))} ({reader.GetDecimal(reader.GetOrdinal("precio")):C})",
-                direccion = reader.GetString(reader.GetOrdinal("direccion")),
-                precio = reader.GetDecimal(reader.GetOrdinal("precio")),
-                estado = reader.GetString(reader.GetOrdinal("estado")) // AGREGAMOS ESTADO PARA DEBUG
-            };
-            
-            Console.WriteLine($"Inmueble {contador}: ID={inmueble.id}, Dir={inmueble.direccion}, Estado={inmueble.estado}");
-            
-            // FILTRAR SOLO DISPONIBLES AQUÍ (para debug)
-            if (reader.GetString(reader.GetOrdinal("estado")) == "disponible")
-            {
-                inmuebles.Add(inmueble);
-                Console.WriteLine($"  -> AGREGADO (disponible)");
+                using var reader = await command.ExecuteReaderAsync();
+                int contador = 0;
+
+                while (await reader.ReadAsync())
+                {
+                    contador++;
+                    var inmueble = new
+                    {
+                        id = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        texto = $"{reader.GetString(reader.GetOrdinal("direccion"))} - {reader.GetString(reader.GetOrdinal("tipo_nombre"))} ({reader.GetDecimal(reader.GetOrdinal("precio")):C})",
+                        direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        precio = reader.GetDecimal(reader.GetOrdinal("precio")),
+                        estado = reader.GetString(reader.GetOrdinal("estado")) // AGREGAMOS ESTADO PARA DEBUG
+                    };
+
+                    Console.WriteLine($"Inmueble {contador}: ID={inmueble.id}, Dir={inmueble.direccion}, Estado={inmueble.estado}");
+
+                    // FILTRAR SOLO DISPONIBLES AQUÍ (para debug)
+                    if (reader.GetString(reader.GetOrdinal("estado")) == "disponible")
+                    {
+                        inmuebles.Add(inmueble);
+                        Console.WriteLine($"  -> AGREGADO (disponible)");
+                    }
+                    else
+                    {
+                        Console.WriteLine($"  -> OMITIDO (estado: {reader.GetString(reader.GetOrdinal("estado"))})");
+                    }
+                }
+
+                Console.WriteLine($"Total encontrados: {contador}");
+                Console.WriteLine($"Total disponibles: {inmuebles.Count}");
+                Console.WriteLine($"=== FIN DEBUG ===");
+
+                return inmuebles;
             }
-            else
+            catch (Exception ex)
             {
-                Console.WriteLine($"  -> OMITIDO (estado: {reader.GetString(reader.GetOrdinal("estado"))})");
+                Console.WriteLine($"ERROR en ObtenerInmueblesPorPropietarioAsync: {ex.Message}");
+                return new List<dynamic>();
             }
         }
 
-        Console.WriteLine($"Total encontrados: {contador}");
-        Console.WriteLine($"Total disponibles: {inmuebles.Count}");
-        Console.WriteLine($"=== FIN DEBUG ===");
+        /// <summary>
+        /// Obtiene el propietario de un inmueble específico
+        /// </summary>
+        public async Task<dynamic?> ObtenerPropietarioDeInmuebleAsync(int inmuebleId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-        return inmuebles;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"ERROR en ObtenerInmueblesPorPropietarioAsync: {ex.Message}");
-        return new List<dynamic>();
-    }
-}
-
-/// <summary>
-/// Obtiene el propietario de un inmueble específico
-/// </summary>
-public async Task<dynamic?> ObtenerPropietarioDeInmuebleAsync(int inmuebleId)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
-        
-        string query = @"
+                string query = @"
             SELECT p.id_propietario, u.nombre, u.apellido, u.dni
             FROM inmueble i
             INNER JOIN propietario p ON i.id_propietario = p.id_propietario
             INNER JOIN usuario u ON p.id_usuario = u.id_usuario
             WHERE i.id_inmueble = @inmuebleId";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@inmuebleId", inmuebleId);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@inmuebleId", inmuebleId);
 
-        using var reader = await command.ExecuteReaderAsync();
-        if (await reader.ReadAsync())
-        {
-            return new
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    return new
+                    {
+                        id = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        texto = $"{reader.GetString(reader.GetOrdinal("apellido"))}, {reader.GetString(reader.GetOrdinal("nombre"))} - DNI: {reader.GetString(reader.GetOrdinal("dni"))}",
+                        nombre = reader.GetString(reader.GetOrdinal("nombre")),
+                        apellido = reader.GetString(reader.GetOrdinal("apellido")),
+                        dni = reader.GetString(reader.GetOrdinal("dni"))
+                    };
+                }
+
+                return null;
+            }
+            catch
             {
-                id = reader.GetInt32(reader.GetOrdinal("id_propietario")),
-                texto = $"{reader.GetString(reader.GetOrdinal("apellido"))}, {reader.GetString(reader.GetOrdinal("nombre"))} - DNI: {reader.GetString(reader.GetOrdinal("dni"))}",
-                nombre = reader.GetString(reader.GetOrdinal("nombre")),
-                apellido = reader.GetString(reader.GetOrdinal("apellido")),
-                dni = reader.GetString(reader.GetOrdinal("dni"))
-            };
+                return null;
+            }
         }
+        //para eliminar inmueble de propietario
+        public async Task<bool> TieneContratosActivosAsync(int idInmueble)
+{
+    using var connection = new MySqlConnection(_connectionString);
+    await connection.OpenAsync();
+    
+    var sql = @"
+        SELECT COUNT(*) 
+        FROM contrato 
+        WHERE id_inmueble = @IdInmueble 
+        AND estado = 'activo' 
+        AND fecha_inicio <= CURDATE() 
+        AND fecha_fin >= CURDATE()";
+    
+    using var command = new MySqlCommand(sql, connection);
+    command.Parameters.AddWithValue("@IdInmueble", idInmueble);
+    
+    var count = Convert.ToInt32(await command.ExecuteScalarAsync());
+    
+    return count > 0;
+}
 
-        return null;
-    }
-    catch
-    {
-        return null;
     }
 }
 
-       
-    }
-}       
-        
-   
+

@@ -1,0 +1,203 @@
+@model Inmobiliaria_troncoso_leandro.Models.Inmueble
+@{
+    ViewData["Title"] = "Agregar Propiedad";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-plus-circle text-success"></i> Agregar Nueva Propiedad
+    </h1>
+    <a asp-action="MisInmuebles" class="btn btn-secondary btn-sm">
+        <i class="bi bi-arrow-left"></i> Volver a Mis Propiedades
+    </a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        <i class="bi bi-check-circle"></i> @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        <i class="bi bi-exclamation-triangle"></i> @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    </div>
+}
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-house-add"></i> Información de la Propiedad
+                </h6>
+            </div>
+            <div class="card-body">
+                <form asp-action="CrearInmueble" method="post" enctype="multipart/form-data">
+                    @Html.AntiForgeryToken()
+                    
+                    <!-- Información Básica -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <label asp-for="Direccion" class="form-label fw-bold">Dirección Completa *</label>
+                                <input asp-for="Direccion" class="form-control" placeholder="Ej: Av. Siempre Viva 123, Springfield" />
+                                <span asp-validation-for="Direccion" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="IdTipoInmueble" class="form-label fw-bold">Tipo de Propiedad *</label>
+                                <select asp-for="IdTipoInmueble" class="form-control" asp-items="ViewBag.TiposInmueble">
+                                    <option value="">Seleccionar tipo...</option>
+                                </select>
+                                <span asp-validation-for="IdTipoInmueble" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group mb-3">
+                                <label asp-for="Uso" class="form-label fw-bold">Uso de la Propiedad *</label>
+                                <select asp-for="Uso" class="form-control">
+                                    <option value="">Seleccionar uso...</option>
+                                    <option value="Residencial">Residencial</option>
+                                    <option value="Comercial">Comercial</option>
+                                    <option value="Mixto">Mixto</option>
+                                    <option value="Industrial">Industrial</option>
+                                </select>
+                                <span asp-validation-for="Uso" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Características -->
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Ambientes" class="form-label fw-bold">Ambientes *</label>
+                                <input asp-for="Ambientes" class="form-control" type="number" min="1" max="20" />
+                                <span asp-validation-for="Ambientes" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Precio" class="form-label fw-bold">Precio Mensual *</label>
+                                <div class="input-group">
+                                    <span class="input-group-text">$</span>
+                                    <input asp-for="Precio" class="form-control" placeholder="0.00" min="0" step="0.01" />
+                                </div>
+                                <span asp-validation-for="Precio" class="text-danger small"></span>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label asp-for="Estado" class="form-label fw-bold">Estado *</label>
+                                <select asp-for="Estado" class="form-control">
+                                    <option value="disponible">Para Alquilar</option>
+                                    <option value="venta">Para Venta</option>
+                                </select>
+                                <span asp-validation-for="Estado" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Coordenadas (Opcional) -->
+                    <div class="row">
+                        <div class="col-md-12">
+                            <div class="form-group mb-3">
+                                <label asp-for="Coordenadas" class="form-label fw-bold">Coordenadas (Opcional)</label>
+                                <input asp-for="Coordenadas" class="form-control" placeholder="Ej: -34.603722, -58.381592" />
+                                <div class="form-text">Formato: latitud,longitud (puedes obtenerlas de Google Maps)</div>
+                                <span asp-validation-for="Coordenadas" class="text-danger small"></span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Imagen de Portada -->
+                    <div class="form-group mb-3">
+                        <label asp-for="PortadaFile" class="form-label fw-bold">Imagen de Portada</label>
+                        <input asp-for="PortadaFile" type="file" class="form-control" accept="image/*" />
+                        <div class="form-text">Imagen principal que se mostrará en los listados (máx. 5MB)</div>
+                        <span asp-validation-for="PortadaFile" class="text-danger small"></span>
+                    </div>
+
+                    <!-- Botones -->
+                    <div class="form-group mt-4 pt-3 border-top">
+                        <button type="submit" class="btn btn-success btn-lg">
+                            <i class="bi bi-check-circle"></i> Crear Propiedad
+                        </button>
+                        <a asp-action="MisInmuebles" class="btn btn-secondary btn-lg">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Panel de Consejos -->
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-lightbulb"></i> Consejos
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6><i class="bi bi-info-circle"></i> Para mejores resultados:</h6>
+                    <ul class="mb-0 ps-3">
+                        <li>Usa fotos de buena calidad y buena iluminación</li>
+                        <li>Incluye imágenes de todas las habitaciones</li>
+                        <li>Precio competitivo según la zona</li>
+                        <li>Dirección exacta y completa</li>
+                        <li>Describe características importantes</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-warning">
+                    <h6><i class="bi bi-exclamation-triangle"></i> Estados de Propiedad:</h6>
+                    <ul class="mb-0 ps-3">
+                        <li><strong>Disponible:</strong> Lista para alquilar</li>
+                        <li><strong>No Disponible:</strong> En mantenimiento o no alquilable</li>
+                        <li><strong>Reservado:</strong> Con reserva pero sin contrato</li>
+                        <li><strong>Para Venta:</strong> Disponible para compra</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+    
+    <script>
+        $(document).ready(function() {
+            // Validación de coordenadas en tiempo real
+            $('#Coordenadas').on('blur', function() {
+                var coordenadas = $(this).val();
+                if (coordenadas && !coordenadas.match(/^-?\d{1,2}(\.\d{1,6})?,-?\d{1,3}(\.\d{1,6})?$/)) {
+                    alert('Formato de coordenadas incorrecto. Usa: latitud,longitud (ej. -34.603722, -58.381592)');
+                    $(this).focus();
+                }
+            });
+
+            // Validación de archivo de portada
+            $('#PortadaFile').on('change', function(e) {
+                var file = e.target.files[0];
+                if (file && file.size > 5 * 1024 * 1024) { // 5MB
+                    alert('La imagen es demasiado grande. Máximo 5MB.');
+                    $(this).val('');
+                }
+            });
+        });
+    </script>
+}

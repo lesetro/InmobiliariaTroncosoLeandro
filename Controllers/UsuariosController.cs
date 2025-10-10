@@ -57,7 +57,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Usuario/Create
-        [Authorize(Policy = "Administrador")] // Solo admin puede crear usuarios
+        
         public IActionResult Create()
         {
             ViewBag.Roles = new List<string> { "administrador", "empleado", "propietario", "inquilino" };
@@ -67,7 +67,6 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         // POST: Usuario/Create
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Create(
             [Bind("Nombre,Apellido,Dni,Email,Telefono,Direccion,Rol,Avatar")] Usuario usuario,
             IFormFile? archivoAvatar)
@@ -237,7 +236,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         }
 
         // GET: Usuario/Edit/5
-        [Authorize(Policy = "AdminOEmpleado")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id)
         {
             try
@@ -272,7 +271,7 @@ namespace Inmobiliaria_troncoso_leandro.Controllers
         // POST: Usuario/Edit/5
         [HttpPost]
         [ValidateAntiForgeryToken]
-        [Authorize(Policy = "AdminOEmpleado")]
+        [Authorize(Policy = "Administrador")]
         public async Task<IActionResult> Edit(int id,
             [Bind("IdUsuario,Nombre,Apellido,Dni,Email,Telefono,Direccion,Rol,Estado,Avatar")] Usuario usuario,
             IFormFile? archivoAvatar)

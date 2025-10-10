@@ -75,7 +75,7 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 }
 
                 pago.MontoTotal = pago.MontoBase + pago.RecargoMora;
-                
+
 
                 // Insertar pago
                 string queryPago = @"
@@ -1047,20 +1047,20 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
                 throw new Exception($"Error al obtener historial de pagos del contrato {idContrato}: {ex.Message}", ex);
             }
         }
-        
+
 
         //Metodos para llenar el formulario de alquiler 
 
         public async Task<List<ContratoAlquilerBusqueda>> BuscarContratosParaPagoAsync(string termino, int limite = 10)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
 
-        var contratos = new List<ContratoAlquilerBusqueda>();
+                var contratos = new List<ContratoAlquilerBusqueda>();
 
-        string query = @"
+                string query = @"
             SELECT 
                 c.id_contrato,
                 c.id_inmueble,
@@ -1099,58 +1099,58 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             ORDER BY i.direccion
             LIMIT @limite";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@termino", termino);
-        command.Parameters.AddWithValue("@limite", limite);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@termino", termino);
+                command.Parameters.AddWithValue("@limite", limite);
 
-        using var reader = await command.ExecuteReaderAsync();
-        while (await reader.ReadAsync())
-        {
-            var totalMeses = reader.GetInt32(reader.GetOrdinal("total_meses"));
-            var pagosRealizados = reader.GetInt32(reader.GetOrdinal("pagos_realizados"));
-            var proximoNumeroPago = pagosRealizados + 1;
-            
-            var contratoBusqueda = new ContratoAlquilerBusqueda
+                using var reader = await command.ExecuteReaderAsync();
+                while (await reader.ReadAsync())
+                {
+                    var totalMeses = reader.GetInt32(reader.GetOrdinal("total_meses"));
+                    var pagosRealizados = reader.GetInt32(reader.GetOrdinal("pagos_realizados"));
+                    var proximoNumeroPago = pagosRealizados + 1;
+
+                    var contratoBusqueda = new ContratoAlquilerBusqueda
+                    {
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        InmuebleDireccion = reader.GetString(reader.GetOrdinal("inmueble_direccion")),
+                        InquilinoNombre = reader.GetString(reader.GetOrdinal("inquilino_nombre")),
+                        InquilinoApellido = reader.GetString(reader.GetOrdinal("inquilino_apellido")),
+                        PropietarioNombre = reader.GetString(reader.GetOrdinal("propietario_nombre")),
+                        PropietarioApellido = reader.GetString(reader.GetOrdinal("propietario_apellido")),
+                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
+                        MontoDiarioMora = MONTO_DIARIO_MORA_DEFAULT,
+                        FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                        FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
+                        TotalMeses = totalMeses,
+                        ProximoNumeroPago = proximoNumeroPago
+                    };
+
+                    contratos.Add(contratoBusqueda);
+                }
+
+                return contratos;
+            }
+            catch (Exception ex)
             {
-                IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
-                IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
-                InmuebleDireccion = reader.GetString(reader.GetOrdinal("inmueble_direccion")),
-                InquilinoNombre = reader.GetString(reader.GetOrdinal("inquilino_nombre")),
-                InquilinoApellido = reader.GetString(reader.GetOrdinal("inquilino_apellido")),
-                PropietarioNombre = reader.GetString(reader.GetOrdinal("propietario_nombre")),
-                PropietarioApellido = reader.GetString(reader.GetOrdinal("propietario_apellido")),
-                MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
-                MontoDiarioMora = MONTO_DIARIO_MORA_DEFAULT,
-                FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
-                FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
-                TotalMeses = totalMeses,
-                ProximoNumeroPago = proximoNumeroPago
-            };
-            
-            contratos.Add(contratoBusqueda);
+                Console.WriteLine($"Error en BuscarContratosParaPagoAsync: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                return new List<ContratoAlquilerBusqueda>();
+            }
         }
 
-        return contratos;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error en BuscarContratosParaPagoAsync: {ex.Message}");
-        Console.WriteLine($"StackTrace: {ex.StackTrace}");
-        return new List<ContratoAlquilerBusqueda>();
-    }
-}
-
         //validacion de la fehcas del contrato para asignarle un dia mes año a cada pago 
-        
-        public async Task<DatosContratoParaPago?> ObtenerDatosContratoParaPagoAsync(int idContrato)
-{
-    try
-    {
-        using var connection = new MySqlConnection(_connectionString);
-        await connection.OpenAsync();
 
-        // Query principal para obtener datos del contrato
-        string query = @"
+        public async Task<DatosContratoParaPago?> ObtenerDatosContratoParaPagoAsync(int idContrato)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                // Query principal para obtener datos del contrato
+                string query = @"
             SELECT 
                 c.id_contrato,
                 c.id_inmueble,
@@ -1174,66 +1174,619 @@ namespace Inmobiliaria_troncoso_leandro.Data.Repositorios
             WHERE c.id_contrato = @idContrato 
               AND c.estado = 'vigente'";
 
-        using var command = new MySqlCommand(query, connection);
-        command.Parameters.AddWithValue("@idContrato", idContrato);
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@idContrato", idContrato);
 
-        using var reader = await command.ExecuteReaderAsync();
-        if (await reader.ReadAsync())
+                using var reader = await command.ExecuteReaderAsync();
+                if (await reader.ReadAsync())
+                {
+                    var fechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio"));
+                    var fechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin"));
+                    var totalMeses = reader.GetInt32(reader.GetOrdinal("total_meses"));
+                    var pagosRealizados = reader.GetInt32(reader.GetOrdinal("pagos_realizados"));
+                    var proximoNumeroPago = pagosRealizados + 1;
+
+                    // Calcular fecha de vencimiento para el próximo pago
+                    DateTime proximaFechaVencimiento;
+                    if (proximoNumeroPago <= totalMeses)
+                    {
+                        // Calcular el mes correspondiente al pago
+                        var fechaPeriodo = fechaInicio.AddMonths(proximoNumeroPago - 1);
+                        // Vencimiento: día 10 del mes siguiente al período
+                        if (fechaPeriodo.Month == 12)
+                        {
+                            proximaFechaVencimiento = new DateTime(fechaPeriodo.Year + 1, 1, 10);
+                        }
+                        else
+                        {
+                            proximaFechaVencimiento = new DateTime(fechaPeriodo.Year, fechaPeriodo.Month + 1, 10);
+                        }
+                    }
+                    else
+                    {
+                        // Si ya se completaron todos los pagos, usar fecha actual + 30 días
+                        proximaFechaVencimiento = DateTime.Now.AddDays(30);
+                    }
+
+                    return new DatosContratoParaPago
+                    {
+                        IdContrato = idContrato,
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        InmuebleDireccion = reader.GetString(reader.GetOrdinal("inmueble_direccion")),
+                        InquilinoNombreCompleto = reader.GetString(reader.GetOrdinal("inquilino_completo")),
+                        PropietarioNombreCompleto = reader.GetString(reader.GetOrdinal("propietario_completo")),
+                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
+                        MontoDiarioMora = MONTO_DIARIO_MORA_DEFAULT,
+                        ProximoNumeroPago = proximoNumeroPago,
+                        ProximaFechaVencimiento = proximaFechaVencimiento,
+                        FechaInicio = fechaInicio,
+                        FechaFin = fechaFin,
+                        TotalMeses = totalMeses,
+                        PagosRealizados = pagosRealizados
+                    };
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en ObtenerDatosContratoParaPagoAsync: {ex.Message}");
+                Console.WriteLine($"StackTrace: {ex.StackTrace}");
+                return null;
+            }
+        }
+        //PRopietario 
+
+        public async Task<IList<Pago>> ObtenerPagosPorPropietarioAsync(int propietarioId, DateTime? fechaInicio = null, DateTime? fechaFin = null)
         {
-            var fechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio"));
-            var fechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin"));
-            var totalMeses = reader.GetInt32(reader.GetOrdinal("total_meses"));
-            var pagosRealizados = reader.GetInt32(reader.GetOrdinal("pagos_realizados"));
-            var proximoNumeroPago = pagosRealizados + 1;
+            var pagos = new List<Pago>();
 
-            // Calcular fecha de vencimiento para el próximo pago
-            DateTime proximaFechaVencimiento;
-            if (proximoNumeroPago <= totalMeses)
+            try
             {
-                // Calcular el mes correspondiente al pago
-                var fechaPeriodo = fechaInicio.AddMonths(proximoNumeroPago - 1);
-                // Vencimiento: día 10 del mes siguiente al período
-                if (fechaPeriodo.Month == 12)
+                using var connection = new MySqlConnection(_connectionString);
+
+                var query = @"
+            SELECT p.*, c.*, i.*, 
+                   u_inq.id_usuario AS inq_id, u_inq.nombre AS inq_nombre, u_inq.apellido AS inq_apellido, u_inq.email AS inq_email,
+                   u_prop.id_usuario AS prop_id, u_prop.nombre AS prop_nombre, u_prop.apellido AS prop_apellido, u_prop.email AS prop_email
+            FROM pago p
+            INNER JOIN contrato c ON p.id_contrato = c.id_contrato
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario u_inq ON inq.id_usuario = u_inq.id_usuario
+            INNER JOIN propietario prop ON i.id_propietario = prop.id_propietario
+            INNER JOIN usuario u_prop ON prop.id_usuario = u_prop.id_usuario
+            WHERE i.id_propietario = @PropietarioId";
+
+                if (fechaInicio.HasValue)
                 {
-                    proximaFechaVencimiento = new DateTime(fechaPeriodo.Year + 1, 1, 10);
+                    query += " AND p.fecha_pago >= @FechaInicio";
                 }
-                else
+
+                if (fechaFin.HasValue)
                 {
-                    proximaFechaVencimiento = new DateTime(fechaPeriodo.Year, fechaPeriodo.Month + 1, 10);
+                    query += " AND p.fecha_pago <= @FechaFin";
+                }
+
+                query += " ORDER BY p.fecha_pago DESC";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@PropietarioId", propietarioId);
+
+                if (fechaInicio.HasValue)
+                {
+                    command.Parameters.AddWithValue("@FechaInicio", fechaInicio.Value);
+                }
+
+                if (fechaFin.HasValue)
+                {
+                    command.Parameters.AddWithValue("@FechaFin", fechaFin.Value);
+                }
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var pago = new Pago
+                    {
+                        IdPago = reader.GetInt32(reader.GetOrdinal("id_pago")),
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        NumeroPago = reader.GetInt32(reader.GetOrdinal("numero_pago")),
+                        FechaPago = reader.GetDateTime(reader.GetOrdinal("fecha_pago")),
+                        MontoBase = reader.GetDecimal(reader.GetOrdinal("monto_base")),
+                        MontoTotal = reader.GetDecimal(reader.GetOrdinal("monto_total")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        DiasMora = reader.IsDBNull(reader.GetOrdinal("dias_mora")) ? 0 : reader.GetInt32(reader.GetOrdinal("dias_mora")),
+                        RecargoMora = reader.IsDBNull(reader.GetOrdinal("recargo_mora")) ? 0 : reader.GetDecimal(reader.GetOrdinal("recargo_mora")),
+                        FechaAnulacion = reader.IsDBNull(reader.GetOrdinal("fecha_anulacion")) ? null : reader.GetDateTime(reader.GetOrdinal("fecha_anulacion")),
+                        IdUsuarioAnulador = reader.IsDBNull(reader.GetOrdinal("id_usuario_anulador")) ? null : reader.GetInt32(reader.GetOrdinal("id_usuario_anulador")),
+                        TipoPago = reader.GetString(reader.GetOrdinal("tipo_pago")),
+                        Concepto = reader.GetString(reader.GetOrdinal("concepto"))
+                    };
+
+                    // Mapear Contrato
+                    pago.Contrato = new Contrato
+                    {
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                        FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
+                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inmueble
+                    pago.Contrato.Inmueble = new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inquilino
+                    pago.Contrato.Inquilino = new Inquilino
+                    {
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("inq_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("inq_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("inq_email"))
+                        }
+                    };
+
+                    // Mapear Propietario
+                    pago.Contrato.Inmueble.Propietario = new Propietario
+                    {
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("prop_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("prop_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("prop_email"))
+                        }
+                    };
+
+                    pagos.Add(pago);
                 }
             }
-            else
+            catch (Exception ex)
             {
-                // Si ya se completaron todos los pagos, usar fecha actual + 30 días
-                proximaFechaVencimiento = DateTime.Now.AddDays(30);
+                throw new Exception($"Error al obtener pagos del propietario: {ex.Message}", ex);
             }
 
-            return new DatosContratoParaPago
+            return pagos;
+        }
+        public async Task<IList<Contrato>> ObtenerContratosPorPropietarioAsync(int propietarioId)
+        {
+            var contratos = new List<Contrato>();
+
+            try
             {
-                IdContrato = idContrato,
-                IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
-                InmuebleDireccion = reader.GetString(reader.GetOrdinal("inmueble_direccion")),
-                InquilinoNombreCompleto = reader.GetString(reader.GetOrdinal("inquilino_completo")),
-                PropietarioNombreCompleto = reader.GetString(reader.GetOrdinal("propietario_completo")),
-                MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
-                MontoDiarioMora = MONTO_DIARIO_MORA_DEFAULT,
-                ProximoNumeroPago = proximoNumeroPago,
-                ProximaFechaVencimiento = proximaFechaVencimiento,
-                FechaInicio = fechaInicio,
-                FechaFin = fechaFin,
-                TotalMeses = totalMeses,
-                PagosRealizados = pagosRealizados
-            };
+                using var connection = new MySqlConnection(_connectionString);
+
+                var query = @"
+            SELECT c.*, i.*, 
+                   u_inq.id_usuario AS inq_id, u_inq.nombre AS inq_nombre, u_inq.apellido AS inq_apellido, u_inq.email AS inq_email,
+                   u_prop.id_usuario AS prop_id, u_prop.nombre AS prop_nombre, u_prop.apellido AS prop_apellido, u_prop.email AS prop_email
+            FROM contrato c
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario u_inq ON inq.id_usuario = u_inq.id_usuario
+            INNER JOIN propietario prop ON i.id_propietario = prop.id_propietario
+            INNER JOIN usuario u_prop ON prop.id_usuario = u_prop.id_usuario
+            WHERE i.id_propietario = @PropietarioId
+            ORDER BY c.fecha_inicio DESC";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@PropietarioId", propietarioId);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var contrato = new Contrato
+                    {
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                        FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
+                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inmueble
+                    contrato.Inmueble = new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inquilino
+                    contrato.Inquilino = new Inquilino
+                    {
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("inq_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("inq_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("inq_email"))
+                        }
+                    };
+
+                    // Mapear Propietario
+                    contrato.Inmueble.Propietario = new Propietario
+                    {
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("prop_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("prop_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("prop_email"))
+                        }
+                    };
+
+                    contratos.Add(contrato);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener contratos del propietario: {ex.Message}", ex);
+            }
+
+            return contratos;
+        }
+        //Implemetacion para el rol de inquilino 
+
+        public async Task<Contrato?> ObtenerContratoVigentePorInquilinoAsync(int inquilinoId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+
+                // QUERY CORREGIDA - usando nombres consistentes
+                var query = @"
+            SELECT c.*, i.*, 
+                   u_inq.id_usuario AS inq_id, u_inq.nombre AS inq_nombre, u_inq.apellido AS inq_apellido, u_inq.email AS inq_email,
+                   u_prop.id_usuario AS prop_id, u_prop.nombre AS prop_nombre, u_prop.apellido AS prop_apellido, u_prop.email AS prop_email
+            FROM contrato c
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario u_inq ON inq.id_usuario = u_inq.id_usuario
+            INNER JOIN propietario prop ON i.id_propietario = prop.id_propietario
+            INNER JOIN usuario u_prop ON prop.id_usuario = u_prop.id_usuario
+            WHERE c.id_inquilino = @InquilinoId 
+            AND c.estado = 'vigente'
+            AND c.fecha_fin >= @Hoy
+            ORDER BY c.fecha_inicio DESC
+            LIMIT 1";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@InquilinoId", inquilinoId);
+                command.Parameters.AddWithValue("@Hoy", DateTime.Today);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    var contrato = new Contrato
+                    {
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                        FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
+                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inmueble (solo campos básicos que existen)
+                    contrato.Inmueble = new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inquilino
+                    contrato.Inquilino = new Inquilino
+                    {
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("inq_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("inq_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("inq_email"))
+                        }
+                    };
+
+                    // Mapear Propietario
+                    contrato.Inmueble.Propietario = new Propietario
+                    {
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("prop_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("prop_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("prop_email"))
+                        }
+                    };
+
+                    return contrato;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener contrato vigente del inquilino: {ex.Message}", ex);
+            }
+        }
+        public async Task<Pago?> ObtenerProximoPagoAsync(int inquilinoId)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+
+                var query = @"
+            SELECT p.*, c.*, i.*
+            FROM pago p
+            INNER JOIN contrato c ON p.id_contrato = c.id_contrato
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            WHERE c.id_inquilino = @InquilinoId 
+            AND p.estado = 'pendiente'
+            AND p.fecha_vencimiento >= @Hoy
+            ORDER BY p.fecha_vencimiento ASC
+            LIMIT 1";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@InquilinoId", inquilinoId);
+                command.Parameters.AddWithValue("@Hoy", DateTime.Today);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                if (await reader.ReadAsync())
+                {
+                    var pago = new Pago
+                    {
+                        IdPago = reader.GetInt32(reader.GetOrdinal("id_pago")),
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        NumeroPago = reader.GetInt32(reader.GetOrdinal("numero_pago")),
+                        FechaPago = reader.GetDateTime(reader.GetOrdinal("fecha_pago")),
+                        FechaVencimiento = reader.GetDateTime(reader.GetOrdinal("fecha_vencimiento")),
+                        MontoBase = reader.GetDecimal(reader.GetOrdinal("monto_base")),
+                        MontoTotal = reader.GetDecimal(reader.GetOrdinal("monto_total")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        TipoPago = reader.GetString(reader.GetOrdinal("tipo_pago")),
+                        Concepto = reader.GetString(reader.GetOrdinal("concepto"))
+                    };
+
+                    return pago;
+                }
+
+                return null;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener próximo pago del inquilino: {ex.Message}", ex);
+            }
+        }
+        public async Task<IList<Pago>> ObtenerPagosPendientesPorInquilinoAsync(int inquilinoId)
+        {
+            var pagos = new List<Pago>();
+
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+
+                var query = @"
+            SELECT p.*, c.*, i.*
+            FROM pago p
+            INNER JOIN contrato c ON p.id_contrato = c.id_contrato
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            WHERE c.id_inquilino = @InquilinoId 
+            AND p.estado = 'pendiente'
+            ORDER BY p.fecha_vencimiento ASC";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@InquilinoId", inquilinoId);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var pago = new Pago
+                    {
+                        IdPago = reader.GetInt32(reader.GetOrdinal("id_pago")),
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        NumeroPago = reader.GetInt32(reader.GetOrdinal("numero_pago")),
+                        FechaPago = reader.GetDateTime(reader.GetOrdinal("fecha_pago")),
+                        FechaVencimiento = reader.GetDateTime(reader.GetOrdinal("fecha_vencimiento")),
+                        MontoBase = reader.GetDecimal(reader.GetOrdinal("monto_base")),
+                        MontoTotal = reader.GetDecimal(reader.GetOrdinal("monto_total")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        TipoPago = reader.GetString(reader.GetOrdinal("tipo_pago")),
+                        Concepto = reader.GetString(reader.GetOrdinal("concepto"))
+                    };
+
+                    pagos.Add(pago);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener pagos pendientes del inquilino: {ex.Message}", ex);
+            }
+
+            return pagos;
         }
 
-        return null;
-    }
-    catch (Exception ex)
-    {
-        Console.WriteLine($"Error en ObtenerDatosContratoParaPagoAsync: {ex.Message}");
-        Console.WriteLine($"StackTrace: {ex.StackTrace}");
-        return null;
-    }
-}
+        public async Task<IList<Pago>> ObtenerPagosPorInquilinoAsync(int inquilinoId)
+        {
+            var pagos = new List<Pago>();
+
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+
+                var query = @"
+            SELECT p.*, c.*, i.*, 
+                   u_inq.id_usuario AS inq_id, u_inq.nombre AS inq_nombre, u_inq.apellido AS inq_apellido, u_inq.email AS inq_email,
+                   u_prop.id_usuario AS prop_id, u_prop.nombre AS prop_nombre, u_prop.apellido AS prop_apellido, u_prop.email AS prop_email
+            FROM pago p
+            INNER JOIN contrato c ON p.id_contrato = c.id_contrato
+            INNER JOIN inmueble i ON c.id_inmueble = i.id_inmueble
+            INNER JOIN inquilino inq ON c.id_inquilino = inq.id_inquilino
+            INNER JOIN usuario u_inq ON inq.id_usuario = u_inq.id_usuario
+            INNER JOIN propietario prop ON i.id_propietario = prop.id_propietario
+            INNER JOIN usuario u_prop ON prop.id_usuario = u_prop.id_usuario
+            WHERE c.id_inquilino = @InquilinoId
+            ORDER BY p.fecha_pago DESC";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@InquilinoId", inquilinoId);
+
+                await connection.OpenAsync();
+                using var reader = await command.ExecuteReaderAsync();
+
+                while (await reader.ReadAsync())
+                {
+                    var pago = new Pago
+                    {
+                        IdPago = reader.GetInt32(reader.GetOrdinal("id_pago")),
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        NumeroPago = reader.GetInt32(reader.GetOrdinal("numero_pago")),
+                        FechaPago = reader.GetDateTime(reader.GetOrdinal("fecha_pago")),
+                        FechaVencimiento = reader.IsDBNull(reader.GetOrdinal("fecha_vencimiento")) ? null : reader.GetDateTime(reader.GetOrdinal("fecha_vencimiento")),
+                        MontoBase = reader.GetDecimal(reader.GetOrdinal("monto_base")),
+                        MontoTotal = reader.GetDecimal(reader.GetOrdinal("monto_total")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado")),
+                        DiasMora = reader.IsDBNull(reader.GetOrdinal("dias_mora")) ? 0 : reader.GetInt32(reader.GetOrdinal("dias_mora")),
+                        RecargoMora = reader.IsDBNull(reader.GetOrdinal("recargo_mora")) ? 0 : reader.GetDecimal(reader.GetOrdinal("recargo_mora")),
+                        FechaAnulacion = reader.IsDBNull(reader.GetOrdinal("fecha_anulacion")) ? null : reader.GetDateTime(reader.GetOrdinal("fecha_anulacion")),
+                        IdUsuarioAnulador = reader.IsDBNull(reader.GetOrdinal("id_usuario_anulador")) ? null : reader.GetInt32(reader.GetOrdinal("id_usuario_anulador")),
+                        TipoPago = reader.GetString(reader.GetOrdinal("tipo_pago")),
+                        Concepto = reader.GetString(reader.GetOrdinal("concepto"))
+                    };
+
+                    // Mapear Contrato
+                    pago.Contrato = new Contrato
+                    {
+                        IdContrato = reader.GetInt32(reader.GetOrdinal("id_contrato")),
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        FechaInicio = reader.GetDateTime(reader.GetOrdinal("fecha_inicio")),
+                        FechaFin = reader.GetDateTime(reader.GetOrdinal("fecha_fin")),
+                        MontoMensual = reader.GetDecimal(reader.GetOrdinal("monto_mensual")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inmueble
+                    pago.Contrato.Inmueble = new Inmueble
+                    {
+                        IdInmueble = reader.GetInt32(reader.GetOrdinal("id_inmueble")),
+                        Direccion = reader.GetString(reader.GetOrdinal("direccion")),
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        Estado = reader.GetString(reader.GetOrdinal("estado"))
+                    };
+
+                    // Mapear Inquilino
+                    pago.Contrato.Inquilino = new Inquilino
+                    {
+                        IdInquilino = reader.GetInt32(reader.GetOrdinal("id_inquilino")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("inq_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("inq_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("inq_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("inq_email"))
+                        }
+                    };
+
+                    // Mapear Propietario
+                    pago.Contrato.Inmueble.Propietario = new Propietario
+                    {
+                        IdPropietario = reader.GetInt32(reader.GetOrdinal("id_propietario")),
+                        IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                        Usuario = new Usuario
+                        {
+                            IdUsuario = reader.GetInt32(reader.GetOrdinal("prop_id")),
+                            Nombre = reader.GetString(reader.GetOrdinal("prop_nombre")),
+                            Apellido = reader.GetString(reader.GetOrdinal("prop_apellido")),
+                            Email = reader.GetString(reader.GetOrdinal("prop_email"))
+                        }
+                    };
+
+                    pagos.Add(pago);
+                }
+            }
+            catch (Exception ex)
+            {
+                throw new Exception($"Error al obtener pagos del inquilino: {ex.Message}", ex);
+            }
+
+            return pagos;
+        }
+        public async Task<int> ObtenerIdInquilinoPorUsuarioAsync(int idUsuario)
+        {
+            try
+            {
+                using var connection = new MySqlConnection(_connectionString);
+                await connection.OpenAsync();
+
+                string query = "SELECT id_inquilino FROM inquilino WHERE id_usuario = @idUsuario";
+
+                using var command = new MySqlCommand(query, connection);
+                command.Parameters.AddWithValue("@idUsuario", idUsuario);
+
+                var result = await command.ExecuteScalarAsync();
+
+                if (result != null)
+                {
+                    int idInquilino = Convert.ToInt32(result);
+                    Console.WriteLine($"=== ID Inquilino encontrado: {idInquilino} para usuario {idUsuario} ===");
+                    return idInquilino;
+                }
+
+                Console.WriteLine($"=== No se encontró inquilino para usuario {idUsuario} ===");
+                return 0;
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"Error en ObtenerIdInquilinoPorUsuarioAsync: {ex.Message}");
+                return 0;
+            }
+        }
     }
 }

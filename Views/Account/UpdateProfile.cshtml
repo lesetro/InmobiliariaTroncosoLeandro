@@ -10,7 +10,7 @@
             Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
             break;
         case "empleado":
-            Layout = "~/Views/Shared/_LayoutEmpleado.cshtml";
+            Layout = "~/Views/Shared/_LayoutAdmin.cshtml";
             break;
         case "propietario":
             Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
@@ -26,13 +26,48 @@
 
 <div class="container-fluid">
     <!-- Header de la página -->
+    
     <div class="d-sm-flex align-items-center justify-content-between mb-4">
-        <h1 class="h3 mb-0 text-gray-800">
-            <i class="fas fa-user-edit"></i> Actualizar Mi Perfil
-        </h1>
-        <a asp-controller="Usuario" asp-action="Perfil" class="btn btn-secondary shadow-sm">
-            <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Perfil
-        </a>
+            <h1 class="h3 mb-0 text-gray-800">
+                <i class="fas fa-user-edit"></i> Actualizar Mi Perfil
+            </h1>
+    
+   <div class="d-sm-flex align-items-center justify-content-between mb-4">
+    
+
+    <div>
+        @if (User.IsInRole("administrador"))
+        {
+            <a asp-controller="Usuario" asp-action="Perfil" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Perfil
+            </a>
+        }
+        else if (User.IsInRole("empleado"))
+        {
+            <a asp-controller="Empleado" asp-action="Dashboard" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Dashboard
+            </a>
+        }
+        else if (User.IsInRole("propietario"))
+        {
+            <a asp-controller="Propietario" asp-action="Dashboard" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Dashboard
+            </a>
+        }
+        else if (User.IsInRole("inquilino"))
+        {
+            <a asp-controller="Inquilino" asp-action="Dashboard" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Dashboard
+            </a>
+        }
+        else
+        {
+            <a asp-controller="Home" asp-action="Index" class="btn btn-secondary shadow-sm">
+                <i class="fas fa-arrow-left fa-sm text-white-50"></i> Volver al Inicio
+            </a>
+        }
+    </div>
+</div>
     </div>
 
     <div class="row">

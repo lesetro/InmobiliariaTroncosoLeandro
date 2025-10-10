@@ -53,20 +53,23 @@
                         </div>
                         <div class="card-body">
                             <div class="row text-left">
-                                <div class="col-md-6">
-                                    <p class="mb-2">
-                                        <strong>Usuario:</strong> @User.FindFirst("FullName")?.Value
-                                    </p>
-                                    <p class="mb-2">
-                                        <strong>Email:</strong> @User.FindFirst(System.Security.Claims.ClaimTypes.Email)?.Value
-                                    </p>
-                                </div>
+                                <p class="mb-2">
+                                    <strong>Usuario:</strong> @(ViewBag.UserName ?? "No disponible")
+                                </p>
+                                <p class="mb-2">
+                                    <strong>Email:</strong> @(ViewBag.UserEmail ?? "No disponible")
+                                </p>
                                 <div class="col-md-6">
                                     <p class="mb-2">
                                         <strong>Rol actual:</strong> 
                                         @{
                                             var userRole = User.FindFirst(System.Security.Claims.ClaimTypes.Role)?.Value;
+                                            
                                         }
+
+                                        <p class="mb-2">
+                                            <strong>Rol actual:</strong>  @userRole
+                                        </p>
                                         @switch (userRole?.ToLower())
                                         {
                                             case "administrador":

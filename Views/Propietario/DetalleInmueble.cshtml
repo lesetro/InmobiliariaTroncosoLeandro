@@ -1,0 +1,145 @@
+@model Inmueble
+@{
+    ViewData["Title"] = "Detalle de Propiedad";
+    Layout = "~/Views/Shared/_LayoutPropietario.cshtml";
+}
+
+<div class="d-sm-flex align-items-center justify-content-between mb-4">
+    <h1 class="h3 mb-0 text-gray-800">
+        <i class="bi bi-house text-success"></i> Detalle de Propiedad
+    </h1>
+    <div>
+        <a asp-action="EditarInmueble" asp-route-id="@Model.IdInmueble" class="btn btn-success btn-sm">
+            <i class="bi bi-pencil"></i> Editar
+        </a>
+        <a asp-action="MisInmuebles" class="btn btn-secondary btn-sm">
+            <i class="bi bi-arrow-left"></i> Volver
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <!-- Imagen Principal -->
+        <div class="card shadow mb-4">
+            <div class="card-body p-0">
+                @if (Model.TienePortada)
+                {
+                    <img src="@Model.UrlPortadaODefault" class="w-100" 
+                         style="height: 300px; object-fit: cover;" 
+                         alt="Imagen de la propiedad">
+                }
+                else
+                {
+                    <div class="text-center py-5 bg-light">
+                        <i class="bi bi-image text-muted" style="font-size: 3rem;"></i>
+                        <p class="text-muted mt-2">Sin imagen principal</p>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Información Básica -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-info-circle"></i> Información Básica
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>📍 Dirección:</strong><br>@Model.Direccion</p>
+                        <p><strong>🏠 Tipo:</strong> @Model.TipoInmueble?.Nombre</p>
+                        <p><strong>🎯 Uso:</strong> @Model.Uso</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>💰 Precio:</strong><br><span class="text-success font-weight-bold">$@Model.Precio.ToString("N0")</span></p>
+                        <p><strong>🚪 Ambientes:</strong> @Model.Ambientes</p>
+                        <p><strong>📊 Estado:</strong> <span class="badge @Model.EstadoBadgeClass">@Model.EstadoParaMostrar</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <!-- Propietario (Tú) -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-person-check"></i> Eres el Propietario
+                </h6>
+            </div>
+            <div class="card-body text-center">
+                <img src="@(Model.Propietario?.Usuario?.Avatar ?? "/img/default-avatar.png")" 
+                     class="rounded-circle mb-3" 
+                     style="width: 70px; height: 70px; object-fit: cover;">
+                <h6 class="mb-1">@Model.Propietario?.Usuario?.NombreCompleto</h6>
+                <p class="text-muted small mb-1">@Model.Propietario?.Usuario?.Email</p>
+                <p class="text-muted small mb-0">@Model.Propietario?.Usuario?.Telefono</p>
+            </div>
+        </div>
+
+        <!-- Estado de la Propiedad -->
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-graph-up"></i> Estado Actual
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="text-center">
+                    <div class="mb-3">
+                        <span class="badge @Model.EstadoBadgeClass" style="font-size: 1.1em;">
+                            @Model.EstadoParaMostrar
+                        </span>
+                    </div>
+                    <p class="small text-muted mb-0">
+                        @if (Model.Estado == "disponible")
+                        {
+                            <text>Tu propiedad está disponible para alquiler/venta</text>
+                        }
+                        else if (Model.Estado == "alquilado")
+                        {
+                            <text>Actualmente alquilada</text>
+                        }
+                        else if (Model.Estado == "vendido")
+                        {
+                            <text>Propiedad vendida</text>
+                        }
+                        else
+                        {
+                            <text>Estado: @Model.Estado</text>
+                        }
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Acciones Rápidas -->
+        <div class="card shadow">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-success">
+                    <i class="bi bi-lightning"></i> Acciones
+                </h6>
+            </div>
+            <div class="card-body">
+                <div class="d-grid gap-2">
+                    <a asp-action="EditarInmueble" asp-route-id="@Model.IdInmueble" class="btn btn-success">
+                        <i class="bi bi-pencil"></i> Editar
+                    </a>
+                   @*  @if (Model.Estado == "disponible")
+                    {
+                        <a href="#" class="btn btn-outline-primary">
+                            <i class="bi bi-megaphone"></i> Publicar
+                        </a>
+                    } *@
+                    <a href="#" class="btn btn-outline-warning">
+                        <i class="bi bi-images"></i> Galería (@(Model.TotalImagenesGaleria))
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

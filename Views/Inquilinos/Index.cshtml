@@ -148,11 +148,17 @@ else
                         </td>
                         <td>
                             <div class="btn-group" role="group">
+                                @if (User.IsInRole("administrador"))
+                                {
                                 <a asp-action="Edit" asp-route-id="@item.IdInquilino" class="btn btn-warning btn-sm"
                                     title="Editar">
                                     <i class="bi bi-pencil"></i>
                                 </a>
-
+                                <a asp-action="Delete" asp-route-id="@item.IdInquilino" class="btn btn-danger btn-sm"
+                                    title="Eliminar">
+                                    <i class="bi bi-info-circle"></i>
+                                </a>
+                                }
                                 @* Botón de Toggle Estado *@
                                 <form asp-action="ToggleEstado" asp-route-id="@item.IdInquilino" method="post"
                                     style="display:inline;">
@@ -172,10 +178,7 @@ else
                                     }
                                 </form>
 
-                                <a asp-action="Delete" asp-route-id="@item.IdInquilino" class="btn btn-danger btn-sm"
-                                    title="Ver Detalles">
-                                    <i class="bi bi-info-circle"></i>
-                                </a>
+                                
                             </div>
                         </td>
                     </tr>

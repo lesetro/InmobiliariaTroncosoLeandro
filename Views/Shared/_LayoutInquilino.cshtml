@@ -3,224 +3,372 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Inmobiliaria CIMA</title>
+    <title>@ViewData["Title"] - Mi Espacio CIMA</title>
+    
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" />
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css" />
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    
+    <!-- Client Dashboard Styles -->
+    <style>
+        body {
+            font-family: 'Nunito', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
+            background-color: #f8f9fc;
+        }
+        .sidebar {
+            min-height: 100vh;
+            max-height: 100vh;
+            /* COLOR POR ROL */
+            @if (User.IsInRole("propietario"))
+            {
+                <text>background: linear-gradient(180deg, #1cc88a 10%, #13855c 100%);</text>
+            }
+            else if (User.IsInRole("inquilino"))
+            {
+                <text>background: linear-gradient(180deg, #36b9cc 10%, #258391 100%);</text>
+            }
+            else
+            {
+                <text>background: linear-gradient(180deg, #6a4a8c 10%, #4e3670 100%);</text>
+            }
+            width: 250px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            z-index: 1000;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding-bottom: 2rem;
+        }
+        
+        .sidebar .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            padding: 1rem 1.5rem;
+            border-radius: 0;
+        }
+        .sidebar .nav-link:hover {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        .sidebar .nav-link.active {
+            color: #fff;
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        .content-wrapper {
+            margin-left: 250px;
+            min-height: 100vh;
+            background-color: #f8f9fc;
+        }
+        
+        /* CORRECCIÓN PRINCIPAL: Padding para el contenido principal */
+        .main-content {
+            padding: 2rem 2.5rem;
+            min-height: calc(100vh - 70px);
+        }
+        
+        /* Topbar fijo */
+        .topbar {
+            height: 70px;
+            background-color: #fff;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 0 2.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            position: sticky;
+            top: 0;
+            z-index: 999;
+        }
+        
+        .sidebar-brand {
+            height: 4.375rem;
+            text-decoration: none;
+            font-size: 1rem;
+            font-weight: 800;
+            padding: 1.5rem 1rem;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.1);
+            color: #fff;
+            flex-shrink: 0;
+        }
+        .sidebar-divider {
+            border-top: 1px solid rgba(255, 255, 255, 0.15);
+            margin: 0 1rem;
+        }
+        .sidebar-heading {
+            color: rgba(255, 255, 255, 0.4);
+            font-size: 0.65rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.1rem;
+            padding: 1.5rem 1.5rem 0.5rem;
+        }
+        
+        /* Responsive */
+        @@media (max-width: 768px) {
+            .sidebar {
+                margin-left: -250px;
+                max-height: none;
+            }
+            .content-wrapper {
+                margin-left: 0;
+            }
+            .sidebar.show {
+                margin-left: 0;
+            }
+            
+            .main-content {
+                padding: 1.5rem;
+            }
+            
+            .topbar {
+                padding: 0 1.5rem;
+            }
+        }
+
+        @@media (max-width: 576px) {
+            .main-content {
+                padding: 1rem;
+            }
+            
+            .topbar {
+                padding: 0 1rem;
+            }
+        }
+
+        /* Badges para estados */
+        .badge-vigente { background-color: #1cc88a; }
+        .badge-proximo { background-color: #f6c23e; }
+        .badge-vencido { background-color: #e74a3b; }
+        .badge-disponible { background-color: #1cc88a; }
+        .badge-alquilado { background-color: #4e73df; }
+        .badge-vendido { background-color: #6f42c1; }
+        
+        /* Mejoras visuales para cards */
+        .card {
+            border-radius: 0.5rem;
+            box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+            border: 1px solid #e3e6f0;
+            margin-bottom: 1.5rem;
+        }
+        
+        .card-header {
+            background-color: #f8f9fc;
+            border-bottom: 1px solid #e3e6f0;
+            padding: 1rem 1.25rem;
+        }
+        
+        .card-body {
+            padding: 1.25rem;
+        }
+    </style>
 </head>
 <body>
-    <header>
-        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
-            <div class="container-fluid">
-                <a class="navbar-brand" href="@Url.Action("Index", "Home")">CIMA Inmobiliaria</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="collapse navbar-collapse" id="navbarNav">
-                    <ul class="navbar-nav me-auto mb-2 mb-lg-0">
-                        <!-- NAVEGACIÓN PÚBLICA -->
-                        <li class="nav-item">
-                            <a class="nav-link" asp-controller="Home" asp-action="Index">
-                                <i class="bi bi-house-door"></i> Inicio
-                            </a>
-                        </li>
-                        
-                        <!-- ÁREA PARA USUARIOS AUTENTICADOS -->
-                        @if (User?.Identity?.IsAuthenticated == true)
-                        {
-                            <!-- DASHBOARD SEGÚN ROL -->
-                            @if (User.IsInRole("administrador"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Admin" asp-action="Index">
-                                        <i class="bi bi-speedometer2"></i> Panel Administrador
-                                    </a>
-                                </li>
-                            }
-                            else if (User.IsInRole("empleado"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="Empleados" asp-action="Index">
-                                        <i class="bi bi-briefcase"></i> Mi Área
-                                    </a>
-                                </li>
-                            }
-                            else if (User.IsInRole("propietario"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="PropietariosArea" asp-action="Index">
-                                        <i class="bi bi-person-badge"></i> Mi Área
-                                    </a>
-                                </li>
-                            }
-                            else if (User.IsInRole("inquilino"))
-                            {
-                                <li class="nav-item">
-                                    <a class="nav-link" asp-controller="InquilinosArea" asp-action="Index">
-                                        <i class="bi bi-people"></i> Mi Área
-                                    </a>
-                                </li>
-                            }
+    <!-- Sidebar -->
+    <nav class="sidebar" id="accordionSidebar">
+        <!-- Sidebar Brand -->
+        <a class="sidebar-brand d-flex align-items-center justify-content-center" 
+           asp-controller="@(User.IsInRole("propietario") ? "Propietario" : "Inquilino")" 
+           asp-action="Index">
+            <div class="sidebar-brand-icon">
+                <i class="bi bi-house-door"></i>
+            </div>
+            <div class="sidebar-brand-text mx-3">
+                @if (User.IsInRole("propietario"))
+                {
+                    <text>Mi Espacio Propietario</text>
+                }
+                else if (User.IsInRole("inquilino"))
+                {
+                    <text>Mi Espacio Inquilino</text>
+                }
+                else
+                {
+                    <text>Mi Espacio</text>
+                }
+            </div>
+        </a>
 
-                            <!-- MENÚS ESPECÍFICOS POR ROL -->
-                            @if (User.IsInRole("administrador") || User.IsInRole("empleado"))
-                            {
-                                <!-- MENÚ COMPLETO PARA ADMIN/EMPLEADOS -->
-                                <li class="nav-item dropdown">
-                                    <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                        <i class="bi bi-gear"></i> Gestión
-                                    </a>
-                                    <ul class="dropdown-menu">
-                                        <li><a class="dropdown-item" asp-controller="Usuario" asp-action="Index">Usuarios</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Propietarios" asp-action="Index">Propietarios</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Inquilinos" asp-action="Index">Inquilinos</a></li>
-                                        <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item" asp-controller="Inmuebles" asp-action="Index">Inmuebles</a></li>
-                                        <li><a class="dropdown-item" asp-controller="TipoInmuebles" asp-action="Index">Tipos</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Contratos" asp-action="Index">Contratos</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Pagos" asp-action="Index">Pagos</a></li>
-                                        <li><a class="dropdown-item" asp-controller="Alquileres" asp-action="Index">Alquileres</a></li>
-                                    </ul>
-                                </li>
-                            }
+        <!-- Divider -->
+        <hr class="sidebar-divider my-0">
 
-                            <!-- ÁREA DE CONTACTO PARA TODOS -->
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="InteresInmueble" asp-action="Index">
-                                    <i class="bi bi-envelope"></i> Personas Interesadas
-                                </a>
-                            </li>
-                        }
-                        else
-                        {
-                            <!-- MENÚ PARA NO AUTENTICADOS -->
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Servicios">
-                                    <i class="bi bi-building"></i> Servicios
-                                </a>
-                            </li>
-                            <li class="nav-item">
-                                <a class="nav-link" asp-controller="Home" asp-action="Contacto">
-                                    <i class="bi bi-envelope"></i> Contacto
-                                </a>
-                            </li>
-                        }
-                    </ul>
+        <!-- Dashboard -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="@(User.IsInRole("propietario") ? "Propietario" : "Inquilino")" asp-action="Index">
+                <i class="bi bi-speedometer2"></i>
+                <span>Mi Dashboard</span>
+            </a>
+        </li>
 
-                    <!-- ÁREA DE USUARIO (LOGIN/LOGOUT) -->
-                    <ul class="navbar-nav">
-                        @if (User?.Identity?.IsAuthenticated  == null)
-                        {
-                            <li class="nav-item dropdown">
-                                <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
-                                    <i class="bi bi-person-circle"></i> @User?.Identity?.Name
-                                </a>
-                                <ul class="dropdown-menu dropdown-menu-end">
-                                    <li><a class="dropdown-item" asp-controller="Auth" asp-action="Profile">Mi Perfil</a></li>
-                                    <li><hr class="dropdown-divider"></li>
-                                    <li>
-                                    
-                                        <li class="nav-item">
-                                            <a class="nav-link" asp-controller="Account" asp-action="Login">
-                                            <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
-                                            </a>
-                                        </li>
-                                    </li>
-                                </ul>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <form asp-controller="Account" asp-action="Logout" method="post" class="d-inline">
-                                    <button type="submit" style="animation: reverse;" class="dropdown-item">
-                                        <i class="bi bi-box-arrow-right border-primary"></i> Cerrar Sesión
-                                    </button>
-                                </form>
-                            </li>
-                        }
-                    </ul>
-                </div>
+        <!-- Divider -->
+        <hr class="sidebar-divider">
+
+        <!-- SECCIÓN ESPECÍFICA PARA PROPIETARIOS -->
+        @if (User.IsInRole("propietario"))
+        {
+            <div class="sidebar-heading">Mis Propiedades</div>
+
+            <!-- Mis Inmuebles -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Propietario" asp-action="MisInmuebles">
+                    <i class="bi bi-building"></i>
+                    <span>Mis Propiedades</span>
+                </a>
+            </li>
+
+            <!-- Agregar Inmueble -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Propietario" asp-action="CrearInmueble">
+                    <i class="bi bi-plus-circle"></i>
+                    <span>Agregar Propiedad</span>
+                </a>
+            </li>
+
+            <!-- Mis Contratos -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Propietario" asp-action="MisContratos">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Mis Contratos</span>
+                </a>
+            </li>
+
+            <!-- Mis Pagos -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Propietario" asp-action="MisPagos">
+                    <i class="bi bi-currency-dollar"></i>
+                    <span>Mis Ingresos</span>
+                </a>
+            </li>
+        }
+
+        <!-- SECCIÓN ESPECÍFICA PARA INQUILINOS -->
+        @if (User.IsInRole("inquilino"))
+        {
+            <div class="sidebar-heading">Mi Alquiler</div>
+
+            <!-- Mi Contrato -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Inquilino" asp-action="MiContrato">
+                    <i class="bi bi-file-earmark-text"></i>
+                    <span>Mi Contrato</span>
+                </a>
+            </li>
+
+            <!-- Mi Inmueble -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Inquilino" asp-action="MiInmueble">
+                    <i class="bi bi-house-door"></i>
+                    <span>Mi Vivienda</span>
+                </a>
+            </li>
+
+            <!-- Mis Pagos -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Inquilino" asp-action="MisPagos">
+                    <i class="bi bi-currency-dollar"></i>
+                    <span>Mis Pagos</span>
+                </a>
+            </li>
+
+            <!-- Reportar Problema -->
+            <li class="nav-item">
+                <a class="nav-link" asp-controller="Inquilino" asp-action="ReportarProblema">
+                    <i class="bi bi-tools"></i>
+                    <span>Reportar Problema</span>
+                </a>
+            </li>
+        }
+
+        <!-- SECCIÓN COMPARTIDA -->
+        <hr class="sidebar-divider">
+
+        <div class="sidebar-heading">Mi Cuenta</div>
+
+        <!-- Mi Perfil -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="@(User.IsInRole("propietario") ? "Propietario" : "Inquilino")" asp-action="MiPerfil">
+                <i class="bi bi-person"></i>
+                <span>Mi Perfil</span>
+            </a>
+        </li>
+
+        <!-- Editar Perfil -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="@(User.IsInRole("propietario") ? "Propietario" : "Inquilino")" asp-action="EditarPerfil">
+                <i class="bi bi-pencil-square"></i>
+                <span>Editar Perfil</span>
+            </a>
+        </li>
+
+        <!-- Contacto -->
+        <li class="nav-item">
+            <a class="nav-link" asp-controller="Home" asp-action="Contacto">
+                <i class="bi bi-telephone"></i>
+                <span>Contactar Soporte</span>
+            </a>
+        </li>
+
+        <!-- Divider -->
+        <hr class="sidebar-divider d-none d-md-block">
+    </nav>
+
+    <div class="content-wrapper">
+        <!-- Topbar -->
+        <nav class="topbar">
+            <!-- Botón para toggle sidebar en móvil -->
+            <button class="btn btn-link text-dark d-md-none" id="sidebarToggleTop">
+                <i class="bi bi-list"></i>
+            </button>
+            
+            <!-- User Info -->
+            <div class="d-flex align-items-center">
+                <span class="text-gray-600 small me-3">Bienvenido, @User.Identity.Name</span>
+                <a class="btn btn-outline-secondary btn-sm" asp-controller="Home" asp-action="Index">
+                    <i class="bi bi-house"></i> Sitio Principal
+                </a>
+                <form class="d-inline" asp-area="" asp-controller="Account" asp-action="Logout" method="post">
+                    <button type="submit" class="btn btn-outline-danger btn-sm ms-2">
+                        <i class="bi bi-box-arrow-right"></i> Salir
+                    </button>
+                </form>
             </div>
         </nav>
-    </header>
 
-    <div id="background-image-container" class="background-image" style="background-image: url('image/clave-de-mano.png');">
-        @if (User?.Identity?.IsAuthenticated == null)
-        {
-            <!-- BREADCRUMB PARA USUARIOS AUTENTICADOS -->
-            <div class="container mt-2">
-                <nav aria-label="breadcrumb">
-                    <ol class="breadcrumb">
-                        <li class="breadcrumb-item">
-                            <a asp-controller="Home" asp-action="Index">Inicio</a>
-                        </li>
-
-
-                        <!-- agregar más breadcrumbs dinámicamente -->
-                    </ol>
-                </nav>
-            </div>
-        }
-        else
-        {
-            <!-- HEADER PARA VISITANTES -->
-            <h1 class="d-inline-flex align-items-center">
-                <i class="bi-building" style="font-size: 2rem;"></i>
-                CIMA Inmobiliaria
-            </h1>
-        }
-
-        <div class="container">
-            <!-- MENSAJES DE NOTIFICACIÓN -->
-            @if (TempData["SuccessMessage"] != null)
-            {
-                <div class="alert alert-success alert-dismissible fade show" role="alert">
-                    @TempData["SuccessMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-            @if (TempData["ErrorMessage"] != null)
-            {
-                <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                    @TempData["ErrorMessage"]
-                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-                </div>
-            }
-
-            <main role="main" class="pb-3">
-                @RenderBody()
-            </main>
-
-        </div>
-
-        <footer class="footer text-muted bg-gray">
-            <div class="container">
-                <p>
-                    Contáctenos: 
-                    <a href="https://wa.me/1234567890" target="_blank" class="text-decoration-none me-2">
-                        <i class="bi bi-whatsapp"></i> 2657648785</a> | 
-                    <a href="https://instagram.com/cima_inmobiliaria" target="_blank" class="text-decoration-none me-2">
-                        <i class="bi bi-instagram"></i> Instagram</a> | 
-                    <a href="mailto:info@CIMA.com" class="text-decoration-none me-2">
-                        <i class="bi bi-envelope"></i> info@CIMA.com
-                    </a>
-                    <strong>
-                        Horarios: Lunes a Viernes de 9 a 14 | 
-                        Calle Belgrano, Villa Mercedes | 
-                        Martillero: Juan Pérez - Matrícula: 12345
-                    </strong> 
-                </p>
-            </div>
-        </footer>
+        <!-- Contenido Principal CON PADDING CORREGIDO -->
+        <main class="main-content">
+            @RenderBody()
+        </main>
     </div>
 
+    <!-- Scripts -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validate/1.19.3/jquery.validate.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-validation-unobtrusive/3.2.11/jquery.validate.unobtrusive.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
+    
+    <script>
+        // Toggle sidebar en móvil
+        $("#sidebarToggleTop").click(function() {
+            $("#accordionSidebar").toggleClass("show");
+        });
 
+        // Cerrar sidebar al hacer click fuera en móvil
+        $(document).click(function(e) {
+            if (!$(e.target).closest('#accordionSidebar, #sidebarToggleTop').length) {
+                $("#accordionSidebar").removeClass("show");
+            }
+        });
+
+        // Marcar enlace activo
+        $(document).ready(function() {
+            var currentPath = window.location.pathname;
+            $('.sidebar .nav-link').each(function() {
+                if ($(this).attr('href') === currentPath) {
+                    $(this).addClass('active');
+                }
+            });
+        });
+    </script>
+
+    @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

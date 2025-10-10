@@ -158,18 +158,22 @@ else
                                    class="btn btn-success btn-sm" title="Detalle ">
                                     <i class="bi bi-file-earmark-text"></i>
                                 </a>
-                                <a asp-action="Edit" asp-route-id="@item.IdInmueble" 
-                                   class="btn btn-warning btn-sm" title="Editar">
-                                    <i class="bi bi-pencil"></i>
-                                </a>
+                                
                                 <a asp-controller="ImagenesInmueble" asp-action="Index" asp-route-idInmueble="@item.IdInmueble" 
                                    class="btn btn-info btn-sm" title="Imágenes">
                                     <i class="bi bi-images"></i>
+                                </a>
+                                @if (User.IsInRole("administrador"))
+                                { 
+                                <a asp-action="Edit" asp-route-id="@item.IdInmueble" 
+                                   class="btn btn-warning btn-sm" title="Editar">
+                                    <i class="bi bi-pencil"></i>
                                 </a>
                                 <a asp-action="Delete" asp-route-id="@item.IdInmueble" 
                                    class="btn btn-danger btn-sm" title="Eliminar">
                                     <i class="bi bi-trash"></i>
                                 </a>
+                                }
                             </div>
                         </td>
                     </tr>
